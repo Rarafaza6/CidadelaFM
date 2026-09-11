@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Gestão | Rádio Escolar EBS Cidadela</title>
+  <meta name="robots" content="noindex, nofollow">
+  
+  <meta name="theme-color" content="#070913">
+  <link rel="icon" type="image/jpeg" href="assets/logo-radio.jpg">
+  <link rel="apple-touch-icon" href="assets/logo-radio.jpg">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="admin-page">
+
+  <!-- MODAL DE AUTENTICAÇÃO -->
+  <div class="modal-overlay active" id="adminAuthModal">
+    <div class="card-panel modal-window" style="text-align: center;">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <img src="assets/logo-radio.jpg" alt="Logótipo Rádio" style="height: 44px; border-radius: 10px; box-shadow: 0 0 20px rgba(2,132,199,0.4);">
+      </div>
+      <h2 style="font-size: 1.4rem;">Painel de Gestão da Rádio</h2>
+      <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.5rem;">
+        Entra com a conta autorizada da equipa da rádio.
+      </p>
+      <div class="form-group" style="margin-bottom: 0.75rem;">
+        <input type="email" id="adminEmailInput" class="form-input-lg" placeholder="Email da equipa" autocomplete="username" required>
+      </div>
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <input type="password" id="adminPasswordInput" class="form-input-lg" placeholder="Palavra-passe" autocomplete="current-password" required>
+      </div>
+      <div id="authAlert" style="margin-bottom: 1rem;"></div>
+      <button id="btnLogin" class="btn-submit-main" style="width: 100%;">
+        <i class="ri-lock-unlock-line"></i> Autenticar no Painel
+      </button>
+      <div style="margin-top: 1.5rem;">
+        <a href="index.html" style="font-size: 0.85rem; color: var(--text-muted);"><i class="ri-arrow-left-line"></i> Regressar ao site público</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHELL PRINCIPAL DO ADMIN (aparece após login) -->
+  <div class="admin-shell" id="adminShell">
+
+    <!-- TOPBAR COMPACTA -->
+    <header class="admin-topbar" id="adminTopbar">
+      <div class="admin-topbar-brand">
+        <img src="assets/logo-radio.jpg" alt="Logo" class="admin-topbar-logo">
+        <div>
+          <span class="admin-topbar-title">Painel de Gestão</span>
+          <span class="admin-topbar-sub">Rádio Cidadela · EBS Cidadela</span>
+        </div>
+      </div>
+
+      <!-- MODE SWITCHER -->
+      <div class="admin-mode-switcher" role="tablist" aria-label="Modo do painel">
+        <button class="admin-mode-btn active" id="btnModeEditorial" onclick="switchAdminMode('editorial')" role="tab" aria-selected="true">
+          <i class="ri-edit-box-line"></i>
+          <span>Editorial</span>
+        </button>
+        <button class="admin-mode-btn" id="btnModeAoVivo" onclick="switchAdminMode('aovivo')" role="tab" aria-selected="false">
+          <i class="ri-broadcast-line"></i>
+          <span>Ao Vivo</span>
+          <span class="admin-live-dot"></span>
+        </button>
+      </div>
+
+      <div class="admin-topbar-actions">
+        <a href="index.html" class="btn-action" title="Ver website"><i class="ri-external-link-line"></i> Website</a>
+        <button id="btnLogout" class="btn-action" title="Terminar sessão"><i class="ri-logout-box-r-line"></i> Sair</button>
+      </div>
+    </header>
+
+    <!-- ============================================================ -->
+    <!-- ZONA EDITORIAL                                                -->
+    <!-- ============================================================ -->
+    <div class="admin-editorial-zone" id="zoneEditorial">
+
+      <!-- SIDEBAR VERTICAL (NOTION-STYLE WORKSPACE) -->
+      <nav class="admin-sidebar" aria-label="Navegação do painel">
+
+        <!-- KPIs compactos na sidebar -->
+        <div class="sidebar-kpis">
+          <div class="sidebar-kpi" title="Músicas pendentes">
+            <i class="ri-music-2-line"></i>
+            <span id="sideKpiSongs">0</span>
+            <small style="font-size: 0.62rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Músicas</small>
+          </div>
+          <div class="sidebar-kpi" title="Mensagens por ler">
+            <i class="ri-chat-3-line"></i>
+            <span id="sideKpiMessages">0</span>
+            <small style="font-size: 0.62rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Inbox</small>
+          </div>
+          <div class="sidebar-kpi" title="Links ativos">
+            <i class="ri-links-line"></i>
+            <span id="sideKpiLinks">0</span>
+            <small style="font-size: 0.62rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Links</small>
+          </div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-section-label">Estúdio &amp; Emissão</div>
+        <ul class="sidebar-nav" role="list">
+          <li>
+            <button class="sidebar-nav-item active" data-target="sec-resumo" onclick="switchAdminSection('sec-resumo')">
+              <i class="ri-dashboard-3-line"></i>
+              <span>Hoje</span>
+            </button>
+          </li>
+          <li>
+            <button class="sidebar-nav-item" data-target="sec-guioes" onclick="switchAdminSection('sec-guioes')">
+              <i class="ri-file-list-3-line" style="color: #38bdf8;"></i>
+              <span>Guiões &amp; Alinhamento</span>
+            </button>
+          </li>
+          <li>
+            <button class="sidebar-nav-item" data-target="sec-musicas" onclick="switchAdminSection('sec-musicas')">
+              <i class="ri-fire-line" style="color: #f59e0b;"></i>
+              <span>Músicas Pedidas</span>
+              <span class="sidebar-badge" id="sideNavBadgeSongs"></span>
+            </button>
+          </li>
+          <li>
+            <button class="sidebar-nav-item" data-target="sec-mensagens" onclick="switchAdminSection('sec-mensagens')">
+              <i class="ri-chat-heart-line" style="color: #a855f7;"></i>
+              <span>Mensagens</span>
+              <span class="sidebar-badge sidebar-badge-alert" id="sideNavBadgeMessages"></span>
+            </button>
+          </li>
+          <li>
+            <button class="sidebar-nav-item" data-target="sec-calendario" onclick="switchAdminSection('sec-calendario')">
+              <i class="ri-calendar-event-line" style="color: #38bdf8;"></i>
+              <span>Calendário</span>
+            </button>
+          </li>
+        </ul>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-section-label">Conteúdos</div>
+        <ul class="sidebar-nav" role="list">
+          <li>
+            <button class="sidebar-nav-item" data-target="sec-anuncios" onclick="switchAdminSection('sec-anuncios')">
+              <i class="ri-article-line"></i>
+              <span>Notícias</span>
+            </button>
+          </li>
+          <li>
+            <button class="sidebar-nav-item" data-target="sec-podcasts" onclick="switchAdminSection('sec-podcasts')">
+              <i class="ri-headphones-line"></i>
+              <span>Podcasts</span>
+            </button>
+          </li>
+          <li>
+            <button class="sidebar-nav-item" data-target="sec-links" onclick="switchAdminSection('sec-links')">
+              <i class="ri-links-line"></i>
+              <span>Links Rápidos</span>
+            </button>
+          </li>
+        </ul>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="sidebar-section-label">Equipa</div>
+        <ul class="sidebar-nav" role="list">
+          <li>
+            <button class="sidebar-nav-item" data-target="sec-utilizadores" onclick="switchAdminSection('sec-utilizadores')">
+              <i class="ri-team-line"></i>
+              <span>Utilizadores</span>
+            </button>
+          </li>
+        </ul>
+
+      </nav>
+
+      <!-- CONTEÚDO PRINCIPAL EDITORIAL -->
+      <main class="admin-content" id="adminContent">
+
+        <!-- BRIEFING DIÁRIO -->
+        <section id="sec-resumo" class="admin-section admin-overview">
+          <div class="admin-command-header">
+            <div>
+              <span class="admin-eyebrow"><i class="ri-broadcast-line"></i> Centro de operações</span>
+              <h2 id="dailyGreeting">Briefing da equipa</h2>
+              <p id="dailyDateLabel">Agenda, avisos e momentos para levar ao ar.</p>
+            </div>
+            <div class="admin-command-actions">
+              <button class="btn-action" onclick="goToCurrentMonth(); switchAdminSection('sec-calendario')"><i class="ri-calendar-2-line"></i> Ver calendário</button>
+              <button class="btn-action" onclick="switchAdminSection('sec-guioes')"><i class="ri-file-list-3-line"></i> Ver alinhamento</button>
+              <button class="btn-submit-main" onclick="openNewRundownModal()"><i class="ri-quill-pen-line"></i> Novo guião de emissão</button>
+            </div>
+          </div>
+
+          <div class="daily-brief-grid">
+            <article class="brief-card brief-card-primary">
+              <div class="brief-card-heading"><div><span class="brief-card-kicker">Hoje na rádio</span><h3>Agenda do dia</h3></div><span class="brief-count" id="todayEventsCount">0</span></div>
+              <div class="brief-timeline" id="todayEventsList"></div>
+            </article>
+            <article class="brief-card">
+              <div class="brief-card-heading"><div><span class="brief-card-kicker">A preparar</span><h3>Esta semana</h3></div><i class="ri-calendar-schedule-line"></i></div>
+              <div class="brief-week-list" id="weekEventsList"></div>
+            </article>
+            <article class="brief-card brief-card-onair">
+              <div class="brief-card-heading"><div><span class="brief-card-kicker">Em antena</span><h3>Avisos para ler</h3></div><i class="ri-mic-2-line"></i></div>
+              <div class="brief-onair-list" id="onAirNotesList"></div>
+              <button class="brief-link-button" onclick="openQuickNoticeModal()"><i class="ri-add-line"></i> Preparar novo aviso rápido</button>
+            </article>
+          </div>
+
+          <div class="overview-bottom-grid">
+            <article class="brief-card inbox-brief-card">
+              <div class="brief-card-heading"><div><span class="brief-card-kicker">Comunidade</span><h3>Mensagens recentes</h3></div><button class="btn-action" onclick="switchAdminSection('sec-mensagens')">Abrir</button></div>
+              <div id="briefMessagesList" class="brief-messages-list"></div>
+            </article>
+            <article class="brief-card editorial-brief-card">
+              <div class="brief-card-heading"><div><span class="brief-card-kicker">Calendário editorial</span><h3>Efemérides em destaque</h3></div><button class="btn-action" onclick="switchAdminSection('sec-calendario')">Explorar</button></div>
+              <div id="editorialHighlightsList" class="editorial-highlights-list"></div>
+            </article>
+          </div>
+
+          <!-- MURAL DE RECADOS DA EQUIPA (NOTION-STYLE STICKY NOTES) -->
+          <div class="team-memos-section card-panel" style="margin-top: 1.25rem; padding: 1.35rem 1.4rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+              <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <i class="ri-sticky-note-line" style="color: #f59e0b; font-size: 1.2rem;"></i>
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; margin: 0;">Mural de Recados da Equipa</h3>
+              </div>
+              <button class="btn-action" onclick="openNewTeamMemoModal()"><i class="ri-add-line"></i> Novo Recado</button>
+            </div>
+            <div class="team-memos-grid" id="teamMemosGrid">
+              <!-- Renderizado via js/admin.js -->
+            </div>
+          </div>
+        </section>
+
+        <!-- SECÇÃO: GUIÃO & NOTAS DA EMISSÃO DIÁRIA -->
+        <section id="sec-guioes" class="admin-section" style="display: none;">
+          <div class="admin-section-heading">
+            <div>
+              <h2>Guião &amp; Avisos da Emissão</h2>
+              <p>Caderno diário estilo Word/Notion com os keypoints, avisos e notas para ler na rádio.</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button class="btn-action" onclick="resetEditorialToTemplate()" title="Recarregar template padrão baseado nos eventos deste dia"><i class="ri-restart-line"></i> Repor Template</button>
+              <button class="btn-action" style="background: rgba(14, 165, 233, 0.15); border-color: rgba(14, 165, 233, 0.4); color: #38bdf8;" onclick="saveEditorialScriptExplicit()"><i class="ri-save-3-line"></i> Guardar Guião</button>
+              <button class="btn-submit-main" onclick="switchAdminMode('aovivo')"><i class="ri-broadcast-line"></i> Abrir no Painel Ao Vivo</button>
+            </div>
+          </div>
+          
+          <div class="card-panel docs-editor-container" style="padding: 1.5rem; background: rgba(8, 12, 22, 0.85); border: 1px solid rgba(148, 163, 184, 0.15); border-radius: 14px;">
+            <!-- SELETOR DE DATA & AÇÕES DE DOCUMENTO -->
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; background: rgba(15, 23, 42, 0.7); padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.12);">
+              <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <button class="btn-action" onclick="changeEditorialDate(-1)"><i class="ri-arrow-left-s-line"></i> Dia Anterior</button>
+                <input type="date" id="editorialDatePicker" class="guiao-date-input" onchange="onEditorialDatePickerChange(this.value)">
+                <button class="btn-action" onclick="setEditorialDateToday()">Hoje</button>
+                <button class="btn-action" onclick="changeEditorialDate(1)">Dia Seguinte <i class="ri-arrow-right-s-line"></i></button>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <span id="editorialSaveStatus" class="guiao-save-status"><i class="ri-check-line"></i> Guardado automaticamente</span>
+              </div>
+            </div>
+
+            <!-- TÍTULO DO DOCUMENTO DO GUIÃO -->
+            <div class="guiao-editor-header">
+              <input type="text" id="editorialScriptTitle" class="form-input-lg guiao-title-editor" placeholder="Título do Guião / Alinhamento (Ex: Guião da Emissão do Intervalo Grande)" oninput="autoSaveEditorialScript()">
+            </div>
+
+            <div class="guiao-workspace-meta" aria-label="Resumo prático do guião">
+              <div class="guiao-meta-card">
+                <span class="guiao-meta-label">Estado</span>
+                <strong id="editorialStatusPill">Rascunho</strong>
+              </div>
+              <div class="guiao-meta-card">
+                <span class="guiao-meta-label">Avisos</span>
+                <strong id="editorialAlertCount">0 itens</strong>
+              </div>
+              <div class="guiao-meta-card">
+                <span class="guiao-meta-label">Próximo passo</span>
+                <strong>Preparar leitura</strong>
+              </div>
+            </div>
+
+            <!-- BARRA DINÂMICA DE TÓPICOS GERADOS A PARTIR DOS AVISOS DO CALENDÁRIO -->
+            <div class="guiao-agenda-bar" id="editorialAgendaBar">
+              <div class="guiao-agenda-header">
+                <div class="guiao-agenda-title">
+                  <i class="ri-sparkling-fill" style="color: #f59e0b;"></i>
+                  <span>Avisos &amp; Eventos do Calendário para esta data:</span>
+                </div>
+                <button type="button" class="guiao-sync-btn" onclick="syncEditorialTopicsFromCalendar()" title="Inserir todos os avisos do calendário no guião">
+                  <i class="ri-magic-line"></i> Inserir todos no guião
+                </button>
+              </div>
+              <div class="guiao-agenda-chips" id="editorialAgendaChips">
+                <!-- Chips com categorias e cores gerados via JS -->
+              </div>
+            </div>
+
+            <!-- BARRA DE FERRAMENTAS ESTILO WORD / GOOGLE DOCS -->
+            <div class="docs-editor-toolbar">
+              <div class="docs-toolbar-group">
+                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('heading')" title="Título de Secção ([Secção])"><i class="ri-heading"></i> Título</button>
+                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('bold')" title="Negrito (**texto**)"><i class="ri-bold"></i> Negrito</button>
+                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('italic')" title="Itálico (*texto*)"><i class="ri-italic"></i> Itálico</button>
+              </div>
+              <div class="docs-toolbar-divider"></div>
+              <div class="docs-toolbar-group">
+                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('bullet')" title="Lista (-)"><i class="ri-list-unordered"></i> Lista (-)</button>
+                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('number')" title="Lista Numerada (1.)"><i class="ri-list-ordered"></i> Numeração</button>
+                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('quote')" title="Nota / Destaque"><i class="ri-double-quotes-l"></i> Destaque</button>
+              </div>
+            </div>
+
+            <!-- TEXTAREA DO GUIÃO SUITE GOOGLE DOCS / WORD -->
+            <div class="docs-paper-wrapper">
+              <textarea id="editorialScriptContent" class="guiao-word-textarea docs-paper-textarea" style="min-height: 480px; width: 100%; padding: 1.5rem; background: rgba(5, 8, 18, 0.85); border: 1px solid rgba(148, 163, 184, 0.18); border-radius: 10px; font-size: 1.1rem; line-height: 1.8;" placeholder="Escreve aqui o guião completo da emissão...
+
+[Inicio da Emissão]
+- Bom dia Cidadela! São [hora], Segunda-feira, 15 de Setembro
+
+[Eventos]
+- (Eventos e dias temáticos do calendário)
+
+[Avisos]
+Sem avisos hoje
+
+[Musica Começa]" oninput="autoSaveEditorialScript()"></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- MÚSICAS PEDIDAS -->
+        <section id="sec-musicas" class="admin-section" style="display: none;">
+          <div class="admin-section-heading">
+            <div>
+              <h2>Músicas Mais Sugeridas</h2>
+              <p>Ranking agregado de músicas enviadas pelos alunos com respetiva contagem de pedidos.</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button class="btn-action" onclick="filterSongsByStatus('all')">Todas</button>
+              <button class="btn-action" onclick="filterSongsByStatus('pending')">Pendentes</button>
+              <button class="btn-action" onclick="filterSongsByStatus('played')">Tocadas</button>
+              <button class="btn-action danger-action" onclick="clearAllSuggestions()"><i class="ri-delete-bin-line"></i> Limpar lista</button>
+            </div>
+          </div>
+          <div class="card-panel data-table-wrapper">
+            <table class="data-table-inst">
+              <thead>
+                <tr>
+                  <th># Pos</th>
+                  <th>Música &amp; Artista</th>
+                  <th>Contagem de Pedidos</th>
+                  <th>Estado</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="songRankingTbody">
+                <!-- Renderizado via js/admin.js -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- LINKS -->
+        <section id="sec-links" class="admin-section" style="display: none;">
+          <div class="admin-section-heading">
+            <div>
+              <h2>Gestão de Links do Linktree</h2>
+              <p>Adiciona e reordena os botões exibidos aos alunos em <code>/links.html</code>.</p>
+            </div>
+            <button class="btn-submit-main admin-add-button" onclick="openModal('addLinkModal')">
+              <i class="ri-add-line"></i> Adicionar Link
+            </button>
+          </div>
+          <div class="card-panel data-table-wrapper">
+            <table class="data-table-inst">
+              <thead>
+                <tr>
+                  <th>Título do Botão</th>
+                  <th>URL de Destino</th>
+                  <th>Badge</th>
+                  <th>Estado</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="linksAdminTbody">
+                <!-- Renderizado via js/admin.js -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- PODCASTS -->
+        <section id="sec-podcasts" class="admin-section" style="display: none;">
+          <div class="admin-section-heading">
+            <div>
+              <h2>Gestão de Podcasts</h2>
+              <p>Publicação de programas e emissões gravadas.</p>
+            </div>
+            <button class="btn-submit-main admin-add-button" onclick="openModal('addPodcastModal')">
+              <i class="ri-add-line"></i> Adicionar Podcast
+            </button>
+          </div>
+          <div class="card-panel data-table-wrapper">
+            <table class="data-table-inst">
+              <thead>
+                <tr>
+                  <th>Título do Episódio</th>
+                  <th>Data &amp; Duração</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="podcastsAdminTbody">
+                <!-- Renderizado via js/admin.js -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- NOTÍCIAS -->
+        <section id="sec-anuncios" class="admin-section" style="display: none;">
+          <div class="admin-section-heading">
+            <div>
+              <h2>Gestão de Notícias &amp; Anúncios</h2>
+              <p>Publicação de comunicados e artigos no mural do site.</p>
+            </div>
+            <a class="btn-submit-main admin-add-button" href="admin-editor.html">
+              <i class="ri-edit-2-line"></i> Escrever Novo Artigo
+            </a>
+          </div>
+          <div class="card-panel data-table-wrapper">
+            <table class="data-table-inst">
+              <thead>
+                <tr>
+                  <th>Título &amp; Categoria</th>
+                  <th>Data</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="announcementsAdminTbody">
+                <!-- Renderizado via js/admin.js -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- MENSAGENS -->
+        <section id="sec-mensagens" class="admin-section" style="display: none;">
+          <div class="admin-section-heading">
+            <div>
+              <h2>Mensagens da Comunidade</h2>
+              <p>Mensagens informais enviadas pelos ouvintes para a equipa da rádio.</p>
+            </div>
+            <span class="security-note"><i class="ri-shield-check-line"></i> Visível apenas nesta sessão</span>
+          </div>
+          <div class="message-inbox-panel card-panel">
+            <aside class="message-inbox-sidebar" id="messagesSidebar"></aside>
+            <main class="message-inbox-content" id="messageDetailPanel"></main>
+          </div>
+        </section>
+
+        <!-- CALENDÁRIO (Google Calendar Style) -->
+        <section id="sec-calendario" class="admin-section gcal-section" style="display: none;">
+          <!-- GCAL TOOLBAR -->
+          <div class="gcal-toolbar">
+            <div class="gcal-toolbar-left">
+              <button class="btn-submit-main gcal-new-btn" id="gcalNewEventBtn" onclick="openCalendarEventModal()">
+                <i class="ri-add-line"></i> Novo evento
+              </button>
+            </div>
+            <div class="gcal-toolbar-center">
+              <button class="gcal-nav-btn" onclick="GCal.navigate(-1)" aria-label="Anterior"><i class="ri-arrow-left-s-line"></i></button>
+              <button class="gcal-today-btn" onclick="GCal.goToday()">Hoje</button>
+              <button class="gcal-nav-btn" onclick="GCal.navigate(1)" aria-label="Seguinte"><i class="ri-arrow-right-s-line"></i></button>
+              <h2 class="gcal-range-label" id="gcalRangeLabel" aria-live="polite"></h2>
+            </div>
+            <div class="gcal-toolbar-right">
+              <div class="gcal-view-switcher" role="group" aria-label="Tipo de vista">
+                <button class="gcal-view-btn active" data-view="month" onclick="GCal.setView('month')">Mês</button>
+                <button class="gcal-view-btn" data-view="week" onclick="GCal.setView('week')">Semana</button>
+                <button class="gcal-view-btn" data-view="day" onclick="GCal.setView('day')">Dia</button>
+                <button class="gcal-view-btn" data-view="agenda" onclick="GCal.setView('agenda')">Agenda</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- GCAL BODY -->
+          <div class="gcal-body">
+            <!-- LEFT SIDEBAR: Mini Calendar + Legend -->
+            <aside class="gcal-sidebar">
+              <div class="gcal-mini-cal">
+                <div class="gcal-mini-nav">
+                  <button onclick="GCal.miniNavigate(-1)" aria-label="Mês anterior"><i class="ri-arrow-left-s-line"></i></button>
+                  <span id="gcalMiniTitle"></span>
+                  <button onclick="GCal.miniNavigate(1)" aria-label="Mês seguinte"><i class="ri-arrow-right-s-line"></i></button>
+                </div>
+                <div class="gcal-mini-weekdays">
+                  <span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span><span>D</span>
+                </div>
+                <div class="gcal-mini-grid" id="gcalMiniGrid"></div>
+              </div>
+
+              <div class="gcal-legend" id="gcalLegend">
+                <!-- Rendered by calendar.js -->
+              </div>
+            </aside>
+
+            <!-- MAIN CALENDAR VIEW -->
+            <main class="gcal-main" id="gcalMain">
+              <!-- Rendered by calendar.js based on active view -->
+            </main>
+          </div>
+        </section>
+
+        <!-- UTILIZADORES -->
+        <section id="sec-utilizadores" class="admin-section" style="display: none;">
+          <div class="admin-section-heading">
+            <div>
+              <h2>Utilizadores</h2>
+              <p>Cria contas de acesso da equipa. Cada conta é automaticamente administradora.</p>
+            </div>
+            <button class="btn-submit-main admin-add-button" onclick="openUserModal()"><i class="ri-user-add-line"></i> Adicionar utilizador</button>
+          </div>
+          <div class="card-panel data-table-wrapper">
+            <table class="data-table-inst">
+              <thead><tr><th>Nome no calendário</th><th>Email</th><th>Função</th><th>Ações</th></tr></thead>
+              <tbody id="adminUsersTbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+      </main>
+    </div>
+    <!-- END EDITORIAL ZONE -->
+
+
+    <!-- ============================================================ -->
+    <!-- ZONA AO VIVO (COCKPIT DO LOCUTOR NO PORTÁTIL)               -->
+    <!-- ============================================================ -->
+    <!-- ============================================================ -->
+    <!-- ZONA AO VIVO (ECRÃ DE APOIO AO LOCUTOR NO PORTÁTIL)          -->
+    <!-- ============================================================ -->
+    <div class="admin-aovivo-zone" id="zoneAoVivo" style="display: none;">
+
+      <!-- TOPBAR AO VIVO: ULTRA-LIMPA (HORAS & ESTADO) -->
+      <header class="aovivo-topbar">
+        <div class="aovivo-brand">
+          <span class="aovivo-live-badge"><span class="aovivo-live-pulse"></span> NO AR</span>
+          <span class="aovivo-station-name">Rádio EBS Cidadela</span>
+        </div>
+
+        <!-- RELÓGIO DE ESTÚDIO PRINCIPAL -->
+        <div class="aovivo-clock-block">
+          <span class="aovivo-clock" id="aoVivoClock">--:--:--</span>
+          <span class="aovivo-date" id="aoVivoDate">--</span>
+        </div>
+
+        <!-- AÇÕES DE TOPO -->
+        <div class="aovivo-topbar-actions">
+          <button class="btn-action" onclick="switchAdminMode('editorial')" title="Painel de Gestão & Editorial">
+            <i class="ri-dashboard-line"></i> <span>Ir para Gestão</span>
+          </button>
+          <button class="aovivo-icon-btn" onclick="toggleAoVivoFullscreen()" title="Modo Ecrã Inteiro">
+            <i class="ri-fullscreen-line"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- CORPO AO VIVO: 2 COLUNAS LIMPAS -->
+      <div class="aovivo-grid-dual">
+
+        <!-- COLUNA 1 (60%): O GUIÃO NÃO EDITÁVEL PARA LOCUÇÃO (TELEPROMPTER / LEITOR DE ESTÚDIO) -->
+        <div class="aovivo-col-guiao">
+          <div class="aovivo-card-main">
+            
+            <!-- BARRA DE SELEÇÃO DE DATA (PASSADO, HOJE, FUTURO) -->
+            <div class="guiao-date-bar">
+              <button class="guiao-date-nav-btn" onclick="changeAoVivoDate(-1)" title="Dia anterior">
+                <i class="ri-arrow-left-s-line"></i> Ontem
+              </button>
+              
+              <div class="guiao-date-center">
+                <i class="ri-calendar-event-line" style="color: #38bdf8;"></i>
+                <input type="date" id="aoVivoDatePicker" class="guiao-date-input" onchange="onAoVivoDatePickerChange(this.value)" title="Escolher data">
+                <button class="guiao-today-chip" onclick="setAoVivoDateToday()" title="Ir para o dia de hoje">Hoje</button>
+              </div>
+
+              <button class="guiao-date-nav-btn" onclick="changeAoVivoDate(1)" title="Dia seguinte">
+                Amanhã <i class="ri-arrow-right-s-line"></i>
+              </button>
+            </div>
+
+            <!-- BARRA DE TÍTULO E CONTROLOS DO GUIÃO AO VIVO (NÃO EDITÁVEL) -->
+            <div class="guiao-live-title-bar">
+              <h2 id="aoVivoScriptTitleDisplay" class="guiao-live-title">Guião da Emissão</h2>
+              
+              <div class="guiao-tools-right">
+                <div class="guiao-font-controls">
+                  <button class="guiao-tool-btn" onclick="adjustAoVivoFontSize(-2)" title="Diminuir tamanho da letra">A-</button>
+                  <button class="guiao-tool-btn" onclick="adjustAoVivoFontSize(2)" title="Aumentar tamanho da letra">A+</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- LEITOR NÃO EDITÁVEL DE ESTÚDIO -->
+            <div id="aoVivoScriptDisplay" class="guiao-reader-display">
+              <!-- Renderizado via JS como leitor de estúdio com marcação visual de tópicos lidos -->
+            </div>
+
+          </div>
+        </div>
+
+        <!-- COLUNA 2 (40%): AS MÚSICAS PEDIDAS -->
+        <div class="aovivo-col-musicas">
+          <div class="aovivo-card-main">
+            
+            <div class="musicas-header">
+              <div class="musicas-title-simple">
+                <i class="ri-music-2-line" style="color: #f59e0b;"></i>
+                <span>Músicas Pedidas</span>
+                <span class="aovivo-count" id="aoVivoSongsCount">0</span>
+              </div>
+
+              <!-- Filtro de Músicas -->
+              <div class="musicas-filters">
+                <button class="musicas-filter-chip active" id="filterAoVivoPending" onclick="filterAoVivoSongs('pending')">Pendentes</button>
+                <button class="musicas-filter-chip" id="filterAoVivoAll" onclick="filterAoVivoSongs('all')">Todas</button>
+                <button class="musicas-filter-chip" id="filterAoVivoPlayed" onclick="filterAoVivoSongs('played')">Tocadas</button>
+              </div>
+            </div>
+
+            <!-- LISTA DE MÚSICAS PEDIDAS -->
+            <div class="musicas-queue-list" id="aoVivoSongsList">
+              <div class="aovivo-empty"><i class="ri-music-2-line"></i> A carregar pedidos...</div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <!-- END AO VIVO ZONE -->
+
+  </div><!-- end admin-shell -->
+
+
+  <!-- ============================================================ -->
+  <!-- MODAIS                                                        -->
+  <!-- ============================================================ -->
+
+  <!-- MODAL: ADICIONAR LINK -->
+  <div class="modal-overlay" id="addLinkModal">
+    <div class="card-panel modal-window">
+      <h3>Adicionar Link ao Linktree</h3>
+      <form id="addLinkForm" onsubmit="saveNewLink(event)">
+        <div class="form-field">
+          <label>Título do Botão</label>
+          <input type="text" id="linkTitleInput" class="form-input-lg" placeholder="Ex: Inscrições na Rádio" required>
+        </div>
+        <div class="form-field">
+          <label>Subtítulo (Opcional)</label>
+          <input type="text" id="linkSubInput" class="form-input-lg" placeholder="Ex: Formulário oficial de adesão">
+        </div>
+        <div class="form-field">
+          <label>URL de Destino</label>
+          <input type="url" id="linkUrlInput" class="form-input-lg" placeholder="https://forms.gle/..." required>
+        </div>
+        <div class="form-field">
+          <label>Ícone (Ex: ri-mic-line, ri-instagram-line)</label>
+          <input type="text" id="linkIconInput" class="form-input-lg" placeholder="ri-link">
+        </div>
+        <div class="form-field">
+          <label>Badge / Etiqueta</label>
+          <input type="text" id="linkBadgeInput" class="form-input-lg" placeholder="Ex: Aberto">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-action" onclick="closeModal('addLinkModal')">Cancelar</button>
+          <button type="submit" class="btn-submit-main">Guardar Link</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADICIONAR PODCAST -->
+  <div class="modal-overlay" id="addPodcastModal">
+    <div class="card-panel modal-window">
+      <h3>Adicionar Novo Podcast</h3>
+      <form id="addPodcastForm" onsubmit="saveNewPodcast(event)">
+        <div class="form-field">
+          <label>Título do Episódio</label>
+          <input type="text" id="podTitleInput" class="form-input-lg" placeholder="Ex: Entrevista com a AE" required>
+        </div>
+        <div class="form-field">
+          <label>Data de Publicação</label>
+          <input type="text" id="podDateInput" class="form-input-lg" placeholder="Ex: 09 Setembro, 2026" required>
+        </div>
+        <div class="form-field">
+          <label>Duração</label>
+          <input type="text" id="podDurationInput" class="form-input-lg" placeholder="18:45">
+        </div>
+        <div class="form-field">
+          <label>URL do Áudio MP3</label>
+          <input type="url" id="podUrlInput" class="form-input-lg" placeholder="https://..." required>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-action" onclick="closeModal('addPodcastModal')">Cancelar</button>
+          <button type="submit" class="btn-submit-main">Guardar Podcast</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADICIONAR ANÚNCIO (mantido para uso interno) -->
+  <div class="modal-overlay" id="addAnnouncementModal">
+    <div class="card-panel modal-window">
+      <h3>Publicar Notícia / Anúncio</h3>
+      <form id="addAnnouncementForm" onsubmit="saveNewAnnouncement(event)">
+        <div class="form-field">
+          <label>Categoria</label>
+          <input type="text" id="annTagInput" class="form-input-lg" placeholder="Ex: Recrutamento, Evento">
+        </div>
+        <div class="form-field">
+          <label>Título da Notícia</label>
+          <input type="text" id="annTitleInput" class="form-input-lg" placeholder="Ex: Inscrições Abertas" required>
+        </div>
+        <div class="form-field">
+          <label>Conteúdo</label>
+          <textarea id="annContentInput" class="form-input-lg" rows="4" placeholder="Escreve o texto..." required></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-action" onclick="closeModal('addAnnouncementModal')">Cancelar</button>
+          <button type="submit" class="btn-submit-main">Publicar Notícia</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EVENTO DO CALENDÁRIO (GOOGLE CALENDAR STYLE) -->
+  <div class="modal-overlay" id="calendarEventModal">
+    <div class="card-panel modal-window gcal-dialog-window">
+      <!-- GCal Dialog Header -->
+      <div class="gcal-dialog-header">
+        <span class="gcal-dialog-badge" id="gcalDialogBadge"><i class="ri-calendar-event-fill"></i> Evento de Calendário</span>
+        <button type="button" class="gcal-dialog-close" onclick="closeModal('calendarEventModal')" title="Fechar (Esc)">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+
+      <form id="calendarEventForm" onsubmit="saveCalendarEvent(event)">
+        <input type="hidden" id="calendarEventIdInput">
+
+        <div id="calendarEventReadOnlyNotice" style="display:none; margin-bottom: 1rem; padding: 0.75rem 1rem; border-radius: 8px; background: rgba(96, 165, 250, 0.08); border: 1px solid rgba(96, 165, 250, 0.25); color: #93c5fd; font-size: 0.82rem;">
+          <i class="ri-information-line"></i> Dia temático gerado automaticamente. Apenas para consulta.
+        </div>
+
+        <div id="calendarEventDateList" class="gcal-date-event-chips-bar" style="display:none;"></div>
+
+        <!-- Title Input (Google Calendar Style - Big Borderless Input) -->
+        <div class="gcal-input-title-wrapper">
+          <input type="text" id="calendarEventTitleInput" class="gcal-title-input" placeholder="Adicionar título e aviso..." required autocomplete="off">
+        </div>
+
+        <!-- Date & Time Row (Google Calendar Style) -->
+        <div class="gcal-row">
+          <div class="gcal-row-icon"><i class="ri-time-line"></i></div>
+          <div class="gcal-row-content gcal-time-grid">
+            <input type="date" id="calendarEventDateInput" class="gcal-field-input" required>
+            <input type="time" id="calendarEventStartInput" class="gcal-field-input" placeholder="Início">
+            <span style="color: #64748b; align-self: center;">–</span>
+            <input type="time" id="calendarEventEndInput" class="gcal-field-input" placeholder="Fim">
+          </div>
+        </div>
+
+        <!-- Category & Color Picker Row -->
+        <div class="gcal-row">
+          <div class="gcal-row-icon"><i class="ri-price-tag-3-line"></i></div>
+          <div class="gcal-row-content gcal-two-col">
+            <select id="calendarEventTypeInput" class="gcal-field-input" onchange="onCalendarCategoryChange(this.value)">
+              <option value="Direção &amp; Escola">Direção &amp; Escola</option>
+              <option value="Associação de Estudantes">Associação de Estudantes</option>
+              <option value="Clubes &amp; Desporto">Clubes &amp; Desporto</option>
+              <option value="Efeméride &amp; Comemoração">Efeméride &amp; Comemoração</option>
+              <option value="Emissão Especial">Emissão Especial</option>
+              <option value="Aviso Geral" selected>Aviso Geral</option>
+              <option value="Reunião / Produção">Reunião / Produção</option>
+            </select>
+            <select id="calendarEventColorInput" class="gcal-field-input">
+              <option value="rose">Rosa (Direção)</option>
+              <option value="amber">Âmbar (Associação)</option>
+              <option value="emerald">Verde (Clubes)</option>
+              <option value="purple">Roxo (Efemérides)</option>
+              <option value="cyan">Ciano (Especiais)</option>
+              <option value="blue" selected>Azul (Aviso Geral)</option>
+              <option value="slate">Cinzento (Produção)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Lead Time / Guião Antecedência Row -->
+        <div class="gcal-row">
+          <div class="gcal-row-icon"><i class="ri-notification-3-line"></i></div>
+          <div class="gcal-row-content">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+              <span style="font-size: 0.85rem; color: #cbd5e1; font-weight: 500;">Anunciar no Guião da Rádio:</span>
+              <select id="calendarEventLeadTimeInput" class="gcal-field-input" style="max-width: 190px;">
+                <option value="0">No próprio dia</option>
+                <option value="1">1 dia antes</option>
+                <option value="2">2 dias antes</option>
+                <option value="3" selected>3 dias antes</option>
+                <option value="5">5 dias antes</option>
+                <option value="7">1 semana antes</option>
+                <option value="14">2 semanas antes</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Responsável Row -->
+        <div class="gcal-row">
+          <div class="gcal-row-icon"><i class="ri-user-3-line"></i></div>
+          <div class="gcal-row-content gcal-two-col">
+            <select id="calendarEventUserInput" class="gcal-field-input">
+              <option value="">Sem responsável atribuído</option>
+            </select>
+            <select id="calendarEventStatusInput" class="gcal-field-input">
+              <option value="confirmado">Confirmado</option>
+              <option value="planeado">Planeado</option>
+              <option value="importante">Importante / Urgente</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Notes / Description Row -->
+        <div class="gcal-row" style="align-items: flex-start;">
+          <div class="gcal-row-icon" style="margin-top: 0.4rem;"><i class="ri-align-left"></i></div>
+          <div class="gcal-row-content">
+            <textarea id="calendarEventNotesInput" class="gcal-notes-textarea" rows="3" placeholder="Adicionar descrição ou notas de leitura para a emissão..."></textarea>
+          </div>
+        </div>
+
+        <!-- GCal Dialog Footer Actions -->
+        <div class="gcal-dialog-footer">
+          <button type="button" id="calendarEventDeleteButton" class="gcal-btn-delete" style="display:none;" onclick="deleteOpenCalendarEvent()">
+            <i class="ri-delete-bin-line"></i> Eliminar
+          </button>
+          <div style="display: flex; gap: 0.5rem; margin-left: auto;">
+            <button type="button" class="btn-action" onclick="closeModal('calendarEventModal')">Cancelar</button>
+            <button type="submit" id="calendarEventSubmitButton" class="btn-submit-main" style="padding: 0.45rem 1.4rem; border-radius: 999px;">Guardar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: UTILIZADOR -->
+  <div class="modal-overlay" id="adminUserModal">
+    <div class="card-panel modal-window">
+      <h3 id="adminUserModalTitle">Adicionar utilizador</h3>
+      <form id="adminUserForm" onsubmit="saveAdminUser(event)">
+        <input type="hidden" id="adminUserIdInput">
+        <div class="form-field"><label for="adminUserNameInput">Nome para o calendário</label><input type="text" id="adminUserNameInput" class="form-input-lg" placeholder="Ex: Ana Silva" required></div>
+        <div class="form-field"><label for="adminUserEmailInput">Email de acesso</label><input type="email" id="adminUserEmailInput" class="form-input-lg" placeholder="ana@escola.pt" required></div>
+        <div class="form-field"><label for="adminUserPasswordInput">Palavra-passe <span id="adminUserPasswordHint">(mínimo 8 caracteres)</span></label><input type="password" id="adminUserPasswordInput" class="form-input-lg" placeholder="Definir palavra-passe" minlength="8" autocomplete="new-password"></div>
+        <p class="admin-user-note"><i class="ri-shield-check-line"></i> A conta terá acesso de administrador ao painel e ficará disponível no calendário pelo nome indicado.</p>
+        <div class="modal-actions"><button type="button" class="btn-action" onclick="closeModal('adminUserModal')">Cancelar</button><button type="submit" class="btn-submit-main">Guardar utilizador</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: TELEPROMPTER DE ESTÚDIO AO VIVO -->
+  <div class="modal-overlay" id="aoVivoPrompterModal">
+    <div class="prompter-window">
+      <!-- Prompter Topbar -->
+      <div class="prompter-topbar">
+        <div class="prompter-header-left">
+          <span class="prompter-badge"><i class="ri-mic-fill"></i> MODO LEITURA AO VIVO</span>
+          <h3 id="prompterTitle" class="prompter-title">Título do Aviso / Bloco</h3>
+        </div>
+        
+        <!-- Controls: Font size, speech timer, effects -->
+        <div class="prompter-controls">
+          <div class="prompter-font-controls" title="Ajustar tamanho da letra">
+            <button type="button" class="prompter-ctrl-btn" onclick="adjustPrompterFontSize(-2)">A-</button>
+            <button type="button" class="prompter-ctrl-btn" onclick="adjustPrompterFontSize(2)">A+</button>
+          </div>
+          
+          <div class="prompter-timer-widget" title="Cronómetro de Leitura">
+            <button type="button" class="prompter-timer-btn" id="prompterTimerToggleBtn" onclick="togglePrompterTimer()">
+              <i class="ri-play-fill" id="prompterTimerIcon"></i>
+            </button>
+            <span class="prompter-timer-display" id="prompterTimerDisplay">00:00</span>
+            <span class="prompter-est-label" id="prompterEstDuration">Est: ~0m 45s</span>
+          </div>
+
+          <button type="button" class="prompter-close-btn" onclick="closePrompterModal()" title="Fechar Teleprompter">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Prompter Meta Bar -->
+      <div class="prompter-meta-bar">
+        <div class="prompter-meta-item" id="prompterSpeaker"><i class="ri-user-voice-line"></i> Locutor: Todos</div>
+        <div class="prompter-meta-item" id="prompterCueTag"><i class="ri-sound-module-line"></i> Cama Sonora: Opcional</div>
+        <div class="prompter-sound-shortcuts">
+          <button class="prompter-sound-btn" onclick="playSoundFX('alert')" title="Tocar som de alerta"><i class="ri-alarm-warning-fill"></i> Alerta</button>
+          <button class="prompter-sound-btn" onclick="playSoundFX('jingle')" title="Tocar jingle da rádio"><i class="ri-broadcast-fill"></i> Jingle</button>
+          <button class="prompter-sound-btn" onclick="toggleSoundboardBGM()" title="Ligar/Desligar Cama Musical"><i class="ri-music-fill"></i> Cama Sonora</button>
+        </div>
+      </div>
+
+      <!-- Prompter Text Body -->
+      <div class="prompter-body" id="prompterBody">
+        <!-- Renderizado com destaque automático de tags sonoras -->
+      </div>
+
+      <!-- Prompter Bottom Bar -->
+      <div class="prompter-footer">
+        <div class="prompter-status-info">
+          <span id="prompterWordCount">0 palavras</span>
+          <span style="color: #64748b;">•</span>
+          <span style="color: #94a3b8;">Ritmo ideal: 120-130 palavras/minuto</span>
+        </div>
+        <div class="prompter-footer-actions">
+          <button type="button" class="btn-action" onclick="closePrompterModal()">Fechar</button>
+          <button type="button" class="btn-submit-main prompter-done-btn" id="prompterMarkReadBtn" onclick="markCurrentPrompterAsRead()">
+            <i class="ri-checkbox-circle-fill"></i> Concluir Leitura &amp; Marcar como Lido
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONSTRUTOR DE GUIÃO & ALINHAMENTO DE EMISSÃO -->
+  <div class="modal-overlay" id="rundownModal">
+    <div class="card-panel modal-window" style="max-width: 860px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
+        <div>
+          <h3 id="rundownModalTitle" style="margin: 0; font-family: 'Outfit', sans-serif;">Alinhamento da Emissão</h3>
+          <p style="margin: 0.2rem 0 0; font-size: 0.82rem; color: var(--text-muted);">Organiza a sequência minuto a minuto dos blocos de fala, músicas e passatempos.</p>
+        </div>
+        <div class="rundown-total-duration-badge" id="rundownTotalDurationBadge">
+          <i class="ri-time-line"></i> Total: <strong id="rundownModalTotalTime">00:00</strong>
+        </div>
+      </div>
+
+      <form id="rundownForm" onsubmit="saveRundownForm(event)">
+        <input type="hidden" id="rundownIdInput">
+        
+        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+          <div class="form-field" style="margin-bottom: 0;">
+            <label>Título do Guião / Emissão</label>
+            <input type="text" id="rundownTitleInput" class="form-input-lg" placeholder="Ex: Emissão Intervalo Grande - Terça-Feira" required>
+          </div>
+          <div class="form-field" style="margin-bottom: 0;">
+            <label>Data</label>
+            <input type="date" id="rundownDateInput" class="form-input-lg" required>
+          </div>
+          <div class="form-field" style="margin-bottom: 0;">
+            <label>Horário / Intervalo</label>
+            <input type="text" id="rundownTimeInput" class="form-input-lg" placeholder="Ex: 10:00 - 10:20">
+          </div>
+        </div>
+
+        <!-- Blocos do Alinhamento -->
+        <div class="rundown-builder-section">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+            <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-main);">Blocos do Alinhamento</label>
+            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+              <button type="button" class="rundown-add-chip" onclick="addRundownBlock('talk')"><i class="ri-mic-line"></i> + Bloco de Fala</button>
+              <button type="button" class="rundown-add-chip" onclick="addRundownBlock('music')"><i class="ri-music-2-line"></i> + Música</button>
+              <button type="button" class="rundown-add-chip" onclick="addRundownBlock('jingle')"><i class="ri-broadcast-line"></i> + Jingle</button>
+              <button type="button" class="rundown-add-chip" onclick="addRundownBlock('interview')"><i class="ri-user-voice-line"></i> + Entrevista</button>
+              <button type="button" class="rundown-add-chip" onclick="addRundownBlock('contest')"><i class="ri-trophy-line"></i> + Passatempo</button>
+            </div>
+          </div>
+
+          <div id="rundownBlocksList" class="rundown-blocks-container">
+            <!-- Blocos renderizados dinamicamente -->
+          </div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 1.25rem;">
+          <button type="button" id="rundownDeleteBtn" class="btn-action danger-action" style="display: none;" onclick="deleteOpenRundown()"><i class="ri-delete-bin-line"></i> Eliminar</button>
+          <button type="button" class="btn-action" onclick="printOpenRundown()"><i class="ri-printer-line"></i> Imprimir Folha A4</button>
+          <button type="button" class="btn-action" onclick="closeModal('rundownModal')">Cancelar</button>
+          <button type="submit" class="btn-submit-main">Guardar Alinhamento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: PREPARAÇÃO RÁPIDA DE AVISO PARA LER -->
+  <div class="modal-overlay" id="quickNoticeModal">
+    <div class="card-panel modal-window" style="max-width: 680px;">
+      <h3 style="margin-bottom: 0.2rem; font-family: 'Outfit', sans-serif;">Preparar Aviso para Ler em Antena</h3>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.25rem;">Escreve o texto com instruções sonoras claras para o locutor ler no ar sem hesitações.</p>
+      
+      <form id="quickNoticeForm" onsubmit="saveQuickNoticeForm(event)">
+        <input type="hidden" id="quickNoticeIdInput">
+        
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.75rem;">
+          <div class="form-field">
+            <label>Título do Aviso</label>
+            <input type="text" id="quickNoticeTitle" class="form-input-lg" placeholder="Ex: Torneio de Futsal Escolar - Inscrições" required>
+          </div>
+          <div class="form-field">
+            <label>Data de Emissão</label>
+            <input type="date" id="quickNoticeDate" class="form-input-lg" required>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-field">
+            <label>Locutor Responsável</label>
+            <input type="text" id="quickNoticeSpeaker" class="form-input-lg" placeholder="Ex: Martim / Equipa da Manhã">
+          </div>
+          <div class="form-field">
+            <label>Cama Sonora Recomendada</label>
+            <select id="quickNoticeCue" class="form-input-lg">
+              <option value="Cama Sonora Suave">Cama Sonora Suave</option>
+              <option value="Jingle de Abertura + Cama">Jingle de Abertura + Cama</option>
+              <option value="Alerta de Notícias">Alerta de Notícias</option>
+              <option value="Sem Cama (Voz Direta)">Sem Cama (Voz Direta)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+            <label style="margin-bottom: 0;">Texto do Aviso (Podes usar tags: [CAMA SONORA], [EFEITO], [PAUSA])</label>
+            <div style="display: flex; gap: 0.3rem;">
+              <button type="button" class="tag-insert-btn" onclick="insertNoticeTag('[CAMA SONORA]')">+ [CAMA SONORA]</button>
+              <button type="button" class="tag-insert-btn" onclick="insertNoticeTag('[EFEITO JINGLE]')">+ [JINGLE]</button>
+              <button type="button" class="tag-insert-btn" onclick="insertNoticeTag('[PAUSA 2s]')">+ [PAUSA]</button>
+            </div>
+          </div>
+          <textarea id="quickNoticeBody" class="form-input-lg" rows="6" placeholder="Atenção comunidade escolar! Estão abertas as inscrições para o grande torneio de futsal..." required oninput="updateQuickNoticeStats()"></textarea>
+          <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); margin-top: 0.3rem;">
+            <span id="quickNoticeStats">0 palavras • ~0 segundos de leitura</span>
+            <span style="color: #60a5fa;"><i class="ri-information-line"></i> Ritmo recomendado: ~130 palavras/minuto</span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-action" onclick="closeModal('quickNoticeModal')">Cancelar</button>
+          <button type="submit" class="btn-submit-main">Guardar Aviso para Emissão</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: RECADO DO MURAL DA EQUIPA -->
+  <div class="modal-overlay" id="teamMemoModal">
+    <div class="card-panel modal-window" style="max-width: 520px;">
+      <h3 id="teamMemoModalTitle" style="margin-bottom: 0.2rem; font-family: 'Outfit', sans-serif;">Recado da Equipa</h3>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.25rem;">Deixa uma nota rápida ou lembrete para os colegas da rádio.</p>
+      
+      <form id="teamMemoForm" onsubmit="saveTeamMemoForm(event)">
+        <input type="hidden" id="teamMemoIdInput">
+        
+        <div class="form-field">
+          <label>Título do Recado</label>
+          <input type="text" id="teamMemoTitleInput" class="form-input-lg" placeholder="Ex: Lembrar de calibrar o microfone 2" required>
+        </div>
+
+        <div class="form-field">
+          <label>Mensagem / Detalhes</label>
+          <textarea id="teamMemoContentInput" class="form-input-lg" rows="4" placeholder="Escreve o recado para a equipa..." required></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-field">
+            <label>Autor</label>
+            <input type="text" id="teamMemoAuthorInput" class="form-input-lg" placeholder="Ex: Rafael" required>
+          </div>
+          <div class="form-field">
+            <label>Cor do Cartão</label>
+            <select id="teamMemoColorInput" class="form-input-lg">
+              <option value="amber">Âmbar (Aviso)</option>
+              <option value="blue">Azul (Técnico)</option>
+              <option value="emerald">Verde (Sucesso)</option>
+              <option value="purple">Roxo (Ideia / Criação)</option>
+              <option value="rose">Rosa (Urgente)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="teamMemoDeleteBtn" class="btn-action danger-action" style="display: none;" onclick="deleteOpenTeamMemo()"><i class="ri-delete-bin-line"></i> Eliminar</button>
+          <button type="button" class="btn-action" onclick="closeModal('teamMemoModal')">Cancelar</button>
+          <button type="submit" class="btn-submit-main">Guardar Recado</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-functions-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
+

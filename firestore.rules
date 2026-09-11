@@ -1,0 +1,73 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null;
+    }
+
+    match /podcasts/{podcastId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /links/{linkId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /suggestions/{suggestionId} {
+      allow create: if request.resource.data.keys().hasOnly(['id', 'songTitle', 'artist', 'artwork', 'previewUrl', 'status', 'timestamp'])
+        && request.resource.data.songTitle is string
+        && request.resource.data.songTitle.size() > 0
+        && request.resource.data.songTitle.size() <= 160
+        && request.resource.data.artist is string
+        && request.resource.data.artist.size() <= 160
+        && request.resource.data.status == 'pending';
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /messages/{messageId} {
+      allow create: if request.resource.data.keys().hasOnly(['id', 'message', 'name', 'email', 'studentClass', 'createdAt', 'status'])
+        && request.resource.data.message is string
+        && request.resource.data.message.size() >= 3
+        && request.resource.data.message.size() <= 280
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 1
+        && request.resource.data.name.size() <= 80
+        && request.resource.data.email is string
+        && request.resource.data.email.size() >= 5
+        && request.resource.data.email.size() <= 160
+        && request.resource.data.studentClass is string
+        && request.resource.data.studentClass.size() >= 1
+        && request.resource.data.studentClass.size() <= 30
+        && request.resource.data.status == 'unread';
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Alinhamentos de emissão (Rundowns)
+    match /rundowns/{rundownId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Memos e notas de equipa
+    match /teamMemos/{memoId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Agenda interna e perfis dos membros da equipa: nunca são públicos.
+    // Nesta instalação, todas as contas autenticadas são administradoras.
+    match /calendarEvents/{eventId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /adminUsers/{userId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

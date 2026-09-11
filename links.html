@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Links Rápidos | Rádio Escolar • AE Cidadela & Município de Cascais</title>
+  <meta name="description" content="Acesso rápido aos links oficiais da Rádio Escolar da EBS da Cidadela.">
+  
+  <meta name="theme-color" content="#070913">
+  <link rel="icon" type="image/jpeg" href="assets/logo-radio.jpg">
+  <link rel="apple-touch-icon" href="assets/logo-radio.jpg">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="links-page">
+  <main class="linktree-wrapper">
+    <div class="linktree-shell">
+      <header class="linktree-hero">
+        <div class="linktree-brand-line"><img src="assets/logo-radio.jpg" alt="Logótipo da Rádio Escolar"></div>
+        <h1>Rádio Escolar</h1>
+        <p class="linktree-handle">EBS Cidadela • Cascais</p>
+        <p class="linktree-intro">Links oficiais, pedidos, inscrições e mensagens para a nossa comunidade.</p>
+      </header>
+
+      <div class="linktree-tools">
+        <label class="linktree-search"><i class="ri-search-line"></i><input id="linkSearchInput" type="search" placeholder="Procurar um link..." aria-label="Procurar um link"></label>
+      </div>
+
+      <div id="linktreeContainer" class="linktree-list" aria-live="polite"></div>
+
+      <footer class="linktree-footer">
+        <a href="index.html"><i class="ri-arrow-left-line"></i> Voltar ao site</a>
+        <span>Rádio Escolar EBS Cidadela • Cascais</span>
+      </footer>
+    </div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="js/firebase-config.js"></script>
+  <script src="js/links.js"></script>
+</body>
+</html>

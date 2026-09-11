@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pedir Música | Rádio Escolar • EBS Cidadela</title>
+  <meta name="description" content="Sugere as tuas músicas favoritas para passarem no intervalo grande da Escola Básica e Secundária da Cidadela.">
+  
+  <meta name="theme-color" content="#070913">
+  <link rel="icon" type="image/jpeg" href="assets/logo-radio.jpg">
+  <link rel="apple-touch-icon" href="assets/logo-radio.jpg">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Topo Institucional Limpo -->
+  <div class="top-sub-bar">
+    <div class="container top-sub-bar-content">
+      <div>
+        <i class="ri-government-line" style="color: var(--primary-blue);"></i>
+        <span>Agrupamento de Escolas da Cidadela • Parceria com a Câmara Municipal de Cascais</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navegação Principal -->
+  <nav class="navbar">
+    <div class="container nav-content">
+      
+      <div class="brand-group">
+        <a href="index.html" style="display: flex; align-items: center; gap: 0.85rem;">
+          <img src="assets/logo-radio.jpg" alt="Logótipo da Rádio Escolar" class="logo-radio-header">
+          <div class="brand-text">
+            <h1>RÁDIO ESCOLAR</h1>
+            <span>EBS CIDADELA</span>
+          </div>
+        </a>
+      </div>
+
+      <ul class="nav-links">
+        <li><a href="index.html">Início</a></li>
+        <li><a href="podcasts.html">Podcasts</a></li>
+        <li><a href="noticias.html">Notícias</a></li>
+        <li><a href="mensagem.html" class="message-nav-button"><i class="ri-chat-heart-line"></i> Enviar mensagem</a></li>
+        <li><a href="pedir-musica.html" class="btn-cta-highlight"><i class="ri-music-2-fill"></i> Pedir Música</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Conteúdo Principal -->
+  <main class="container" style="padding-top: 3rem; padding-bottom: 4rem;">
+    
+    <div style="margin-bottom: 2.5rem;">
+      <h1 style="font-size: 2.2rem; margin-bottom: 0.4rem;">Pedir Música</h1>
+      <p style="color: var(--text-secondary); font-size: 1.05rem;">Escolhe os teus temas favoritos para a playlist do intervalo grande.</p>
+    </div>
+
+    <!-- Layout Grid em 2 Colunas (PC) / Empilhado (Mobile) -->
+    <div class="request-music-layout">
+      
+      <!-- Coluna da Esquerda: Formulário de Envio -->
+      <section class="card-box request-form-card">
+        <form id="suggestionForm">
+          
+          <div style="margin-bottom: 1.5rem;">
+            <label for="musicSearchInput" class="form-label">Pesquisar Música ou Artista</label>
+            <div class="search-input-wrapper">
+              <i class="ri-search-line search-icon-inside"></i>
+              <input type="text" id="musicSearchInput" class="input-custom" placeholder="Escreve o nome da música ou artista..." autocomplete="off">
+              <div id="searchResultsDropdown" class="search-dropdown"></div>
+            </div>
+          </div>
+
+          <!-- Faixa Selecionada -->
+          <div id="selectedTrackContainer"></div>
+
+          <!-- Botão Único Solicitado -->
+          <button type="submit" class="btn-submit-strict">
+            Submeter Sugestão
+          </button>
+        </form>
+
+        <div id="suggestionAlertContainer"></div>
+      </section>
+
+      <!-- Coluna da Direita (PC) / Abaixo (Mobile): Guidelines das Sugestões -->
+      <aside class="guidelines-card">
+        <h3 style="font-size: 1.25rem; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.6rem; color: #ffffff;">
+          <i class="ri-shield-check-line" style="color: var(--primary-blue);"></i> Regras
+        </h3>
+
+        <div class="guideline-item">
+          <div class="guideline-num">1</div>
+          <div>
+            <strong style="color: #ffffff; font-size: 0.95rem;">Limite de 3 Músicas por Dia</strong>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.2rem;">
+              Cada dispositivo pode enviar até 3 sugestões diariamente (<span id="dailyRequestsCountEl" style="color: var(--gold-accent); font-weight: 800;">0/3</span> enviadas).
+            </p>
+          </div>
+        </div>
+
+        <div class="guideline-item">
+          <div class="guideline-num">2</div>
+          <div>
+            <strong style="color: #ffffff; font-size: 0.95rem;">Musicas Apropriadas</strong>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.2rem;">
+              Nós queremos ouvir o que tu gostas, mas apenas músicas com linguagem (minimamente) apropriada vão ser consideradas.
+            </p>
+          </div>
+        </div>
+
+        <div class="guideline-item">
+          <div class="guideline-num">3</div>
+          <div>
+            <strong style="color: #ffffff; font-size: 0.95rem;">Nada de Zé Cabra</strong>
+            <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.2rem;">
+              Só porque o Zé Cabra é um ícone da música portuguesa, não significa que seja uma boa sugestão para a playlist do intervalo. Evita enviar músicas que sabes que não são boas.
+            </p>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+
+    <section class="community-message-layout community-message-section-quiet message-link-promo">
+      <div>
+        <span class="message-section-label"><i class="ri-chat-heart-line"></i> Fala connosco</span>
+        <h2>Fala connosco</h2>
+        <p>Queres dar os parabéns a alguém ou mandar um abraço? Escreve-nos numa página própria.</p>
+        <a class="btn-submit-main" href="mensagem.html"><i class="ri-chat-heart-line"></i> Abrir mensagens</a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Rodapé Institucional Sem Caixa Externa -->
+  <footer class="footer-pro">
+    <div class="container footer-pro-content">
+      
+      <div class="footer-credits-top">
+        &copy; Rádio Escolar 2026
+        <span>Site desenvolvido por Rafael Diogo</span>
+      </div>
+
+      <div class="footer-emblem-wrap">
+        <img src="assets/logo-radio.jpg" alt="Rádio Escolar Logo" class="footer-logo-item">
+      </div>
+
+      <div class="footer-institution-text">
+        A Rádio Escolar faz parte do <strong>Agrupamento de Escolas da Cidadela</strong>,<br>
+        desenvolvida em parceria oficial com a <strong>Câmara Municipal de Cascais</strong>.
+      </div>
+
+      <nav class="footer-nav-links">
+        <a href="index.html">Início</a> •
+        <a href="pedir-musica.html">Pedir Música</a> •
+        <a href="podcasts.html">Podcasts</a> •
+        <a href="noticias.html">Notícias</a> •
+        <a href="links.html">Links Rápidos</a> •
+        <a href="admin.html" style="color: var(--text-muted);">Área Reservada</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="js/firebase-config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

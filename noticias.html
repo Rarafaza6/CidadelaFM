@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notícias & Anúncios | Rádio Escolar • EBS Cidadela</title>
+  <meta name="description" content="Mural de notícias, convocatórias e comunicados oficiais da Rádio Escolar da Escola Básica e Secundária da Cidadela.">
+  
+  <meta name="theme-color" content="#070913">
+  <link rel="icon" type="image/jpeg" href="assets/logo-radio.jpg">
+  <link rel="apple-touch-icon" href="assets/logo-radio.jpg">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- Topo Institucional -->
+  <div class="top-sub-bar">
+    <div class="container top-sub-bar-content">
+      <div>
+        <i class="ri-government-line" style="color: var(--primary-blue);"></i>
+        <span>Agrupamento de Escolas da Cidadela • Parceria com a Câmara Municipal de Cascais</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navegação Principal -->
+  <nav class="navbar">
+    <div class="container nav-content">
+      
+      <div class="brand-group">
+        <a href="index.html" style="display: flex; align-items: center; gap: 0.85rem;">
+          <img src="assets/logo-radio.jpg" alt="Logótipo da Rádio Escolar" class="logo-radio-header">
+          <div class="brand-text">
+            <h1>RÁDIO ESCOLAR</h1>
+            <span>EBS CIDADELA</span>
+          </div>
+        </a>
+      </div>
+
+      <ul class="nav-links">
+        <li><a href="index.html">Início</a></li>
+        <li><a href="podcasts.html">Podcasts</a></li>
+        <li><a href="noticias.html" class="active">Notícias</a></li>
+        <li><a href="mensagem.html" class="message-nav-button"><i class="ri-chat-heart-line"></i> Enviar mensagem</a></li>
+        <li><a href="pedir-musica.html" class="btn-cta-highlight"><i class="ri-music-2-fill"></i> Pedir Música</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Conteúdo Principal -->
+  <main class="container" style="padding-top: 3rem; padding-bottom: 4rem;">
+    
+    <div style="margin-bottom: 2.5rem;">
+      <h1 style="font-size: 2.2rem; margin-bottom: 0.4rem;">Notícias & Comunicados</h1>
+      <p style="color: var(--text-secondary); font-size: 1.05rem;">Acompanha os avisos oficiais da equipa da rádio e convocatórias da comunidade escolar.</p>
+    </div>
+
+    <div class="news-filters" aria-label="Filtros de notícias">
+      <label class="news-search-box"><i class="ri-search-line"></i><input id="newsSearchInput" type="search" placeholder="Pesquisar notícias..." aria-label="Pesquisar notícias"></label>
+      <select id="newsCategoryFilter" class="form-input-lg" aria-label="Filtrar por categoria"><option value="all">Todas as categorias</option><option>Evento</option><option>Recrutamento</option><option>Cultura</option><option>Emissão</option><option>Aviso</option><option>Entrevista</option><option>Concurso</option></select>
+    </div>
+
+    <!-- Grid de Notícias -->
+    <div class="home-grid-3" id="fullNewsGrid">
+      <!-- Renderizado via js/app.js -->
+    </div>
+
+  </main>
+
+  <!-- Rodapé Institucional Sem Caixa Externa -->
+  <footer class="footer-pro">
+    <div class="container footer-pro-content">
+      
+      <div class="footer-credits-top">
+        &copy; Rádio Escolar 2026
+        <span>Site desenvolvido por Rafael Diogo</span>
+      </div>
+
+      <div class="footer-emblem-wrap">
+        <img src="assets/logo-radio.jpg" alt="Rádio Escolar Logo" class="footer-logo-item">
+      </div>
+
+      <div class="footer-institution-text">
+        A Rádio Escolar faz parte do <strong>Agrupamento de Escolas da Cidadela</strong>,<br>
+        desenvolvida em parceria oficial com a <strong>Câmara Municipal de Cascais</strong>.
+      </div>
+
+      <nav class="footer-nav-links">
+        <a href="index.html">Início</a> •
+        <a href="pedir-musica.html">Pedir Música</a> •
+        <a href="podcasts.html">Podcasts</a> •
+        <a href="noticias.html">Notícias</a> •
+        <a href="links.html">Links Rápidos</a> •
+        <a href="admin.html" style="color: var(--text-muted);">Área Reservada</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="js/firebase-config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
