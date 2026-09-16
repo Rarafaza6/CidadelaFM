@@ -19,16 +19,29 @@
 
   3. IMPORTANTE — SEGURANÇA:
      Esta página NÃO tem password, conforme pedido. Isso significa
-     que a leitura da coleção "votos" no Firestore passa a ser
-     pública (qualquer pessoa com a app do Firebase configurada, ou
-     com este link, consegue ver os votos e as chaves de identificação
-     dos alunos, ex.: "PROC_12345"). Se quiseres, no futuro, esconder
-     este link do público (não indexar, não partilhar) ou adicionar
-     uma password simples mais tarde.
+     que a leitura E o apagar (delete) da coleção "votos" no
+     Firestore passam a ser públicos: qualquer pessoa com a
+     firebaseConfig (visível no código-fonte de qualquer uma destas
+     páginas) consegue ver os votos, as chaves de identificação dos
+     alunos (ex.: "PROC_12345") e apagar tudo — não só quem abrir
+     este admin.html. O botão "Repor votação" pede que se escreva
+     "RESETAR" antes de apagar, mas isso é só uma proteção contra
+     cliques acidentais no browser, não uma proteção real dos dados.
+     Não partilhes este link nem a firebaseConfig publicamente. Se
+     mais tarde quiseres mais segurança, o próximo passo é ativar
+     Firebase Authentication e restringir "read"/"delete" a
+     "request.auth != null" nas regras.
 
-  4. Basta abrir este ficheiro no browser (ou publicá-lo junto do
-     index.html no mesmo servidor). Os resultados atualizam-se
-     automaticamente em tempo real, sem precisar recarregar a página.
+  4. Funcionalidades deste painel:
+     - Resultados e contagens em tempo real (sem recarregar a página)
+     - "Outros detalhes": primeiro/último voto, votos na última hora
+       e votos hoje
+     - Exportar todos os votos para CSV
+     - "Repor votação": apaga permanentemente todos os votos (pede
+       confirmação escrita)
+
+  5. Basta abrir este ficheiro no browser (ou publicá-lo junto do
+     index.html no mesmo servidor).
   =====================================================================
 -->
 
@@ -253,8 +266,143 @@
     margin-top:10px;
   }
 
+  .detalhes-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .detalhe-item{
+    background:#f6f7f9;
+    border-radius:10px;
+    padding:12px 14px;
+  }
+  .detalhe-item .rotulo{
+    font-size:0.75rem;
+    color:var(--text-muted);
+    text-transform:uppercase;
+    letter-spacing:0.3px;
+    margin-bottom:4px;
+  }
+  .detalhe-item .valor{
+    font-size:0.95rem;
+    font-weight:700;
+    color:var(--text-dark);
+  }
+
+  .btn-secundario{
+    width:100%;
+    margin-top:16px;
+    padding:12px;
+    border:1.5px solid #ddd;
+    border-radius:10px;
+    background:#fff;
+    color:var(--text-dark);
+    font-size:0.9rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:0.15s;
+  }
+  .btn-secundario:hover{
+    border-color:var(--bg3);
+  }
+
+  .card-perigo{
+    border:1.5px solid #ffd1d1;
+  }
+  .card-perigo h2{
+    color:#a10000;
+  }
+  .card-perigo p{
+    font-size:0.85rem;
+    color:var(--text-muted);
+    margin:0 0 14px;
+    line-height:1.5;
+  }
+  .btn-perigo{
+    width:100%;
+    padding:13px;
+    border:none;
+    border-radius:10px;
+    background:#a10000;
+    color:#fff;
+    font-size:0.9rem;
+    font-weight:700;
+    cursor:pointer;
+    transition:0.15s;
+  }
+  .btn-perigo:hover{
+    background:#c40000;
+  }
+  .btn-perigo:disabled{
+    background:#e5b3b3;
+    cursor:not-allowed;
+  }
+
+  .confirma-reset{
+    display:none;
+    margin-top:14px;
+    background:#fff5f5;
+    border:1.5px solid #ffd1d1;
+    border-radius:10px;
+    padding:14px;
+  }
+  .confirma-reset.ativo{
+    display:block;
+  }
+  .confirma-reset p{
+    font-size:0.85rem;
+    color:#a10000;
+    margin:0 0 10px;
+    line-height:1.4;
+  }
+  .confirma-reset input{
+    width:100%;
+    padding:10px 12px;
+    border-radius:8px;
+    border:1.5px solid #ffb3b3;
+    font-size:0.95rem;
+    outline:none;
+    margin-bottom:10px;
+  }
+  .confirma-reset .botoes{
+    display:flex;
+    gap:8px;
+  }
+  .confirma-reset .botoes button{
+    flex:1;
+  }
+  .btn-cancelar{
+    padding:12px;
+    border:1.5px solid #ddd;
+    border-radius:10px;
+    background:#fff;
+    color:var(--text-muted);
+    font-size:0.9rem;
+    font-weight:600;
+    cursor:pointer;
+  }
+
+  .reset-msg{
+    margin-top:12px;
+    padding:10px 12px;
+    border-radius:8px;
+    font-size:0.85rem;
+    display:none;
+  }
+  .reset-msg.sucesso{
+    background:#e3f8e8;
+    color:#116a30;
+    display:block;
+  }
+  .reset-msg.erro{
+    background:#ffe6e6;
+    color:#a10000;
+    display:block;
+  }
+
   @media (max-width:480px){
     .resultado-topo{ flex-direction:column; align-items:flex-start; gap:2px; }
+    .detalhes-grid{ grid-template-columns:1fr; }
   }
 </style>
 </head>
@@ -307,6 +455,45 @@
     </div>
   </div>
 
+  <div class="card" id="cardDetalhes">
+    <h2>Outros detalhes</h2>
+    <div class="detalhes-grid">
+      <div class="detalhe-item">
+        <div class="rotulo">Primeiro voto</div>
+        <div class="valor" id="detPrimeiro">—</div>
+      </div>
+      <div class="detalhe-item">
+        <div class="rotulo">Último voto</div>
+        <div class="valor" id="detUltimo">—</div>
+      </div>
+      <div class="detalhe-item">
+        <div class="rotulo">Votos na última hora</div>
+        <div class="valor" id="detUltimaHora">—</div>
+      </div>
+      <div class="detalhe-item">
+        <div class="rotulo">Votos hoje</div>
+        <div class="valor" id="detHoje">—</div>
+      </div>
+    </div>
+    <button class="btn-secundario" id="btnExportar">⬇️ Exportar para CSV</button>
+  </div>
+
+  <div class="card card-perigo">
+    <h2>⚠️ Repor votação</h2>
+    <p>Apaga permanentemente TODOS os votos registados na base de dados. Esta ação não pode ser desfeita e os alunos poderão voltar a votar (os cookies/localStorage nos telemóveis deles continuam a marcar "já votou", mas a contagem fica a zeros).</p>
+    <button class="btn-perigo" id="btnAbrirReset">Repor votação</button>
+
+    <div class="confirma-reset" id="confirmaReset">
+      <p>Para confirmar, escreve <strong>RESETAR</strong> na caixa abaixo. Todos os <span id="totalParaApagar">0</span> votos atuais serão apagados.</p>
+      <input type="text" id="inputConfirmaReset" placeholder="Escreve RESETAR" autocomplete="off">
+      <div class="botoes">
+        <button class="btn-cancelar" id="btnCancelarReset">Cancelar</button>
+        <button class="btn-perigo" id="btnConfirmarReset" disabled>Apagar tudo</button>
+      </div>
+    </div>
+    <div class="reset-msg" id="resetMsg"></div>
+  </div>
+
   <footer>Atualização automática em tempo real • Firebase Firestore</footer>
 </div>
 
@@ -339,6 +526,22 @@
   const tabelaBody = document.getElementById('tabelaBody');
   const tabelaWrap = document.getElementById('tabelaWrap');
   const btnToggleTabela = document.getElementById('btnToggleTabela');
+
+  const detPrimeiro = document.getElementById('detPrimeiro');
+  const detUltimo = document.getElementById('detUltimo');
+  const detUltimaHora = document.getElementById('detUltimaHora');
+  const detHoje = document.getElementById('detHoje');
+  const btnExportar = document.getElementById('btnExportar');
+
+  const btnAbrirReset = document.getElementById('btnAbrirReset');
+  const confirmaReset = document.getElementById('confirmaReset');
+  const totalParaApagar = document.getElementById('totalParaApagar');
+  const inputConfirmaReset = document.getElementById('inputConfirmaReset');
+  const btnCancelarReset = document.getElementById('btnCancelarReset');
+  const btnConfirmarReset = document.getElementById('btnConfirmarReset');
+  const resetMsg = document.getElementById('resetMsg');
+
+  let votosAtuais = []; // guarda a última leitura, usada pelo export e pelo reset
 
   btnToggleTabela.addEventListener('click', () => {
     const aberta = tabelaWrap.style.display !== 'none';
@@ -423,6 +626,122 @@
       `;
       tabelaBody.appendChild(tr);
     });
+
+    // Outros detalhes
+    const comData = votos
+      .filter(v => v.timestamp && typeof v.timestamp.toDate === 'function')
+      .map(v => v.timestamp.toDate());
+
+    if(comData.length > 0){
+      const maisAntigo = new Date(Math.min(...comData.map(d => d.getTime())));
+      const maisRecente = new Date(Math.max(...comData.map(d => d.getTime())));
+      detPrimeiro.textContent = formatarData(maisAntigo);
+      detUltimo.textContent = formatarData(maisRecente);
+
+      const agora = Date.now();
+      const umaHoraAtras = agora - 60*60*1000;
+      detUltimaHora.textContent = comData.filter(d => d.getTime() >= umaHoraAtras).length;
+
+      const inicioHoje = new Date();
+      inicioHoje.setHours(0,0,0,0);
+      detHoje.textContent = comData.filter(d => d.getTime() >= inicioHoje.getTime()).length;
+    } else {
+      detPrimeiro.textContent = '—';
+      detUltimo.textContent = '—';
+      detUltimaHora.textContent = '0';
+      detHoje.textContent = '0';
+    }
+
+    totalParaApagar.textContent = total;
+  }
+
+  // ---------- Exportar CSV ----------
+  btnExportar.addEventListener('click', () => {
+    if(votosAtuais.length === 0){
+      alert('Não há votos para exportar.');
+      return;
+    }
+    const linhas = [['Identificacao', 'Opcao', 'Metodo', 'DataHora']];
+    const ordenados = [...votosAtuais].sort((a,b) => {
+      const da = a.timestamp && a.timestamp.toDate ? a.timestamp.toDate().getTime() : 0;
+      const db_ = b.timestamp && b.timestamp.toDate ? b.timestamp.toDate().getTime() : 0;
+      return da - db_;
+    });
+    ordenados.forEach(v => {
+      linhas.push([v.id, v.opcao || '', v.metodo || '', formatarData(v.timestamp)]);
+    });
+    const csv = linhas.map(l => l.map(campo => `"${String(campo).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'votos_' + new Date().toISOString().slice(0,19).replace(/[:T]/g,'-') + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  // ---------- Repor votação ----------
+  const PALAVRA_CONFIRMACAO = 'RESETAR';
+
+  btnAbrirReset.addEventListener('click', () => {
+    resetMsg.style.display = 'none';
+    inputConfirmaReset.value = '';
+    btnConfirmarReset.disabled = true;
+    confirmaReset.classList.add('ativo');
+    inputConfirmaReset.focus();
+  });
+
+  btnCancelarReset.addEventListener('click', () => {
+    confirmaReset.classList.remove('ativo');
+  });
+
+  inputConfirmaReset.addEventListener('input', () => {
+    btnConfirmarReset.disabled = inputConfirmaReset.value.trim().toUpperCase() !== PALAVRA_CONFIRMACAO;
+  });
+
+  btnConfirmarReset.addEventListener('click', async () => {
+    if(inputConfirmaReset.value.trim().toUpperCase() !== PALAVRA_CONFIRMACAO) return;
+
+    btnConfirmarReset.disabled = true;
+    btnAbrirReset.disabled = true;
+    btnConfirmarReset.textContent = 'A apagar...';
+    resetMsg.style.display = 'none';
+
+    try{
+      await apagarTodosOsVotos();
+      resetMsg.className = 'reset-msg sucesso';
+      resetMsg.textContent = 'Votação reposta. Todos os votos foram apagados.';
+      resetMsg.style.display = 'block';
+      confirmaReset.classList.remove('ativo');
+    }catch(err){
+      console.error(err);
+      resetMsg.className = 'reset-msg erro';
+      resetMsg.textContent = 'Ocorreu um erro ao apagar os votos. Verifica as regras do Firestore (delete tem de estar permitido) e tenta novamente.';
+      resetMsg.style.display = 'block';
+    }finally{
+      btnConfirmarReset.disabled = false;
+      btnAbrirReset.disabled = false;
+      btnConfirmarReset.textContent = 'Apagar tudo';
+    }
+  });
+
+  async function apagarTodosOsVotos(){
+    // Apaga em lotes de 400 (limite do Firestore é 500 operações por batch)
+    const TAMANHO_LOTE = 400;
+    let continuar = true;
+    while(continuar){
+      const snap = await db.collection('votos').limit(TAMANHO_LOTE).get();
+      if(snap.empty){
+        continuar = false;
+        break;
+      }
+      const batch = db.batch();
+      snap.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+      if(snap.size < TAMANHO_LOTE) continuar = false;
+    }
   }
 
   // Ligação em tempo real à coleção "votos"
@@ -442,6 +761,7 @@
           timestamp: d.timestamp
         });
       });
+      votosAtuais = votos;
       renderizar(votos);
     },
     function(err){
