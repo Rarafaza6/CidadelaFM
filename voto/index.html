@@ -16,12 +16,30 @@
        match /databases/{database}/documents {
          match /votos/{voteId} {
            allow create: if request.resource.data.keys().hasAll(['opcao','metodo','timestamp'])
-                         && request.resource.data.opcao in ['Feedback','Wave','Eco','Sem rede'];
+                         && request.resource.data.keys().hasOnly(['opcao','metodo','timestamp','sugestao'])
+                         && request.resource.data.opcao in ['Feedback','Wave','Eco','Sem rede']
+                         && (!('sugestao' in request.resource.data)
+                             || (request.resource.data.sugestao is string
+                                 && request.resource.data.sugestao.size() <= 500));
+           allow read: if request.auth != null;
+           allow update, delete: if false;
+         }
+         match /sugestoes/{sugestaoId} {
+           allow create: if request.resource.data.keys().hasAll(['texto','timestamp'])
+                         && request.resource.data.keys().hasOnly(['texto','timestamp'])
+                         && request.resource.data.texto is string
+                         && request.resource.data.texto.size() > 0
+                         && request.resource.data.texto.size() <= 500;
            allow read: if request.auth != null;
            allow update, delete: if false;
          }
        }
      }
+
+     Nota: a coleção "sugestoes" aceita qualquer número de envios por
+     dispositivo/aluno de propósito — depois de votar, o aluno pode
+     continuar a mandar sugestões livremente, sem limite de uma por
+     pessoa (ao contrário da coleção "votos").
 
   2. No Firebase Console > Authentication > Sign-in method, ativa
      "Email/Password" e cria manualmente um utilizador para o(a)
@@ -198,7 +216,7 @@
     margin-bottom:4px;
   }
 
-  input[type="text"], input[type="number"]{
+  input[type="text"], input[type="number"], textarea{
     width:100%;
     padding:12px 12px;
     border-radius:10px;
@@ -206,9 +224,23 @@
     font-size:1rem;
     outline:none;
     transition:0.15s;
+    font-family:inherit;
   }
-  input[type="text"]:focus, input[type="number"]:focus{
+  input[type="text"]:focus, input[type="number"]:focus, textarea:focus{
     border-color:var(--accent);
+  }
+
+  textarea{
+    resize:vertical;
+    min-height:90px;
+    max-height:220px;
+  }
+
+  .contador-carateres{
+    text-align:right;
+    font-size:0.78rem;
+    color:var(--text-muted);
+    margin-top:4px;
   }
 
   .opcoes-voto{
@@ -310,6 +342,66 @@
     margin:0;
   }
 
+  #cardSugestaoContinua{
+    display:none;
+    text-align:left;
+  }
+  #cardSugestaoContinua h2{
+    text-align:center;
+  }
+  #cardSugestaoContinua p.intro{
+    color:var(--text-muted);
+    font-size:0.9rem;
+    margin:0 0 14px;
+    text-align:center;
+  }
+  button#btnEnviarSugestao{
+    width:100%;
+    margin-top:12px;
+    padding:13px;
+    border:none;
+    border-radius:12px;
+    background:linear-gradient(135deg, var(--bg2), var(--bg3));
+    color:#fff;
+    font-size:0.98rem;
+    font-weight:700;
+    cursor:pointer;
+    transition:0.15s;
+  }
+  button#btnEnviarSugestao:disabled{
+    background:#c9c9c9;
+    cursor:not-allowed;
+  }
+  button#btnEnviarSugestao:not(:disabled):active{
+    transform:scale(0.98);
+  }
+  #listaSugestoesEnviadas{
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px solid #eee;
+  }
+  #listaSugestoesEnviadas p.titulo{
+    font-size:0.82rem;
+    font-weight:600;
+    color:var(--text-muted);
+    margin:0 0 8px;
+  }
+  #listaSugestoesEnviadas ul{
+    list-style:none;
+    margin:0;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  #listaSugestoesEnviadas li{
+    background:#f6f7f9;
+    border-radius:10px;
+    padding:10px 12px;
+    font-size:0.88rem;
+    color:#333;
+  }
+
   footer{
     text-align:center;
     color:rgba(255,255,255,0.6);
@@ -372,6 +464,21 @@
     <p>Obrigado por participares na escolha do nome da rádio escolar.</p>
   </div>
 
+  <!-- CAIXA DE SUGESTÕES CONTÍNUAS: fica visível para quem já votou (agora ou anteriormente) e permite envios ilimitados -->
+  <div class="card" id="cardSugestaoContinua">
+    <h2>💬 Continua a enviar sugestões</h2>
+    <p class="intro">Já votaste, mas as ideias para a rádio não têm de parar por aqui. Envia quantas sugestões quiseres, quando quiseres.</p>
+    <label class="field-label" for="inputSugestaoContinua">A tua sugestão</label>
+    <textarea id="inputSugestaoContinua" maxlength="500" placeholder="Ex: gostava de um programa dedicado a novidades de cinema e séries..."></textarea>
+    <div class="contador-carateres"><span id="contadorSugestaoContinua">0</span>/500</div>
+    <button type="button" id="btnEnviarSugestao" disabled>Enviar sugestão</button>
+    <div class="msg" id="msgSugestaoBox"></div>
+    <div id="listaSugestoesEnviadas" style="display:none;">
+      <p class="titulo">Sugestões que enviaste nesta sessão:</p>
+      <ul id="ulSugestoesEnviadas"></ul>
+    </div>
+  </div>
+
   <!-- FORMULÁRIO DE VOTO -->
   <form class="card" id="formVoto">
     <fieldset>
@@ -426,6 +533,13 @@
           <span>Sem rede</span>
         </label>
       </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>3. Sugestões para a rádio (opcional)</legend>
+      <label class="field-label" for="inputSugestao">Tens alguma ideia, sugestão ou tópico que gostarias de ouvir na rádio escolar? Deixa aqui a tua opinião.</label>
+      <textarea id="inputSugestao" maxlength="500" placeholder="Ex: gostava de programas sobre música portuguesa, entrevistas a professores, um concurso de perguntas..."></textarea>
+      <div class="contador-carateres"><span id="contadorSugestao">0</span>/500</div>
     </fieldset>
 
     <button type="submit" id="btnVotar" disabled>Votar</button>
@@ -496,6 +610,16 @@
   const inputProcesso = document.getElementById('inputProcesso');
   const inputNumero = document.getElementById('inputNumero');
   const inputTurma = document.getElementById('inputTurma');
+  const inputSugestao = document.getElementById('inputSugestao');
+  const contadorSugestao = document.getElementById('contadorSugestao');
+
+  const cardSugestaoContinua = document.getElementById('cardSugestaoContinua');
+  const inputSugestaoContinua = document.getElementById('inputSugestaoContinua');
+  const contadorSugestaoContinua = document.getElementById('contadorSugestaoContinua');
+  const btnEnviarSugestao = document.getElementById('btnEnviarSugestao');
+  const msgSugestaoBox = document.getElementById('msgSugestaoBox');
+  const listaSugestoesEnviadas = document.getElementById('listaSugestoesEnviadas');
+  const ulSugestoesEnviadas = document.getElementById('ulSugestoesEnviadas');
 
   function mostrarMsg(texto, tipo){
     msgBox.textContent = texto;
@@ -506,11 +630,25 @@
     msgBox.className = 'msg';
   }
 
+  function mostrarMsgSugestao(texto, tipo){
+    msgSugestaoBox.textContent = texto;
+    msgSugestaoBox.className = 'msg ' + tipo;
+  }
+  function limparMsgSugestao(){
+    msgSugestaoBox.textContent = '';
+    msgSugestaoBox.className = 'msg';
+  }
+
+  function mostrarCardSugestaoContinua(){
+    cardSugestaoContinua.style.display = 'block';
+  }
+
   // ---------- Verificação inicial ----------
   if(jaVotouLocalmente()){
     formVoto.style.display = 'none';
     document.getElementById('texto-obrigatorio').style.display = 'none';
     estadoJaVotou.style.display = 'block';
+    mostrarCardSugestaoContinua();
   }
 
   // ---------- Alternar método de identificação ----------
@@ -550,6 +688,10 @@
   [inputProcesso, inputNumero, inputTurma, confirmaLeitura].forEach(el => {
     el.addEventListener('input', validarFormulario);
     el.addEventListener('change', validarFormulario);
+  });
+
+  inputSugestao.addEventListener('input', () => {
+    contadorSugestao.textContent = inputSugestao.value.length;
   });
   document.querySelectorAll('input[name="opcao"]').forEach(el => {
     el.addEventListener('change', validarFormulario);
@@ -600,6 +742,7 @@
     }
 
     const voterKey = construirVoterKey();
+    const sugestao = inputSugestao.value.trim().slice(0, 500);
 
     btnVotar.disabled = true;
     btnVotar.textContent = 'A registar...';
@@ -611,17 +754,22 @@
         if(doc.exists){
           throw new Error('DUPLICADO');
         }
-        transaction.set(voteRef, {
+        const dadosVoto = {
           opcao: opcao,
           metodo: metodo,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        };
+        if(sugestao){
+          dadosVoto.sugestao = sugestao;
+        }
+        transaction.set(voteRef, dadosVoto);
       });
     }).then(function(){
       marcarVotoLocalmente();
       formVoto.style.display = 'none';
       document.getElementById('texto-obrigatorio').style.display = 'none';
       estadoSucesso.style.display = 'block';
+      mostrarCardSugestaoContinua();
     }).catch(function(err){
       btnVotar.disabled = false;
       btnVotar.textContent = 'Votar';
@@ -632,6 +780,47 @@
         console.error(err);
         mostrarMsg('Ocorreu um erro ao registar o voto. Tenta novamente.', 'erro');
       }
+    });
+  });
+
+  // ---------- Sugestões contínuas (após votar, sem limite de envios) ----------
+  inputSugestaoContinua.addEventListener('input', () => {
+    contadorSugestaoContinua.textContent = inputSugestaoContinua.value.length;
+    btnEnviarSugestao.disabled = inputSugestaoContinua.value.trim().length === 0;
+  });
+
+  btnEnviarSugestao.addEventListener('click', function(){
+    limparMsgSugestao();
+    const texto = inputSugestaoContinua.value.trim().slice(0, 500);
+
+    if(!texto){
+      mostrarMsgSugestao('Escreve a tua sugestão antes de enviar.', 'erro');
+      return;
+    }
+
+    btnEnviarSugestao.disabled = true;
+    btnEnviarSugestao.textContent = 'A enviar...';
+
+    db.collection('sugestoes').add({
+      texto: texto,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(function(){
+      mostrarMsgSugestao('Sugestão enviada! Obrigado pela ideia.', 'sucesso');
+
+      const li = document.createElement('li');
+      li.textContent = texto;
+      ulSugestoesEnviadas.prepend(li);
+      listaSugestoesEnviadas.style.display = 'block';
+
+      inputSugestaoContinua.value = '';
+      contadorSugestaoContinua.textContent = '0';
+      btnEnviarSugestao.textContent = 'Enviar sugestão';
+      btnEnviarSugestao.disabled = true;
+    }).catch(function(err){
+      console.error(err);
+      btnEnviarSugestao.textContent = 'Enviar sugestão';
+      btnEnviarSugestao.disabled = false;
+      mostrarMsgSugestao('Ocorreu um erro ao enviar a sugestão. Tenta novamente.', 'erro');
     });
   });
 
