@@ -3,45 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-<title>Admin — Estado da Votação</title>
+<title>Admin — Votação Rádio Escolar</title>
 
 <!--
   =====================================================================
-  COMO CONFIGURAR (ler antes de publicar):
+  IMPORTANTE — LER ANTES DE USAR (sem login):
 
-  1. Este ficheiro usa o MESMO projeto Firebase do index.html
-     (cidadelafm). Não precisa de nenhuma alteração de configuração
-     além das regras do Firestore abaixo.
+  Esta página NÃO tem autenticação: qualquer pessoa com o link consegue
+  ver os votos e sugestões. Como tal, as regras do Firestore têm de
+  permitir leitura pública das coleções "votos" e "sugestoes". No teu
+  index.html original, as regras exigem "request.auth != null" para
+  leitura — isso vai bloquear esta página. Substitui as regras de
+  leitura por algo como:
 
-  2. No Firebase Console > Firestore Database > Rules, cola as
-     regras do ficheiro "firestore.rules" que acompanha este ficheiro
-     (ou vê o comentário no final deste ficheiro).
+     match /votos/{voteId} {
+       allow create: if ... (mantém como está)
+       allow read: if true;          // <-- ALTERADO (antes: request.auth != null)
+       allow update, delete: if false;
+     }
+     match /sugestoes/{sugestaoId} {
+       allow create: if ... (mantém como está)
+       allow read: if true;          // <-- ALTERADO
+       allow update, delete: if false;
+     }
 
-  3. IMPORTANTE — SEGURANÇA:
-     Esta página NÃO tem password, conforme pedido. Isso significa
-     que a leitura E o apagar (delete) da coleção "votos" no
-     Firestore passam a ser públicos: qualquer pessoa com a
-     firebaseConfig (visível no código-fonte de qualquer uma destas
-     páginas) consegue ver os votos, as chaves de identificação dos
-     alunos (ex.: "PROC_12345") e apagar tudo — não só quem abrir
-     este admin.html. O botão "Repor votação" pede que se escreva
-     "RESETAR" antes de apagar, mas isso é só uma proteção contra
-     cliques acidentais no browser, não uma proteção real dos dados.
-     Não partilhes este link nem a firebaseConfig publicamente. Se
-     mais tarde quiseres mais segurança, o próximo passo é ativar
-     Firebase Authentication e restringir "read"/"delete" a
-     "request.auth != null" nas regras.
-
-  4. Funcionalidades deste painel:
-     - Resultados e contagens em tempo real (sem recarregar a página)
-     - "Outros detalhes": primeiro/último voto, votos na última hora
-       e votos hoje
-     - Exportar todos os votos para CSV
-     - "Repor votação": apaga permanentemente todos os votos (pede
-       confirmação escrita)
-
-  5. Basta abrir este ficheiro no browser (ou publicá-lo junto do
-     index.html no mesmo servidor).
+  Se preferires manter a leitura protegida, o mais simples é NÃO
+  publicares este ficheiro publicamente (ex: não o colocares num site
+  indexado) e partilhares o link apenas com quem deve ter acesso —
+  mas tecnicamente qualquer pessoa com o URL do ficheiro consegue abri-lo
+  e ler os dados, pois não há verificação de identidade aqui.
   =====================================================================
 -->
 
@@ -57,10 +47,10 @@
     --text-muted:#666;
     --radius:16px;
     --shadow:0 10px 30px rgba(0,0,0,0.25);
+    --ok:#116a30;
+    --err:#a10000;
   }
-
   *{box-sizing:border-box;}
-
   body{
     margin:0;
     min-height:100vh;
@@ -68,436 +58,283 @@
     background:linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
     background-attachment:fixed;
     color:var(--text-dark);
-    display:flex;
-    justify-content:center;
     padding:20px 12px 60px;
   }
-
-  .container{
-    width:100%;
-    max-width:720px;
-  }
-
+  .wrap{max-width:980px;margin:0 auto;}
   header{
     text-align:center;
     color:#fff;
+    margin-bottom:22px;
+  }
+  header h1{margin:0 0 6px;font-size:1.7rem;}
+  header p{margin:0;opacity:.85;font-size:.95rem;}
+
+  .toolbar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    justify-content:center;
     margin-bottom:20px;
   }
-
-  header h1{
-    font-size:1.6rem;
-    margin:0 0 6px;
-    letter-spacing:0.5px;
-  }
-
-  header p{
-    margin:0;
-    opacity:0.85;
-    font-size:0.9rem;
-  }
-
-  .status-pill{
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    background:rgba(255,255,255,0.12);
+  .toolbar button{
+    border:none;
+    border-radius:10px;
+    padding:10px 16px;
+    font-weight:700;
+    font-size:.9rem;
+    cursor:pointer;
     color:#fff;
-    padding:6px 14px;
-    border-radius:999px;
-    font-size:0.8rem;
-    margin-top:10px;
+    background:linear-gradient(135deg, var(--accent), var(--accent2));
+    transition:.15s;
   }
-  .status-pill .dot{
-    width:8px;
-    height:8px;
-    border-radius:50%;
-    background:#4ade80;
-    box-shadow:0 0 0 3px rgba(74,222,128,0.25);
+  .toolbar button.secundario{
+    background:linear-gradient(135deg, var(--bg2), var(--bg3));
   }
-  .status-pill.offline .dot{ background:#f87171; box-shadow:0 0 0 3px rgba(248,113,113,0.25); }
+  .toolbar button:active{transform:scale(.97);}
+  .toolbar button:disabled{background:#c9c9c9;cursor:not-allowed;}
 
   .card{
     background:var(--card-bg);
     border-radius:var(--radius);
     box-shadow:var(--shadow);
     padding:22px 20px;
-    margin-bottom:18px;
+    margin-bottom:20px;
   }
+  .card h2{margin:0 0 14px;font-size:1.1rem;}
 
-  .card h2{
-    font-size:1.05rem;
-    margin:0 0 14px;
-    color:var(--text-dark);
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-  }
-
-  .total-votos{
-    text-align:center;
-    padding:6px 0 18px;
-  }
-  .total-votos .numero{
-    font-size:2.8rem;
-    font-weight:800;
-    background:linear-gradient(135deg, var(--accent), var(--accent2));
-    -webkit-background-clip:text;
-    background-clip:text;
-    color:transparent;
-    line-height:1;
-  }
-  .total-votos .legenda{
-    color:var(--text-muted);
-    font-size:0.85rem;
-    margin-top:6px;
-  }
-
-  .resultado-linha{
-    margin-bottom:16px;
-  }
-  .resultado-linha:last-child{
-    margin-bottom:0;
-  }
-  .resultado-topo{
-    display:flex;
-    justify-content:space-between;
-    align-items:baseline;
+  .stats-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+    gap:14px;
     margin-bottom:6px;
-    font-size:0.95rem;
   }
-  .resultado-nome{
-    font-weight:700;
-    color:var(--text-dark);
+  .stat-box{
+    background:#f6f7f9;
+    border-radius:12px;
+    padding:14px;
+    text-align:center;
   }
-  .resultado-nome .medalha{
-    margin-right:4px;
-  }
-  .resultado-numeros{
-    color:var(--text-muted);
-    font-size:0.85rem;
-    white-space:nowrap;
+  .stat-box .num{font-size:1.7rem;font-weight:800;color:var(--bg2);}
+  .stat-box .label{font-size:.8rem;color:var(--text-muted);margin-top:2px;}
+
+  .barra-opcao{margin-bottom:14px;}
+  .barra-opcao .linha-topo{
+    display:flex;
+    justify-content:space-between;
+    font-size:.9rem;
+    margin-bottom:4px;
+    font-weight:600;
   }
   .barra-fundo{
-    background:#f0f0f0;
-    border-radius:10px;
-    height:14px;
+    background:#eee;
+    border-radius:8px;
     overflow:hidden;
+    height:16px;
   }
   .barra-preenchida{
     height:100%;
-    border-radius:10px;
-    background:linear-gradient(135deg, var(--bg2), var(--bg3));
-    transition:width 0.4s ease;
-  }
-  .resultado-linha.vencedor .barra-preenchida{
     background:linear-gradient(135deg, var(--accent), var(--accent2));
-  }
-
-  .breakdown{
-    display:flex;
-    gap:16px;
-    font-size:0.85rem;
-    color:var(--text-muted);
-    margin-top:4px;
-    flex-wrap:wrap;
-  }
-
-  .btn-toggle{
-    background:none;
-    border:1.5px solid #ddd;
     border-radius:8px;
-    padding:6px 12px;
-    font-size:0.8rem;
-    color:var(--text-muted);
-    cursor:pointer;
+    transition:width .4s ease;
   }
-  .btn-toggle:hover{
-    border-color:var(--accent);
-    color:var(--accent);
+
+  .filtros{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:14px;
   }
+  .filtros input, .filtros select{
+    padding:9px 10px;
+    border-radius:8px;
+    border:1.5px solid #ddd;
+    font-size:.88rem;
+    font-family:inherit;
+  }
+  .filtros input[type="text"]{flex:1;min-width:160px;}
 
   table{
     width:100%;
     border-collapse:collapse;
-    font-size:0.85rem;
+    font-size:.85rem;
   }
-  table th, table td{
+  thead th{
     text-align:left;
-    padding:8px 6px;
-    border-bottom:1px solid #eee;
-  }
-  table th{
+    padding:8px 8px;
+    border-bottom:2px solid #eee;
     color:var(--text-muted);
-    font-weight:600;
-    font-size:0.78rem;
+    font-size:.78rem;
     text-transform:uppercase;
-    letter-spacing:0.3px;
+    letter-spacing:.3px;
+    cursor:pointer;
+    user-select:none;
+    white-space:nowrap;
   }
-  table tbody tr:hover{
-    background:#fafafa;
+  thead th:hover{color:var(--bg2);}
+  tbody td{
+    padding:9px 8px;
+    border-bottom:1px solid #f0f0f0;
+    vertical-align:top;
   }
-  .tabela-wrap{
-    max-height:420px;
-    overflow-y:auto;
-    margin-top:4px;
+  tbody tr:hover{background:#fafafa;}
+  .tag{
+    display:inline-block;
+    padding:3px 9px;
+    border-radius:20px;
+    font-size:.75rem;
+    font-weight:700;
+    background:var(--bg2);
+    color:#fff;
   }
-
+  .sugestao-texto{max-width:320px;white-space:pre-wrap;}
   .vazio{
     text-align:center;
     color:var(--text-muted);
-    padding:30px 10px;
-    font-size:0.9rem;
+    padding:24px 0;
+    font-size:.9rem;
   }
+  .table-scroll{overflow-x:auto;}
 
-  .erro-box{
-    background:#ffe6e6;
-    color:#a10000;
-    padding:14px;
+  .msg{
+    margin-top:12px;
+    padding:11px 14px;
     border-radius:10px;
-    font-size:0.9rem;
-    margin-bottom:18px;
+    font-size:.88rem;
     display:none;
+  }
+  .msg.erro{background:#ffe6e6;color:var(--err);display:block;}
+  .msg.info{background:#eaf2ff;color:#1a4c9c;display:block;}
+
+  .loading{
+    text-align:center;
+    color:#fff;
+    padding:30px 0;
+    font-size:.95rem;
   }
 
   footer{
     text-align:center;
-    color:rgba(255,255,255,0.6);
-    font-size:0.78rem;
+    color:rgba(255,255,255,.6);
+    font-size:.75rem;
     margin-top:10px;
-  }
-
-  .detalhes-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:12px;
-  }
-  .detalhe-item{
-    background:#f6f7f9;
-    border-radius:10px;
-    padding:12px 14px;
-  }
-  .detalhe-item .rotulo{
-    font-size:0.75rem;
-    color:var(--text-muted);
-    text-transform:uppercase;
-    letter-spacing:0.3px;
-    margin-bottom:4px;
-  }
-  .detalhe-item .valor{
-    font-size:0.95rem;
-    font-weight:700;
-    color:var(--text-dark);
-  }
-
-  .btn-secundario{
-    width:100%;
-    margin-top:16px;
-    padding:12px;
-    border:1.5px solid #ddd;
-    border-radius:10px;
-    background:#fff;
-    color:var(--text-dark);
-    font-size:0.9rem;
-    font-weight:600;
-    cursor:pointer;
-    transition:0.15s;
-  }
-  .btn-secundario:hover{
-    border-color:var(--bg3);
-  }
-
-  .card-perigo{
-    border:1.5px solid #ffd1d1;
-  }
-  .card-perigo h2{
-    color:#a10000;
-  }
-  .card-perigo p{
-    font-size:0.85rem;
-    color:var(--text-muted);
-    margin:0 0 14px;
-    line-height:1.5;
-  }
-  .btn-perigo{
-    width:100%;
-    padding:13px;
-    border:none;
-    border-radius:10px;
-    background:#a10000;
-    color:#fff;
-    font-size:0.9rem;
-    font-weight:700;
-    cursor:pointer;
-    transition:0.15s;
-  }
-  .btn-perigo:hover{
-    background:#c40000;
-  }
-  .btn-perigo:disabled{
-    background:#e5b3b3;
-    cursor:not-allowed;
-  }
-
-  .confirma-reset{
-    display:none;
-    margin-top:14px;
-    background:#fff5f5;
-    border:1.5px solid #ffd1d1;
-    border-radius:10px;
-    padding:14px;
-  }
-  .confirma-reset.ativo{
-    display:block;
-  }
-  .confirma-reset p{
-    font-size:0.85rem;
-    color:#a10000;
-    margin:0 0 10px;
-    line-height:1.4;
-  }
-  .confirma-reset input{
-    width:100%;
-    padding:10px 12px;
-    border-radius:8px;
-    border:1.5px solid #ffb3b3;
-    font-size:0.95rem;
-    outline:none;
-    margin-bottom:10px;
-  }
-  .confirma-reset .botoes{
-    display:flex;
-    gap:8px;
-  }
-  .confirma-reset .botoes button{
-    flex:1;
-  }
-  .btn-cancelar{
-    padding:12px;
-    border:1.5px solid #ddd;
-    border-radius:10px;
-    background:#fff;
-    color:var(--text-muted);
-    font-size:0.9rem;
-    font-weight:600;
-    cursor:pointer;
-  }
-
-  .reset-msg{
-    margin-top:12px;
-    padding:10px 12px;
-    border-radius:8px;
-    font-size:0.85rem;
-    display:none;
-  }
-  .reset-msg.sucesso{
-    background:#e3f8e8;
-    color:#116a30;
-    display:block;
-  }
-  .reset-msg.erro{
-    background:#ffe6e6;
-    color:#a10000;
-    display:block;
-  }
-
-  @media (max-width:480px){
-    .resultado-topo{ flex-direction:column; align-items:flex-start; gap:2px; }
-    .detalhes-grid{ grid-template-columns:1fr; }
   }
 </style>
 </head>
 <body>
-<div class="container">
 
+<div class="wrap">
   <header>
-    <h1>📻 Estado da Votação</h1>
-    <p>Nome da Rádio Escolar — painel de administração</p>
-    <span class="status-pill" id="statusPill"><span class="dot"></span><span id="statusTexto">A ligar…</span></span>
+    <h1>📊 Painel de Administração</h1>
+    <p>Votação — Nome da Rádio Escolar (sem login, leitura direta do Firestore)</p>
   </header>
 
-  <div class="erro-box" id="erroBox"></div>
-
-  <div class="card">
-    <div class="total-votos">
-      <div class="numero" id="totalVotos">—</div>
-      <div class="legenda">votos registados</div>
-    </div>
+  <div class="toolbar">
+    <button id="btnAtualizar">🔄 Atualizar dados</button>
+    <button class="secundario" id="btnExportarVotos">⬇️ Exportar votos (CSV)</button>
+    <button class="secundario" id="btnExportarSugestoes">⬇️ Exportar sugestões (CSV)</button>
   </div>
 
-  <div class="card" id="cardResultados">
-    <h2>Resultados por opção</h2>
-    <div id="listaResultados"></div>
-    <div class="vazio" id="semVotosMsg" style="display:none;">Ainda não há votos registados.</div>
-  </div>
+  <div id="msgGlobal" class="msg"></div>
+  <div id="loadingBox" class="loading">A carregar dados...</div>
 
-  <div class="card" id="cardMetodo">
-    <h2>Identificação usada</h2>
-    <div class="breakdown" id="metodoBreakdown"></div>
-  </div>
+  <div id="conteudo" style="display:none;">
 
-  <div class="card">
-    <h2>
-      Registo detalhado
-      <button class="btn-toggle" id="btnToggleTabela">Mostrar</button>
-    </h2>
-    <div class="tabela-wrap" id="tabelaWrap" style="display:none;">
-      <table>
-        <thead>
-          <tr>
-            <th>Opção</th>
-            <th>Método</th>
-            <th>Identificação</th>
-            <th>Data/Hora</th>
-          </tr>
-        </thead>
-        <tbody id="tabelaBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="card" id="cardDetalhes">
-    <h2>Outros detalhes</h2>
-    <div class="detalhes-grid">
-      <div class="detalhe-item">
-        <div class="rotulo">Primeiro voto</div>
-        <div class="valor" id="detPrimeiro">—</div>
-      </div>
-      <div class="detalhe-item">
-        <div class="rotulo">Último voto</div>
-        <div class="valor" id="detUltimo">—</div>
-      </div>
-      <div class="detalhe-item">
-        <div class="rotulo">Votos na última hora</div>
-        <div class="valor" id="detUltimaHora">—</div>
-      </div>
-      <div class="detalhe-item">
-        <div class="rotulo">Votos hoje</div>
-        <div class="valor" id="detHoje">—</div>
+    <!-- RESUMO -->
+    <div class="card">
+      <h2>Resumo</h2>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="num" id="statTotalVotos">0</div>
+          <div class="label">Votos totais</div>
+        </div>
+        <div class="stat-box">
+          <div class="num" id="statTotalSugestoesVoto">0</div>
+          <div class="label">Sugestões no voto</div>
+        </div>
+        <div class="stat-box">
+          <div class="num" id="statTotalSugestoesExtra">0</div>
+          <div class="label">Sugestões extra</div>
+        </div>
+        <div class="stat-box">
+          <div class="num" id="statVencedor">—</div>
+          <div class="label">Opção em 1º lugar</div>
+        </div>
       </div>
     </div>
-    <button class="btn-secundario" id="btnExportar">⬇️ Exportar para CSV</button>
-  </div>
 
-  <div class="card card-perigo">
-    <h2>⚠️ Repor votação</h2>
-    <p>Apaga permanentemente TODOS os votos registados na base de dados. Esta ação não pode ser desfeita e os alunos poderão voltar a votar (os cookies/localStorage nos telemóveis deles continuam a marcar "já votou", mas a contagem fica a zeros).</p>
-    <button class="btn-perigo" id="btnAbrirReset">Repor votação</button>
-
-    <div class="confirma-reset" id="confirmaReset">
-      <p>Para confirmar, escreve <strong>RESETAR</strong> na caixa abaixo. Todos os <span id="totalParaApagar">0</span> votos atuais serão apagados.</p>
-      <input type="text" id="inputConfirmaReset" placeholder="Escreve RESETAR" autocomplete="off">
-      <div class="botoes">
-        <button class="btn-cancelar" id="btnCancelarReset">Cancelar</button>
-        <button class="btn-perigo" id="btnConfirmarReset" disabled>Apagar tudo</button>
-      </div>
+    <!-- RESULTADOS POR OPÇÃO -->
+    <div class="card">
+      <h2>Resultados por opção</h2>
+      <div id="barrasResultados"></div>
     </div>
-    <div class="reset-msg" id="resetMsg"></div>
+
+    <!-- LISTA DE VOTOS -->
+    <div class="card">
+      <h2>Todos os votos</h2>
+      <div class="filtros">
+        <select id="filtroOpcao">
+          <option value="">Todas as opções</option>
+          <option value="Feedback">Feedback</option>
+          <option value="Wave">Wave</option>
+          <option value="Eco">Eco</option>
+          <option value="Sem rede">Sem rede</option>
+        </select>
+        <select id="filtroMetodo">
+          <option value="">Todos os métodos</option>
+          <option value="processo">Nº de Processo</option>
+          <option value="numturma">Nº + Turma</option>
+        </select>
+        <select id="filtroSugestao">
+          <option value="">Com ou sem sugestão</option>
+          <option value="com">Só com sugestão</option>
+          <option value="sem">Só sem sugestão</option>
+        </select>
+        <input type="text" id="buscaVotos" placeholder="Procurar em ID / sugestão...">
+      </div>
+      <div class="table-scroll">
+        <table id="tabelaVotos">
+          <thead>
+            <tr>
+              <th data-col="id">ID</th>
+              <th data-col="opcao">Opção</th>
+              <th data-col="metodo">Método</th>
+              <th data-col="sugestao">Sugestão</th>
+              <th data-col="timestamp">Data/Hora ⬍</th>
+            </tr>
+          </thead>
+          <tbody id="corpoTabelaVotos"></tbody>
+        </table>
+      </div>
+      <div class="vazio" id="votosVazio" style="display:none;">Nenhum voto encontrado com estes filtros.</div>
+    </div>
+
+    <!-- LISTA DE SUGESTÕES CONTÍNUAS -->
+    <div class="card">
+      <h2>Sugestões extra (enviadas depois de votar)</h2>
+      <div class="filtros">
+        <input type="text" id="buscaSugestoes" placeholder="Procurar sugestão...">
+      </div>
+      <div class="table-scroll">
+        <table id="tabelaSugestoes">
+          <thead>
+            <tr>
+              <th data-col="id">ID</th>
+              <th data-col="texto">Texto</th>
+              <th data-col="timestamp">Data/Hora ⬍</th>
+            </tr>
+          </thead>
+          <tbody id="corpoTabelaSugestoes"></tbody>
+        </table>
+      </div>
+      <div class="vazio" id="sugestoesVazio" style="display:none;">Nenhuma sugestão extra encontrada.</div>
+    </div>
+
   </div>
 
-  <footer>Atualização automática em tempo real • Firebase Firestore</footer>
+  <footer>Painel sem autenticação — protege o acesso a este ficheiro e às regras do Firestore por ti próprio(a).</footer>
 </div>
 
-<!-- Firebase (compat SDK) -->
+<!-- Firebase (compat SDK, apenas Firestore, sem Auth) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
@@ -516,262 +353,331 @@
 
   const OPCOES_VALIDAS = ["Feedback", "Wave", "Eco", "Sem rede"];
 
-  const statusPill = document.getElementById('statusPill');
-  const statusTexto = document.getElementById('statusTexto');
-  const erroBox = document.getElementById('erroBox');
-  const totalVotosEl = document.getElementById('totalVotos');
-  const listaResultados = document.getElementById('listaResultados');
-  const semVotosMsg = document.getElementById('semVotosMsg');
-  const metodoBreakdown = document.getElementById('metodoBreakdown');
-  const tabelaBody = document.getElementById('tabelaBody');
-  const tabelaWrap = document.getElementById('tabelaWrap');
-  const btnToggleTabela = document.getElementById('btnToggleTabela');
+  let votosCache = [];
+  let sugestoesCache = [];
+  let ordemVotos = { col: 'timestamp', dir: 'desc' };
+  let ordemSugestoes = { col: 'timestamp', dir: 'desc' };
 
-  const detPrimeiro = document.getElementById('detPrimeiro');
-  const detUltimo = document.getElementById('detUltimo');
-  const detUltimaHora = document.getElementById('detUltimaHora');
-  const detHoje = document.getElementById('detHoje');
-  const btnExportar = document.getElementById('btnExportar');
+  const loadingBox = document.getElementById('loadingBox');
+  const conteudo = document.getElementById('conteudo');
+  const msgGlobal = document.getElementById('msgGlobal');
+  const btnAtualizar = document.getElementById('btnAtualizar');
+  const btnExportarVotos = document.getElementById('btnExportarVotos');
+  const btnExportarSugestoes = document.getElementById('btnExportarSugestoes');
 
-  const btnAbrirReset = document.getElementById('btnAbrirReset');
-  const confirmaReset = document.getElementById('confirmaReset');
-  const totalParaApagar = document.getElementById('totalParaApagar');
-  const inputConfirmaReset = document.getElementById('inputConfirmaReset');
-  const btnCancelarReset = document.getElementById('btnCancelarReset');
-  const btnConfirmarReset = document.getElementById('btnConfirmarReset');
-  const resetMsg = document.getElementById('resetMsg');
-
-  let votosAtuais = []; // guarda a última leitura, usada pelo export e pelo reset
-
-  btnToggleTabela.addEventListener('click', () => {
-    const aberta = tabelaWrap.style.display !== 'none';
-    tabelaWrap.style.display = aberta ? 'none' : 'block';
-    btnToggleTabela.textContent = aberta ? 'Mostrar' : 'Esconder';
-  });
+  function mostrarErro(texto){
+    msgGlobal.textContent = texto;
+    msgGlobal.className = 'msg erro';
+  }
+  function mostrarInfo(texto){
+    msgGlobal.textContent = texto;
+    msgGlobal.className = 'msg info';
+  }
+  function limparMsgGlobal(){
+    msgGlobal.textContent = '';
+    msgGlobal.className = 'msg';
+  }
 
   function formatarData(ts){
     if(!ts) return '—';
-    let data;
-    if(typeof ts.toDate === 'function') data = ts.toDate();
-    else data = new Date(ts);
-    return data.toLocaleString('pt-PT', {
-      day:'2-digit', month:'2-digit', year:'numeric',
-      hour:'2-digit', minute:'2-digit', second:'2-digit'
+    let d;
+    if(ts.toDate) d = ts.toDate();
+    else d = new Date(ts);
+    if(isNaN(d.getTime())) return '—';
+    return d.toLocaleString('pt-PT', { dateStyle:'short', timeStyle:'medium' });
+  }
+
+  function escapeHTML(str){
+    if(str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  // ---------- Carregar dados ----------
+  async function carregarDados(){
+    limparMsgGlobal();
+    loadingBox.style.display = 'block';
+    conteudo.style.display = 'none';
+    btnAtualizar.disabled = true;
+
+    try{
+      const [votosSnap, sugestoesSnap] = await Promise.all([
+        db.collection('votos').orderBy('timestamp', 'desc').get(),
+        db.collection('sugestoes').orderBy('timestamp', 'desc').get()
+      ]);
+
+      votosCache = votosSnap.docs.map(doc => {
+        const d = doc.data();
+        return {
+          id: doc.id,
+          opcao: d.opcao || '',
+          metodo: d.metodo || '',
+          sugestao: d.sugestao || '',
+          timestamp: d.timestamp || null
+        };
+      });
+
+      sugestoesCache = sugestoesSnap.docs.map(doc => {
+        const d = doc.data();
+        return {
+          id: doc.id,
+          texto: d.texto || '',
+          timestamp: d.timestamp || null
+        };
+      });
+
+      renderResumo();
+      renderBarras();
+      renderTabelaVotos();
+      renderTabelaSugestoes();
+
+      loadingBox.style.display = 'none';
+      conteudo.style.display = 'block';
+    }catch(err){
+      console.error(err);
+      loadingBox.style.display = 'none';
+      mostrarErro('Não foi possível carregar os dados. Verifica se as regras do Firestore permitem leitura sem autenticação (ver comentário no topo do ficheiro). Detalhe técnico: ' + (err && err.message ? err.message : err));
+    }finally{
+      btnAtualizar.disabled = false;
+    }
+  }
+
+  // ---------- Resumo ----------
+  function renderResumo(){
+    document.getElementById('statTotalVotos').textContent = votosCache.length;
+    document.getElementById('statTotalSugestoesVoto').textContent = votosCache.filter(v => v.sugestao && v.sugestao.trim()).length;
+    document.getElementById('statTotalSugestoesExtra').textContent = sugestoesCache.length;
+
+    const contagem = contarPorOpcao();
+    let vencedor = '—';
+    let maxVal = -1;
+    OPCOES_VALIDAS.forEach(op => {
+      if(contagem[op] > maxVal){
+        maxVal = contagem[op];
+        vencedor = op;
+      }
     });
+    document.getElementById('statVencedor').textContent = votosCache.length ? vencedor : '—';
   }
 
-  function medalha(i){
-    return i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : '';
-  }
-
-  function renderizar(votos){
-    const total = votos.length;
-    totalVotosEl.textContent = total;
-
-    // Contagem por opção
+  function contarPorOpcao(){
     const contagem = {};
-    OPCOES_VALIDAS.forEach(o => contagem[o] = 0);
-    votos.forEach(v => {
+    OPCOES_VALIDAS.forEach(op => contagem[op] = 0);
+    votosCache.forEach(v => {
       if(contagem.hasOwnProperty(v.opcao)) contagem[v.opcao]++;
     });
-
-    const ordenado = Object.entries(contagem).sort((a,b) => b[1]-a[1]);
-
-    listaResultados.innerHTML = '';
-    if(total === 0){
-      semVotosMsg.style.display = 'block';
-    } else {
-      semVotosMsg.style.display = 'none';
-      ordenado.forEach(([nome, qtd], i) => {
-        const pct = total > 0 ? (qtd/total*100) : 0;
-        const linha = document.createElement('div');
-        linha.className = 'resultado-linha' + (i === 0 && qtd > 0 ? ' vencedor' : '');
-        linha.innerHTML = `
-          <div class="resultado-topo">
-            <span class="resultado-nome">${medalha(i)}${nome}</span>
-            <span class="resultado-numeros">${qtd} voto${qtd===1?'':'s'} · ${pct.toFixed(1)}%</span>
-          </div>
-          <div class="barra-fundo">
-            <div class="barra-preenchida" style="width:${pct}%;"></div>
-          </div>
-        `;
-        listaResultados.appendChild(linha);
-      });
-    }
-
-    // Contagem por método
-    const metodos = { processo: 0, numturma: 0 };
-    votos.forEach(v => {
-      if(metodos.hasOwnProperty(v.metodo)) metodos[v.metodo]++;
-    });
-    metodoBreakdown.innerHTML = `
-      <span>Nº de Processo: <strong>${metodos.processo}</strong></span>
-      <span>Nº + Turma: <strong>${metodos.numturma}</strong></span>
-    `;
-
-    // Tabela detalhada (mais recentes primeiro)
-    const ordenadoPorData = [...votos].sort((a,b) => {
-      const da = a.timestamp && a.timestamp.toDate ? a.timestamp.toDate().getTime() : 0;
-      const db_ = b.timestamp && b.timestamp.toDate ? b.timestamp.toDate().getTime() : 0;
-      return db_ - da;
-    });
-    tabelaBody.innerHTML = '';
-    ordenadoPorData.forEach(v => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${v.opcao || '—'}</td>
-        <td>${v.metodo === 'processo' ? 'Processo' : 'Nº+Turma'}</td>
-        <td>${v.id}</td>
-        <td>${formatarData(v.timestamp)}</td>
-      `;
-      tabelaBody.appendChild(tr);
-    });
-
-    // Outros detalhes
-    const comData = votos
-      .filter(v => v.timestamp && typeof v.timestamp.toDate === 'function')
-      .map(v => v.timestamp.toDate());
-
-    if(comData.length > 0){
-      const maisAntigo = new Date(Math.min(...comData.map(d => d.getTime())));
-      const maisRecente = new Date(Math.max(...comData.map(d => d.getTime())));
-      detPrimeiro.textContent = formatarData(maisAntigo);
-      detUltimo.textContent = formatarData(maisRecente);
-
-      const agora = Date.now();
-      const umaHoraAtras = agora - 60*60*1000;
-      detUltimaHora.textContent = comData.filter(d => d.getTime() >= umaHoraAtras).length;
-
-      const inicioHoje = new Date();
-      inicioHoje.setHours(0,0,0,0);
-      detHoje.textContent = comData.filter(d => d.getTime() >= inicioHoje.getTime()).length;
-    } else {
-      detPrimeiro.textContent = '—';
-      detUltimo.textContent = '—';
-      detUltimaHora.textContent = '0';
-      detHoje.textContent = '0';
-    }
-
-    totalParaApagar.textContent = total;
+    return contagem;
   }
 
-  // ---------- Exportar CSV ----------
-  btnExportar.addEventListener('click', () => {
-    if(votosAtuais.length === 0){
-      alert('Não há votos para exportar.');
+  // ---------- Barras de resultados ----------
+  function renderBarras(){
+    const contagem = contarPorOpcao();
+    const total = votosCache.length;
+    const container = document.getElementById('barrasResultados');
+    container.innerHTML = '';
+
+    OPCOES_VALIDAS.forEach(op => {
+      const val = contagem[op];
+      const pct = total > 0 ? Math.round((val / total) * 100) : 0;
+
+      const div = document.createElement('div');
+      div.className = 'barra-opcao';
+      div.innerHTML = `
+        <div class="linha-topo">
+          <span>${escapeHTML(op)}</span>
+          <span>${val} voto${val === 1 ? '' : 's'} (${pct}%)</span>
+        </div>
+        <div class="barra-fundo">
+          <div class="barra-preenchida" style="width:${pct}%;"></div>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  // ---------- Tabela de votos ----------
+  function votosFiltrados(){
+    const opcaoFiltro = document.getElementById('filtroOpcao').value;
+    const metodoFiltro = document.getElementById('filtroMetodo').value;
+    const sugestaoFiltro = document.getElementById('filtroSugestao').value;
+    const busca = document.getElementById('buscaVotos').value.trim().toLowerCase();
+
+    let lista = votosCache.filter(v => {
+      if(opcaoFiltro && v.opcao !== opcaoFiltro) return false;
+      if(metodoFiltro && v.metodo !== metodoFiltro) return false;
+      if(sugestaoFiltro === 'com' && !(v.sugestao && v.sugestao.trim())) return false;
+      if(sugestaoFiltro === 'sem' && v.sugestao && v.sugestao.trim()) return false;
+      if(busca){
+        const alvo = (v.id + ' ' + v.sugestao).toLowerCase();
+        if(!alvo.includes(busca)) return false;
+      }
+      return true;
+    });
+
+    lista = ordenarLista(lista, ordemVotos);
+    return lista;
+  }
+
+  function ordenarLista(lista, ordem){
+    const copia = lista.slice();
+    copia.sort((a, b) => {
+      let va = a[ordem.col];
+      let vb = b[ordem.col];
+      if(ordem.col === 'timestamp'){
+        va = va && va.toDate ? va.toDate().getTime() : (va ? new Date(va).getTime() : 0);
+        vb = vb && vb.toDate ? vb.toDate().getTime() : (vb ? new Date(vb).getTime() : 0);
+      } else {
+        va = (va || '').toString().toLowerCase();
+        vb = (vb || '').toString().toLowerCase();
+      }
+      if(va < vb) return ordem.dir === 'asc' ? -1 : 1;
+      if(va > vb) return ordem.dir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return copia;
+  }
+
+  function renderTabelaVotos(){
+    const lista = votosFiltrados();
+    const corpo = document.getElementById('corpoTabelaVotos');
+    const vazio = document.getElementById('votosVazio');
+    corpo.innerHTML = '';
+
+    if(lista.length === 0){
+      vazio.style.display = 'block';
       return;
     }
-    const linhas = [['Identificacao', 'Opcao', 'Metodo', 'DataHora']];
-    const ordenados = [...votosAtuais].sort((a,b) => {
-      const da = a.timestamp && a.timestamp.toDate ? a.timestamp.toDate().getTime() : 0;
-      const db_ = b.timestamp && b.timestamp.toDate ? b.timestamp.toDate().getTime() : 0;
-      return da - db_;
+    vazio.style.display = 'none';
+
+    lista.forEach(v => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><code>${escapeHTML(v.id)}</code></td>
+        <td><span class="tag">${escapeHTML(v.opcao)}</span></td>
+        <td>${v.metodo === 'processo' ? 'Nº de Processo' : (v.metodo === 'numturma' ? 'Nº + Turma' : escapeHTML(v.metodo))}</td>
+        <td class="sugestao-texto">${v.sugestao ? escapeHTML(v.sugestao) : '<span style="color:#999;">—</span>'}</td>
+        <td>${formatarData(v.timestamp)}</td>
+      `;
+      corpo.appendChild(tr);
     });
-    ordenados.forEach(v => {
-      linhas.push([v.id, v.opcao || '', v.metodo || '', formatarData(v.timestamp)]);
+  }
+
+  // ---------- Tabela de sugestões extra ----------
+  function sugestoesFiltradas(){
+    const busca = document.getElementById('buscaSugestoes').value.trim().toLowerCase();
+    let lista = sugestoesCache.filter(s => {
+      if(busca && !s.texto.toLowerCase().includes(busca)) return false;
+      return true;
     });
-    const csv = linhas.map(l => l.map(campo => `"${String(campo).replace(/"/g,'""')}"`).join(',')).join('\r\n');
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    lista = ordenarLista(lista, ordemSugestoes);
+    return lista;
+  }
+
+  function renderTabelaSugestoes(){
+    const lista = sugestoesFiltradas();
+    const corpo = document.getElementById('corpoTabelaSugestoes');
+    const vazio = document.getElementById('sugestoesVazio');
+    corpo.innerHTML = '';
+
+    if(lista.length === 0){
+      vazio.style.display = 'block';
+      return;
+    }
+    vazio.style.display = 'none';
+
+    lista.forEach(s => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><code>${escapeHTML(s.id)}</code></td>
+        <td class="sugestao-texto">${escapeHTML(s.texto)}</td>
+        <td>${formatarData(s.timestamp)}</td>
+      `;
+      corpo.appendChild(tr);
+    });
+  }
+
+  // ---------- Ordenação por clique no cabeçalho ----------
+  document.querySelectorAll('#tabelaVotos thead th').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.dataset.col;
+      if(ordemVotos.col === col){
+        ordemVotos.dir = ordemVotos.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        ordemVotos.col = col;
+        ordemVotos.dir = 'asc';
+      }
+      renderTabelaVotos();
+    });
+  });
+
+  document.querySelectorAll('#tabelaSugestoes thead th').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.dataset.col;
+      if(ordemSugestoes.col === col){
+        ordemSugestoes.dir = ordemSugestoes.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        ordemSugestoes.col = col;
+        ordemSugestoes.dir = 'asc';
+      }
+      renderTabelaSugestoes();
+    });
+  });
+
+  // ---------- Filtros ----------
+  ['filtroOpcao', 'filtroMetodo', 'filtroSugestao', 'buscaVotos'].forEach(id => {
+    document.getElementById(id).addEventListener('input', renderTabelaVotos);
+    document.getElementById(id).addEventListener('change', renderTabelaVotos);
+  });
+  document.getElementById('buscaSugestoes').addEventListener('input', renderTabelaSugestoes);
+
+  // ---------- Exportação CSV ----------
+  function paraCSV(linhas, cabecalhos){
+    const escapeCSV = (v) => {
+      const s = (v === null || v === undefined) ? '' : String(v);
+      if(/[",\n;]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    };
+    const corpo = linhas.map(l => l.map(escapeCSV).join(';')).join('\n');
+    return cabecalhos.map(escapeCSV).join(';') + '\n' + corpo;
+  }
+
+  function descarregarCSV(conteudo, nomeFicheiro){
+    const blob = new Blob(['\uFEFF' + conteudo], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'votos_' + new Date().toISOString().slice(0,19).replace(/[:T]/g,'-') + '.csv';
+    a.download = nomeFicheiro;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  });
-
-  // ---------- Repor votação ----------
-  const PALAVRA_CONFIRMACAO = 'RESETAR';
-
-  btnAbrirReset.addEventListener('click', () => {
-    resetMsg.style.display = 'none';
-    inputConfirmaReset.value = '';
-    btnConfirmarReset.disabled = true;
-    confirmaReset.classList.add('ativo');
-    inputConfirmaReset.focus();
-  });
-
-  btnCancelarReset.addEventListener('click', () => {
-    confirmaReset.classList.remove('ativo');
-  });
-
-  inputConfirmaReset.addEventListener('input', () => {
-    btnConfirmarReset.disabled = inputConfirmaReset.value.trim().toUpperCase() !== PALAVRA_CONFIRMACAO;
-  });
-
-  btnConfirmarReset.addEventListener('click', async () => {
-    if(inputConfirmaReset.value.trim().toUpperCase() !== PALAVRA_CONFIRMACAO) return;
-
-    btnConfirmarReset.disabled = true;
-    btnAbrirReset.disabled = true;
-    btnConfirmarReset.textContent = 'A apagar...';
-    resetMsg.style.display = 'none';
-
-    try{
-      await apagarTodosOsVotos();
-      resetMsg.className = 'reset-msg sucesso';
-      resetMsg.textContent = 'Votação reposta. Todos os votos foram apagados.';
-      resetMsg.style.display = 'block';
-      confirmaReset.classList.remove('ativo');
-    }catch(err){
-      console.error(err);
-      resetMsg.className = 'reset-msg erro';
-      resetMsg.textContent = 'Ocorreu um erro ao apagar os votos. Verifica as regras do Firestore (delete tem de estar permitido) e tenta novamente.';
-      resetMsg.style.display = 'block';
-    }finally{
-      btnConfirmarReset.disabled = false;
-      btnAbrirReset.disabled = false;
-      btnConfirmarReset.textContent = 'Apagar tudo';
-    }
-  });
-
-  async function apagarTodosOsVotos(){
-    // Apaga em lotes de 400 (limite do Firestore é 500 operações por batch)
-    const TAMANHO_LOTE = 400;
-    let continuar = true;
-    while(continuar){
-      const snap = await db.collection('votos').limit(TAMANHO_LOTE).get();
-      if(snap.empty){
-        continuar = false;
-        break;
-      }
-      const batch = db.batch();
-      snap.forEach(doc => batch.delete(doc.ref));
-      await batch.commit();
-      if(snap.size < TAMANHO_LOTE) continuar = false;
-    }
   }
 
-  // Ligação em tempo real à coleção "votos"
-  db.collection('votos').onSnapshot(
-    function(snapshot){
-      statusPill.classList.remove('offline');
-      statusTexto.textContent = 'Ligado';
-      erroBox.style.display = 'none';
+  btnExportarVotos.addEventListener('click', () => {
+    if(votosCache.length === 0){ mostrarInfo('Não há votos para exportar.'); return; }
+    const linhas = votosFiltrados().map(v => [
+      v.id, v.opcao, v.metodo, v.sugestao || '', formatarData(v.timestamp)
+    ]);
+    const csv = paraCSV(linhas, ['ID', 'Opção', 'Método', 'Sugestão', 'Data/Hora']);
+    descarregarCSV(csv, 'votos_radio.csv');
+  });
 
-      const votos = [];
-      snapshot.forEach(doc => {
-        const d = doc.data();
-        votos.push({
-          id: doc.id,
-          opcao: d.opcao,
-          metodo: d.metodo,
-          timestamp: d.timestamp
-        });
-      });
-      votosAtuais = votos;
-      renderizar(votos);
-    },
-    function(err){
-      console.error(err);
-      statusPill.classList.add('offline');
-      statusTexto.textContent = 'Erro de ligação';
-      erroBox.style.display = 'block';
-      erroBox.textContent = 'Não foi possível ler os votos. Verifica as regras do Firestore (ver comentário no topo deste ficheiro) e a ligação à internet.';
-    }
-  );
+  btnExportarSugestoes.addEventListener('click', () => {
+    if(sugestoesCache.length === 0){ mostrarInfo('Não há sugestões extra para exportar.'); return; }
+    const linhas = sugestoesFiltradas().map(s => [
+      s.id, s.texto, formatarData(s.timestamp)
+    ]);
+    const csv = paraCSV(linhas, ['ID', 'Texto', 'Data/Hora']);
+    descarregarCSV(csv, 'sugestoes_extra_radio.csv');
+  });
+
+  btnAtualizar.addEventListener('click', carregarDados);
+
+  // ---------- Arranque ----------
+  carregarDados();
 </script>
 </body>
 </html>
