@@ -101,9 +101,20 @@
 
   #texto-obrigatorio p{
     font-size:0.95rem;
-    line-height:1.5;
+    line-height:1.6;
     color:#333;
-    margin:0 0 10px;
+    margin:0 0 14px;
+  }
+
+  #texto-obrigatorio p:last-of-type{
+    margin-bottom:0;
+  }
+
+  #texto-obrigatorio p.destaque{
+    font-weight:700;
+    font-size:1.05rem;
+    color:var(--bg2);
+    letter-spacing:0.3px;
   }
 
   .checkbox-row{
@@ -113,7 +124,7 @@
     background:#f6f7f9;
     border-radius:10px;
     padding:12px;
-    margin-top:8px;
+    margin-top:16px;
   }
   .checkbox-row input{
     margin-top:3px;
@@ -324,23 +335,23 @@
   <!-- TEXTO A LER ANTES DA VOTAÇÃO -->
   <div class="card" id="texto-obrigatorio">
     <h2>📋 Antes de votares, lê com atenção</h2>
-    <p>
-      A NOSSA RÁDIO ESTÁ DE VOLTA!
 
-Depois de vários anos em silêncio, a Rádio Escolar está de volta!
+    <p class="destaque">A NOSSA RÁDIO ESTÁ DE VOLTA!</p>
 
-Um novo projeto está a nascer na nossa escola, com vontade de trazer música, informação, criatividade, entrevistas, desafios, notícias e muitas outras ideias para os nossos intervalos.
+    <p>Depois de vários anos em silêncio, a Rádio Escolar está de volta!</p>
 
-Mas há uma coisa que não queremos decidir sozinhos: o nome da nossa rádio!
-Queremos que o nome seja escolhido por quem dá vida à escola: os alunos, os professores e todos os que fazem parte da nossa comunidade escolar.
+    <p>Um novo projeto está a nascer na nossa escola, com vontade de trazer música, informação, criatividade, entrevistas, desafios, notícias e muitas outras ideias para os nossos intervalos.</p>
 
-A equipa de coordenação e técnica da rádio reuniu várias sugestões e selecionou 4 nomes finalistas.
+    <p>Mas há uma coisa que não queremos decidir sozinhos: o nome da nossa rádio!<br>
+    Queremos que o nome seja escolhido por quem dá vida à escola: os alunos, os professores e todos os que fazem parte da nossa comunidade escolar.</p>
 
-Agora, a escolha é de todos nós! 
-Participa na votação e ajuda-nos a escolher o nome que vai dar voz à nossa rádio.
+    <p>A equipa de coordenação e técnica da rádio reuniu várias sugestões e selecionou 4 nomes finalistas.</p>
 
-Vamos voltar a ligar os microfones, aumentar o volume e deixar a escola ouvir a tua voz. Vota. Participa. Faz parte!
-    </p>
+    <p>Agora, a escolha é de todos nós! <br>
+    Participa na votação e ajuda-nos a escolher o nome que vai dar voz à nossa rádio.</p>
+
+    <p>Vamos voltar a ligar os microfones, aumentar o volume e deixar a escola ouvir a tua voz. Vota. Participa. Faz parte!</p>
+
     <div class="checkbox-row">
       <input type="checkbox" id="confirmaLeitura">
       <label for="confirmaLeitura">Li e compreendi o texto acima.</label>
