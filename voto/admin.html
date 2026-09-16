@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Admin — Estado da Votação</title>
+
+<!--
+  =====================================================================
+  COMO CONFIGURAR (ler antes de publicar):
+
+  1. Este ficheiro usa o MESMO projeto Firebase do index.html
+     (cidadelafm). Não precisa de nenhuma alteração de configuração
+     além das regras do Firestore abaixo.
+
+  2. No Firebase Console > Firestore Database > Rules, cola as
+     regras do ficheiro "firestore.rules" que acompanha este ficheiro
+     (ou vê o comentário no final deste ficheiro).
+
+  3. IMPORTANTE — SEGURANÇA:
+     Esta página NÃO tem password, conforme pedido. Isso significa
+     que a leitura da coleção "votos" no Firestore passa a ser
+     pública (qualquer pessoa com a app do Firebase configurada, ou
+     com este link, consegue ver os votos e as chaves de identificação
+     dos alunos, ex.: "PROC_12345"). Se quiseres, no futuro, esconder
+     este link do público (não indexar, não partilhar) ou adicionar
+     uma password simples mais tarde.
+
+  4. Basta abrir este ficheiro no browser (ou publicá-lo junto do
+     index.html no mesmo servidor). Os resultados atualizam-se
+     automaticamente em tempo real, sem precisar recarregar a página.
+  =====================================================================
+-->
+
+<style>
+  :root{
+    --bg1:#0f2027;
+    --bg2:#203a43;
+    --bg3:#2c5364;
+    --accent:#ff5e62;
+    --accent2:#ff9966;
+    --card-bg:#ffffff;
+    --text-dark:#1a1a1a;
+    --text-muted:#666;
+    --radius:16px;
+    --shadow:0 10px 30px rgba(0,0,0,0.25);
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background:linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
+    background-attachment:fixed;
+    color:var(--text-dark);
+    display:flex;
+    justify-content:center;
+    padding:20px 12px 60px;
+  }
+
+  .container{
+    width:100%;
+    max-width:720px;
+  }
+
+  header{
+    text-align:center;
+    color:#fff;
+    margin-bottom:20px;
+  }
+
+  header h1{
+    font-size:1.6rem;
+    margin:0 0 6px;
+    letter-spacing:0.5px;
+  }
+
+  header p{
+    margin:0;
+    opacity:0.85;
+    font-size:0.9rem;
+  }
+
+  .status-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:rgba(255,255,255,0.12);
+    color:#fff;
+    padding:6px 14px;
+    border-radius:999px;
+    font-size:0.8rem;
+    margin-top:10px;
+  }
+  .status-pill .dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#4ade80;
+    box-shadow:0 0 0 3px rgba(74,222,128,0.25);
+  }
+  .status-pill.offline .dot{ background:#f87171; box-shadow:0 0 0 3px rgba(248,113,113,0.25); }
+
+  .card{
+    background:var(--card-bg);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:22px 20px;
+    margin-bottom:18px;
+  }
+
+  .card h2{
+    font-size:1.05rem;
+    margin:0 0 14px;
+    color:var(--text-dark);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+
+  .total-votos{
+    text-align:center;
+    padding:6px 0 18px;
+  }
+  .total-votos .numero{
+    font-size:2.8rem;
+    font-weight:800;
+    background:linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    line-height:1;
+  }
+  .total-votos .legenda{
+    color:var(--text-muted);
+    font-size:0.85rem;
+    margin-top:6px;
+  }
+
+  .resultado-linha{
+    margin-bottom:16px;
+  }
+  .resultado-linha:last-child{
+    margin-bottom:0;
+  }
+  .resultado-topo{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:6px;
+    font-size:0.95rem;
+  }
+  .resultado-nome{
+    font-weight:700;
+    color:var(--text-dark);
+  }
+  .resultado-nome .medalha{
+    margin-right:4px;
+  }
+  .resultado-numeros{
+    color:var(--text-muted);
+    font-size:0.85rem;
+    white-space:nowrap;
+  }
+  .barra-fundo{
+    background:#f0f0f0;
+    border-radius:10px;
+    height:14px;
+    overflow:hidden;
+  }
+  .barra-preenchida{
+    height:100%;
+    border-radius:10px;
+    background:linear-gradient(135deg, var(--bg2), var(--bg3));
+    transition:width 0.4s ease;
+  }
+  .resultado-linha.vencedor .barra-preenchida{
+    background:linear-gradient(135deg, var(--accent), var(--accent2));
+  }
+
+  .breakdown{
+    display:flex;
+    gap:16px;
+    font-size:0.85rem;
+    color:var(--text-muted);
+    margin-top:4px;
+    flex-wrap:wrap;
+  }
+
+  .btn-toggle{
+    background:none;
+    border:1.5px solid #ddd;
+    border-radius:8px;
+    padding:6px 12px;
+    font-size:0.8rem;
+    color:var(--text-muted);
+    cursor:pointer;
+  }
+  .btn-toggle:hover{
+    border-color:var(--accent);
+    color:var(--accent);
+  }
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:0.85rem;
+  }
+  table th, table td{
+    text-align:left;
+    padding:8px 6px;
+    border-bottom:1px solid #eee;
+  }
+  table th{
+    color:var(--text-muted);
+    font-weight:600;
+    font-size:0.78rem;
+    text-transform:uppercase;
+    letter-spacing:0.3px;
+  }
+  table tbody tr:hover{
+    background:#fafafa;
+  }
+  .tabela-wrap{
+    max-height:420px;
+    overflow-y:auto;
+    margin-top:4px;
+  }
+
+  .vazio{
+    text-align:center;
+    color:var(--text-muted);
+    padding:30px 10px;
+    font-size:0.9rem;
+  }
+
+  .erro-box{
+    background:#ffe6e6;
+    color:#a10000;
+    padding:14px;
+    border-radius:10px;
+    font-size:0.9rem;
+    margin-bottom:18px;
+    display:none;
+  }
+
+  footer{
+    text-align:center;
+    color:rgba(255,255,255,0.6);
+    font-size:0.78rem;
+    margin-top:10px;
+  }
+
+  @media (max-width:480px){
+    .resultado-topo{ flex-direction:column; align-items:flex-start; gap:2px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>📻 Estado da Votação</h1>
+    <p>Nome da Rádio Escolar — painel de administração</p>
+    <span class="status-pill" id="statusPill"><span class="dot"></span><span id="statusTexto">A ligar…</span></span>
+  </header>
+
+  <div class="erro-box" id="erroBox"></div>
+
+  <div class="card">
+    <div class="total-votos">
+      <div class="numero" id="totalVotos">—</div>
+      <div class="legenda">votos registados</div>
+    </div>
+  </div>
+
+  <div class="card" id="cardResultados">
+    <h2>Resultados por opção</h2>
+    <div id="listaResultados"></div>
+    <div class="vazio" id="semVotosMsg" style="display:none;">Ainda não há votos registados.</div>
+  </div>
+
+  <div class="card" id="cardMetodo">
+    <h2>Identificação usada</h2>
+    <div class="breakdown" id="metodoBreakdown"></div>
+  </div>
+
+  <div class="card">
+    <h2>
+      Registo detalhado
+      <button class="btn-toggle" id="btnToggleTabela">Mostrar</button>
+    </h2>
+    <div class="tabela-wrap" id="tabelaWrap" style="display:none;">
+      <table>
+        <thead>
+          <tr>
+            <th>Opção</th>
+            <th>Método</th>
+            <th>Identificação</th>
+            <th>Data/Hora</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>Atualização automática em tempo real • Firebase Firestore</footer>
+</div>
+
+<!-- Firebase (compat SDK) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCn04I22HdbvOFSFpxci1l_uRRepcLk5f8",
+    authDomain: "cidadelafm.firebaseapp.com",
+    projectId: "cidadelafm",
+    storageBucket: "cidadelafm.firebasestorage.app",
+    messagingSenderId: "312932696570",
+    appId: "1:312932696570:web:2faf5d0036f2bb3b4fa443",
+    measurementId: "G-QZ6Q7RPG9B"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  const OPCOES_VALIDAS = ["Feedback", "Wave", "Eco", "Sem rede"];
+
+  const statusPill = document.getElementById('statusPill');
+  const statusTexto = document.getElementById('statusTexto');
+  const erroBox = document.getElementById('erroBox');
+  const totalVotosEl = document.getElementById('totalVotos');
+  const listaResultados = document.getElementById('listaResultados');
+  const semVotosMsg = document.getElementById('semVotosMsg');
+  const metodoBreakdown = document.getElementById('metodoBreakdown');
+  const tabelaBody = document.getElementById('tabelaBody');
+  const tabelaWrap = document.getElementById('tabelaWrap');
+  const btnToggleTabela = document.getElementById('btnToggleTabela');
+
+  btnToggleTabela.addEventListener('click', () => {
+    const aberta = tabelaWrap.style.display !== 'none';
+    tabelaWrap.style.display = aberta ? 'none' : 'block';
+    btnToggleTabela.textContent = aberta ? 'Mostrar' : 'Esconder';
+  });
+
+  function formatarData(ts){
+    if(!ts) return '—';
+    let data;
+    if(typeof ts.toDate === 'function') data = ts.toDate();
+    else data = new Date(ts);
+    return data.toLocaleString('pt-PT', {
+      day:'2-digit', month:'2-digit', year:'numeric',
+      hour:'2-digit', minute:'2-digit', second:'2-digit'
+    });
+  }
+
+  function medalha(i){
+    return i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : '';
+  }
+
+  function renderizar(votos){
+    const total = votos.length;
+    totalVotosEl.textContent = total;
+
+    // Contagem por opção
+    const contagem = {};
+    OPCOES_VALIDAS.forEach(o => contagem[o] = 0);
+    votos.forEach(v => {
+      if(contagem.hasOwnProperty(v.opcao)) contagem[v.opcao]++;
+    });
+
+    const ordenado = Object.entries(contagem).sort((a,b) => b[1]-a[1]);
+
+    listaResultados.innerHTML = '';
+    if(total === 0){
+      semVotosMsg.style.display = 'block';
+    } else {
+      semVotosMsg.style.display = 'none';
+      ordenado.forEach(([nome, qtd], i) => {
+        const pct = total > 0 ? (qtd/total*100) : 0;
+        const linha = document.createElement('div');
+        linha.className = 'resultado-linha' + (i === 0 && qtd > 0 ? ' vencedor' : '');
+        linha.innerHTML = `
+          <div class="resultado-topo">
+            <span class="resultado-nome">${medalha(i)}${nome}</span>
+            <span class="resultado-numeros">${qtd} voto${qtd===1?'':'s'} · ${pct.toFixed(1)}%</span>
+          </div>
+          <div class="barra-fundo">
+            <div class="barra-preenchida" style="width:${pct}%;"></div>
+          </div>
+        `;
+        listaResultados.appendChild(linha);
+      });
+    }
+
+    // Contagem por método
+    const metodos = { processo: 0, numturma: 0 };
+    votos.forEach(v => {
+      if(metodos.hasOwnProperty(v.metodo)) metodos[v.metodo]++;
+    });
+    metodoBreakdown.innerHTML = `
+      <span>Nº de Processo: <strong>${metodos.processo}</strong></span>
+      <span>Nº + Turma: <strong>${metodos.numturma}</strong></span>
+    `;
+
+    // Tabela detalhada (mais recentes primeiro)
+    const ordenadoPorData = [...votos].sort((a,b) => {
+      const da = a.timestamp && a.timestamp.toDate ? a.timestamp.toDate().getTime() : 0;
+      const db_ = b.timestamp && b.timestamp.toDate ? b.timestamp.toDate().getTime() : 0;
+      return db_ - da;
+    });
+    tabelaBody.innerHTML = '';
+    ordenadoPorData.forEach(v => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${v.opcao || '—'}</td>
+        <td>${v.metodo === 'processo' ? 'Processo' : 'Nº+Turma'}</td>
+        <td>${v.id}</td>
+        <td>${formatarData(v.timestamp)}</td>
+      `;
+      tabelaBody.appendChild(tr);
+    });
+  }
+
+  // Ligação em tempo real à coleção "votos"
+  db.collection('votos').onSnapshot(
+    function(snapshot){
+      statusPill.classList.remove('offline');
+      statusTexto.textContent = 'Ligado';
+      erroBox.style.display = 'none';
+
+      const votos = [];
+      snapshot.forEach(doc => {
+        const d = doc.data();
+        votos.push({
+          id: doc.id,
+          opcao: d.opcao,
+          metodo: d.metodo,
+          timestamp: d.timestamp
+        });
+      });
+      renderizar(votos);
+    },
+    function(err){
+      console.error(err);
+      statusPill.classList.add('offline');
+      statusTexto.textContent = 'Erro de ligação';
+      erroBox.style.display = 'block';
+      erroBox.textContent = 'Não foi possível ler os votos. Verifica as regras do Firestore (ver comentário no topo deste ficheiro) e a ligação à internet.';
+    }
+  );
+</script>
+</body>
+</html>
