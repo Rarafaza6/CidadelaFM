@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Votação — Nome da Rádio Escolar</title>
+
+<!--
+  =====================================================================
+  COMO CONFIGURAR (ler antes de publicar):
+  1. No Firebase Console > Firestore Database, cria a base de dados
+     (modo produção) e cola as regras abaixo em "Rules":
+
+     rules_version = '2';
+     service cloud.firestore {
+       match /databases/{database}/documents {
+         match /votos/{voteId} {
+           allow create: if request.resource.data.keys().hasAll(['opcao','metodo','timestamp'])
+                         && request.resource.data.opcao in ['Feedback','Wave','Eco','Sem rede'];
+           allow read: if request.auth != null;
+           allow update, delete: if false;
+         }
+       }
+     }
+
+  2. No Firebase Console > Authentication > Sign-in method, ativa
+     "Email/Password" e cria manualmente um utilizador para o(a)
+     admin (ex.: admin@cidadelafm.pt + password). Usa essas
+     credenciais para entrar em admin.html.
+
+  3. O texto a ler antes da votação está marcado mais abaixo com
+     o comentário "TEXTO A LER ANTES DA VOTAÇÃO" — substitui o
+     parágrafo de exemplo pelo texto definitivo.
+  =====================================================================
+-->
+
+<style>
+  :root{
+    --bg1:#0f2027;
+    --bg2:#203a43;
+    --bg3:#2c5364;
+    --accent:#ff5e62;
+    --accent2:#ff9966;
+    --card-bg:#ffffff;
+    --text-dark:#1a1a1a;
+    --text-muted:#666;
+    --radius:16px;
+    --shadow:0 10px 30px rgba(0,0,0,0.25);
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background:linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
+    background-attachment:fixed;
+    color:var(--text-dark);
+    display:flex;
+    justify-content:center;
+    padding:20px 12px 60px;
+  }
+
+  .container{
+    width:100%;
+    max-width:560px;
+  }
+
+  header{
+    text-align:center;
+    color:#fff;
+    margin-bottom:20px;
+  }
+
+  header h1{
+    font-size:1.6rem;
+    margin:0 0 6px;
+    letter-spacing:0.5px;
+  }
+
+  header p{
+    margin:0;
+    opacity:0.85;
+    font-size:0.95rem;
+  }
+
+  .card{
+    background:var(--card-bg);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:22px 20px;
+    margin-bottom:18px;
+  }
+
+  .card h2{
+    font-size:1.05rem;
+    margin:0 0 10px;
+    color:var(--text-dark);
+  }
+
+  #texto-obrigatorio p{
+    font-size:0.95rem;
+    line-height:1.5;
+    color:#333;
+    margin:0 0 10px;
+  }
+
+  .checkbox-row{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    background:#f6f7f9;
+    border-radius:10px;
+    padding:12px;
+    margin-top:8px;
+  }
+  .checkbox-row input{
+    margin-top:3px;
+    width:18px;
+    height:18px;
+    flex-shrink:0;
+  }
+  .checkbox-row label{
+    font-size:0.9rem;
+    color:#333;
+  }
+
+  fieldset{
+    border:none;
+    padding:0;
+    margin:0 0 16px;
+  }
+
+  legend{
+    font-weight:600;
+    margin-bottom:8px;
+    padding:0;
+  }
+
+  .metodo-toggle{
+    display:flex;
+    gap:8px;
+    margin-bottom:14px;
+  }
+  .metodo-toggle label{
+    flex:1;
+    text-align:center;
+    padding:10px 6px;
+    border-radius:10px;
+    border:2px solid #e2e2e2;
+    cursor:pointer;
+    font-size:0.9rem;
+    font-weight:500;
+    transition:0.15s;
+    user-select:none;
+  }
+  .metodo-toggle input{
+    display:none;
+  }
+  .metodo-toggle input:checked + span{
+    color:#fff;
+  }
+  .metodo-toggle label:has(input:checked){
+    background:linear-gradient(135deg, var(--accent), var(--accent2));
+    border-color:transparent;
+    color:#fff;
+  }
+
+  .campo-grupo{
+    display:none;
+    gap:10px;
+  }
+  .campo-grupo.ativo{
+    display:flex;
+    flex-wrap:wrap;
+  }
+  .campo-grupo .campo{
+    flex:1;
+    min-width:120px;
+  }
+
+  label.field-label{
+    display:block;
+    font-size:0.85rem;
+    color:var(--text-muted);
+    margin-bottom:4px;
+  }
+
+  input[type="text"], input[type="number"]{
+    width:100%;
+    padding:12px 12px;
+    border-radius:10px;
+    border:1.5px solid #ddd;
+    font-size:1rem;
+    outline:none;
+    transition:0.15s;
+  }
+  input[type="text"]:focus, input[type="number"]:focus{
+    border-color:var(--accent);
+  }
+
+  .opcoes-voto{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:6px;
+  }
+
+  .opcao-card{
+    position:relative;
+  }
+  .opcao-card input{
+    position:absolute;
+    opacity:0;
+    inset:0;
+    cursor:pointer;
+  }
+  .opcao-card span{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:22px 8px;
+    border-radius:14px;
+    border:2px solid #e2e2e2;
+    font-weight:700;
+    font-size:1.05rem;
+    color:#333;
+    transition:0.15s;
+    min-height:70px;
+  }
+  .opcao-card input:checked + span{
+    background:linear-gradient(135deg, var(--bg2), var(--bg3));
+    color:#fff;
+    border-color:transparent;
+    transform:scale(1.03);
+    box-shadow:0 6px 16px rgba(32,58,67,0.4);
+  }
+
+  button#btnVotar{
+    width:100%;
+    margin-top:20px;
+    padding:15px;
+    border:none;
+    border-radius:12px;
+    background:linear-gradient(135deg, var(--accent), var(--accent2));
+    color:#fff;
+    font-size:1.05rem;
+    font-weight:700;
+    cursor:pointer;
+    transition:0.15s;
+    letter-spacing:0.3px;
+  }
+  button#btnVotar:disabled{
+    background:#c9c9c9;
+    cursor:not-allowed;
+  }
+  button#btnVotar:not(:disabled):active{
+    transform:scale(0.98);
+  }
+
+  .msg{
+    margin-top:14px;
+    padding:12px 14px;
+    border-radius:10px;
+    font-size:0.9rem;
+    display:none;
+  }
+  .msg.erro{
+    background:#ffe6e6;
+    color:#a10000;
+    display:block;
+  }
+  .msg.sucesso{
+    background:#e3f8e8;
+    color:#116a30;
+    display:block;
+  }
+  .msg.info{
+    background:#eaf2ff;
+    color:#1a4c9c;
+    display:block;
+  }
+
+  .estado-final{
+    text-align:center;
+    padding:30px 10px;
+  }
+  .estado-final .emoji{
+    font-size:3rem;
+    margin-bottom:10px;
+  }
+  .estado-final h2{
+    margin:0 0 8px;
+  }
+  .estado-final p{
+    color:var(--text-muted);
+    margin:0;
+  }
+
+  footer{
+    text-align:center;
+    color:rgba(255,255,255,0.6);
+    font-size:0.75rem;
+    margin-top:10px;
+  }
+
+  @media (max-width:400px){
+    .opcoes-voto{grid-template-columns:1fr 1fr;}
+    header h1{font-size:1.35rem;}
+    .card{padding:18px 14px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>🎙️ Vota no nome da Rádio Escolar</h1>
+    <p>O teu voto conta! Escolhe apenas uma opção.</p>
+  </header>
+
+  <!-- TEXTO A LER ANTES DA VOTAÇÃO -->
+  <div class="card" id="texto-obrigatorio">
+    <h2>📋 Antes de votares, lê com atenção</h2>
+    <p>
+      <!-- Substituir este parágrafo de exemplo pelo texto definitivo -->
+      [Insere aqui o parágrafo com as informações/regras da votação que os alunos devem ler antes de votar.]
+    </p>
+    <div class="checkbox-row">
+      <input type="checkbox" id="confirmaLeitura">
+      <label for="confirmaLeitura">Li e compreendi o texto acima.</label>
+    </div>
+  </div>
+
+  <!-- ESTADO: JÁ VOTOU (mostrado via cookie/localStorage) -->
+  <div class="card estado-final" id="estadoJaVotou" style="display:none;">
+    <div class="emoji">✅</div>
+    <h2>Já votaste!</h2>
+    <p>Só é permitido um voto por aluno. Obrigado pela participação.</p>
+  </div>
+
+  <!-- ESTADO: SUCESSO APÓS VOTAR -->
+  <div class="card estado-final" id="estadoSucesso" style="display:none;">
+    <div class="emoji">🎉</div>
+    <h2>Voto registado!</h2>
+    <p>Obrigado por participares na escolha do nome da rádio escolar.</p>
+  </div>
+
+  <!-- FORMULÁRIO DE VOTO -->
+  <form class="card" id="formVoto">
+    <fieldset>
+      <legend>1. Identificação</legend>
+      <div class="metodo-toggle">
+        <label>
+          <input type="radio" name="metodo" value="processo" checked>
+          <span>Nº de Processo</span>
+        </label>
+        <label>
+          <input type="radio" name="metodo" value="numturma">
+          <span>Nº + Turma</span>
+        </label>
+      </div>
+
+      <div class="campo-grupo ativo" id="grupoProcesso">
+        <div class="campo">
+          <label class="field-label" for="inputProcesso">Número de processo</label>
+          <input type="text" inputmode="numeric" id="inputProcesso" placeholder="Ex: 12345" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="campo-grupo" id="grupoNumTurma">
+        <div class="campo">
+          <label class="field-label" for="inputNumero">Nº do aluno</label>
+          <input type="text" inputmode="numeric" id="inputNumero" placeholder="Ex: 7" autocomplete="off">
+        </div>
+        <div class="campo">
+          <label class="field-label" for="inputTurma">Turma</label>
+          <input type="text" id="inputTurma" placeholder="Ex: 10ºA" autocomplete="off">
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>2. Nome da Rádio</legend>
+      <div class="opcoes-voto">
+        <label class="opcao-card">
+          <input type="radio" name="opcao" value="Feedback">
+          <span>Feedback</span>
+        </label>
+        <label class="opcao-card">
+          <input type="radio" name="opcao" value="Wave">
+          <span>Wave</span>
+        </label>
+        <label class="opcao-card">
+          <input type="radio" name="opcao" value="Eco">
+          <span>Eco</span>
+        </label>
+        <label class="opcao-card">
+          <input type="radio" name="opcao" value="Sem rede">
+          <span>Sem rede</span>
+        </label>
+      </div>
+    </fieldset>
+
+    <button type="submit" id="btnVotar" disabled>Votar</button>
+    <div class="msg" id="msgBox"></div>
+  </form>
+
+  <footer>Rádio Escolar — votação segura via Firebase</footer>
+</div>
+
+<!-- Firebase (compat SDK) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCn04I22HdbvOFSFpxci1l_uRRepcLk5f8",
+    authDomain: "cidadelafm.firebaseapp.com",
+    projectId: "cidadelafm",
+    storageBucket: "cidadelafm.firebasestorage.app",
+    messagingSenderId: "312932696570",
+    appId: "1:312932696570:web:2faf5d0036f2bb3b4fa443",
+    measurementId: "G-QZ6Q7RPG9B"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  const OPCOES_VALIDAS = ["Feedback", "Wave", "Eco", "Sem rede"];
+  const COOKIE_NAME = "radio_voto_feito";
+
+  // ---------- Cookies / armazenamento local ----------
+  function setCookie(name, value, days){
+    const d = new Date();
+    d.setTime(d.getTime() + days*24*60*60*1000);
+    document.cookie = name + "=" + encodeURIComponent(value) + ";expires=" + d.toUTCString() + ";path=/;SameSite=Lax";
+  }
+  function getCookie(name){
+    const cname = name + "=";
+    const decoded = decodeURIComponent(document.cookie);
+    const partes = decoded.split(';');
+    for(let p of partes){
+      p = p.trim();
+      if(p.indexOf(cname) === 0) return p.substring(cname.length);
+    }
+    return "";
+  }
+  function jaVotouLocalmente(){
+    if(getCookie(COOKIE_NAME) === "sim") return true;
+    try{ if(localStorage.getItem(COOKIE_NAME) === "sim") return true; }catch(e){}
+    return false;
+  }
+  function marcarVotoLocalmente(){
+    setCookie(COOKIE_NAME, "sim", 3650);
+    try{ localStorage.setItem(COOKIE_NAME, "sim"); }catch(e){}
+  }
+
+  // ---------- Elementos ----------
+  const formVoto = document.getElementById('formVoto');
+  const estadoJaVotou = document.getElementById('estadoJaVotou');
+  const estadoSucesso = document.getElementById('estadoSucesso');
+  const msgBox = document.getElementById('msgBox');
+  const btnVotar = document.getElementById('btnVotar');
+  const confirmaLeitura = document.getElementById('confirmaLeitura');
+
+  const radiosMetodo = document.querySelectorAll('input[name="metodo"]');
+  const grupoProcesso = document.getElementById('grupoProcesso');
+  const grupoNumTurma = document.getElementById('grupoNumTurma');
+
+  const inputProcesso = document.getElementById('inputProcesso');
+  const inputNumero = document.getElementById('inputNumero');
+  const inputTurma = document.getElementById('inputTurma');
+
+  function mostrarMsg(texto, tipo){
+    msgBox.textContent = texto;
+    msgBox.className = 'msg ' + tipo;
+  }
+  function limparMsg(){
+    msgBox.textContent = '';
+    msgBox.className = 'msg';
+  }
+
+  // ---------- Verificação inicial ----------
+  if(jaVotouLocalmente()){
+    formVoto.style.display = 'none';
+    document.getElementById('texto-obrigatorio').style.display = 'none';
+    estadoJaVotou.style.display = 'block';
+  }
+
+  // ---------- Alternar método de identificação ----------
+  radiosMetodo.forEach(r => {
+    r.addEventListener('change', () => {
+      if(r.value === 'processo' && r.checked){
+        grupoProcesso.classList.add('ativo');
+        grupoNumTurma.classList.remove('ativo');
+      } else if(r.value === 'numturma' && r.checked){
+        grupoNumTurma.classList.add('ativo');
+        grupoProcesso.classList.remove('ativo');
+      }
+      validarFormulario();
+    });
+  });
+
+  // ---------- Validação em tempo real para ativar botão ----------
+  function metodoAtual(){
+    return document.querySelector('input[name="metodo"]:checked').value;
+  }
+  function opcaoSelecionada(){
+    const sel = document.querySelector('input[name="opcao"]:checked');
+    return sel ? sel.value : null;
+  }
+  function validarFormulario(){
+    let idOk = false;
+    if(metodoAtual() === 'processo'){
+      idOk = inputProcesso.value.trim().length > 0;
+    } else {
+      idOk = inputNumero.value.trim().length > 0 && inputTurma.value.trim().length > 0;
+    }
+    const opcaoOk = !!opcaoSelecionada();
+    const leituraOk = confirmaLeitura.checked;
+    btnVotar.disabled = !(idOk && opcaoOk && leituraOk);
+  }
+
+  [inputProcesso, inputNumero, inputTurma, confirmaLeitura].forEach(el => {
+    el.addEventListener('input', validarFormulario);
+    el.addEventListener('change', validarFormulario);
+  });
+  document.querySelectorAll('input[name="opcao"]').forEach(el => {
+    el.addEventListener('change', validarFormulario);
+  });
+
+  // ---------- Construir chave única do votante ----------
+  function sanitizar(str){
+    return str.trim().toUpperCase().replace(/[\/\.\#\$\[\]\s]+/g, '_');
+  }
+  function construirVoterKey(){
+    if(metodoAtual() === 'processo'){
+      return 'PROC_' + sanitizar(inputProcesso.value);
+    } else {
+      return 'NT_' + sanitizar(inputTurma.value) + '_' + sanitizar(inputNumero.value);
+    }
+  }
+
+  // ---------- Submeter voto ----------
+  formVoto.addEventListener('submit', function(e){
+    e.preventDefault();
+    limparMsg();
+
+    if(jaVotouLocalmente()){
+      mostrarMsg('Já votaste anteriormente neste dispositivo.', 'erro');
+      return;
+    }
+
+    const opcao = opcaoSelecionada();
+    if(!opcao || !OPCOES_VALIDAS.includes(opcao)){
+      mostrarMsg('Escolhe uma opção de voto válida.', 'erro');
+      return;
+    }
+
+    const metodo = metodoAtual();
+    let idValido = true;
+    if(metodo === 'processo'){
+      if(!inputProcesso.value.trim()) idValido = false;
+    } else {
+      if(!inputNumero.value.trim() || !inputTurma.value.trim()) idValido = false;
+    }
+    if(!idValido){
+      mostrarMsg('Preenche os campos de identificação.', 'erro');
+      return;
+    }
+    if(!confirmaLeitura.checked){
+      mostrarMsg('Tens de confirmar que leste o texto informativo.', 'erro');
+      return;
+    }
+
+    const voterKey = construirVoterKey();
+
+    btnVotar.disabled = true;
+    btnVotar.textContent = 'A registar...';
+
+    const voteRef = db.collection('votos').doc(voterKey);
+
+    db.runTransaction(function(transaction){
+      return transaction.get(voteRef).then(function(doc){
+        if(doc.exists){
+          throw new Error('DUPLICADO');
+        }
+        transaction.set(voteRef, {
+          opcao: opcao,
+          metodo: metodo,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      });
+    }).then(function(){
+      marcarVotoLocalmente();
+      formVoto.style.display = 'none';
+      document.getElementById('texto-obrigatorio').style.display = 'none';
+      estadoSucesso.style.display = 'block';
+    }).catch(function(err){
+      btnVotar.disabled = false;
+      btnVotar.textContent = 'Votar';
+      if(err && err.message === 'DUPLICADO'){
+        mostrarMsg('Este número já foi utilizado para votar. Só é permitido um voto por aluno.', 'erro');
+        marcarVotoLocalmente();
+      } else {
+        console.error(err);
+        mostrarMsg('Ocorreu um erro ao registar o voto. Tenta novamente.', 'erro');
+      }
+    });
+  });
+
+  validarFormulario();
+</script>
+</body>
+</html>
