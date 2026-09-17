@@ -49,6 +49,12 @@
   3. O texto a ler antes da votação está marcado mais abaixo com
      o comentário "TEXTO A LER ANTES DA VOTAÇÃO" — substitui o
      parágrafo de exemplo pelo texto definitivo.
+
+  4. A votação fecha automaticamente às 00:00 do dia 19/09 (ver
+     constante DATA_FECHO no <script> final). Passada essa hora,
+     o formulário é escondido e é mostrada uma mensagem de
+     "votação encerrada", tanto para quem abre a página depois
+     do fecho como para quem já a tinha aberta antes.
   =====================================================================
 -->
 
@@ -424,6 +430,13 @@
     <p>O teu voto conta! Escolhe apenas uma opção.</p>
   </header>
 
+  <!-- ESTADO: VOTAÇÃO ENCERRADA (prazo terminado) -->
+  <div class="card estado-final" id="estadoEncerrado" style="display:none;">
+    <div class="emoji">🔒</div>
+    <h2>Votação encerrada</h2>
+    <p>O período de votação terminou às 00:00 do dia 19/09. Obrigado a todos os que participaram!</p>
+  </div>
+
   <!-- TEXTO A LER ANTES DA VOTAÇÃO -->
   <div class="card" id="texto-obrigatorio">
     <h2>📋 Antes de votares, lê com atenção</h2>
@@ -569,6 +582,14 @@
   const OPCOES_VALIDAS = ["Feedback", "Wave", "Eco", "Sem rede"];
   const COOKIE_NAME = "radio_voto_feito";
 
+  // ---------- Data/hora de fecho da votação: 00:00 do dia 19/09 ----------
+  // Interpretado na hora local de quem visita a página.
+  const DATA_FECHO = new Date(2026, 8, 19, 4, 0, 0, 0); // mês 8 = setembro (0-indexado)
+
+  function votacaoEncerrada(){
+    return new Date() >= DATA_FECHO;
+  }
+
   // ---------- Cookies / armazenamento local ----------
   function setCookie(name, value, days){
     const d = new Date();
@@ -597,6 +618,8 @@
 
   // ---------- Elementos ----------
   const formVoto = document.getElementById('formVoto');
+  const textoObrigatorio = document.getElementById('texto-obrigatorio');
+  const estadoEncerrado = document.getElementById('estadoEncerrado');
   const estadoJaVotou = document.getElementById('estadoJaVotou');
   const estadoSucesso = document.getElementById('estadoSucesso');
   const msgBox = document.getElementById('msgBox');
@@ -643,13 +666,34 @@
     cardSugestaoContinua.style.display = 'block';
   }
 
-  // ---------- Verificação inicial ----------
-  if(jaVotouLocalmente()){
+  // ---------- Fechar a votação (usado no arranque e quando o prazo expira em direto) ----------
+  function aplicarFechoVotacao(){
     formVoto.style.display = 'none';
-    document.getElementById('texto-obrigatorio').style.display = 'none';
+    textoObrigatorio.style.display = 'none';
+    estadoJaVotou.style.display = 'none';
+    estadoSucesso.style.display = 'none';
+    estadoEncerrado.style.display = 'block';
+    // As sugestões contínuas continuam disponíveis mesmo depois do fecho da votação.
+    mostrarCardSugestaoContinua();
+  }
+
+  // ---------- Verificação inicial ----------
+  if(votacaoEncerrada()){
+    aplicarFechoVotacao();
+  } else if(jaVotouLocalmente()){
+    formVoto.style.display = 'none';
+    textoObrigatorio.style.display = 'none';
     estadoJaVotou.style.display = 'block';
     mostrarCardSugestaoContinua();
   }
+
+  // ---------- Verificação periódica: fecha automaticamente ao bater a hora, ----------
+  // mesmo que a página já esteja aberta desde antes do prazo.
+  setInterval(function(){
+    if(votacaoEncerrada() && estadoEncerrado.style.display !== 'block'){
+      aplicarFechoVotacao();
+    }
+  }, 15000);
 
   // ---------- Alternar método de identificação ----------
   radiosMetodo.forEach(r => {
@@ -674,6 +718,10 @@
     return sel ? sel.value : null;
   }
   function validarFormulario(){
+    if(votacaoEncerrada()){
+      btnVotar.disabled = true;
+      return;
+    }
     let idOk = false;
     if(metodoAtual() === 'processo'){
       idOk = inputProcesso.value.trim().length > 0;
@@ -713,6 +761,11 @@
   formVoto.addEventListener('submit', function(e){
     e.preventDefault();
     limparMsg();
+
+    if(votacaoEncerrada()){
+      aplicarFechoVotacao();
+      return;
+    }
 
     if(jaVotouLocalmente()){
       mostrarMsg('Já votaste anteriormente neste dispositivo.', 'erro');
@@ -767,7 +820,7 @@
     }).then(function(){
       marcarVotoLocalmente();
       formVoto.style.display = 'none';
-      document.getElementById('texto-obrigatorio').style.display = 'none';
+      textoObrigatorio.style.display = 'none';
       estadoSucesso.style.display = 'block';
       mostrarCardSugestaoContinua();
     }).catch(function(err){
