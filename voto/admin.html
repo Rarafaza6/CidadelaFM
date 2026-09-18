@@ -10,28 +10,43 @@
   IMPORTANTE — LER ANTES DE USAR (sem login):
 
   Esta página NÃO tem autenticação: qualquer pessoa com o link consegue
-  ver os votos e sugestões. Como tal, as regras do Firestore têm de
-  permitir leitura pública das coleções "votos" e "sugestoes". No teu
-  index.html original, as regras exigem "request.auth != null" para
-  leitura — isso vai bloquear esta página. Substitui as regras de
-  leitura por algo como:
+  ver os votos e sugestões. As regras do Firestore têm de permitir
+  leitura pública das coleções "votos" e "sugestoes":
 
      match /votos/{voteId} {
        allow create: if ... (mantém como está)
-       allow read: if true;          // <-- ALTERADO (antes: request.auth != null)
+       allow read: if true;
        allow update, delete: if false;
      }
      match /sugestoes/{sugestaoId} {
        allow create: if ... (mantém como está)
-       allow read: if true;          // <-- ALTERADO
+       allow read: if true;
        allow update, delete: if false;
      }
 
-  Se preferires manter a leitura protegida, o mais simples é NÃO
-  publicares este ficheiro publicamente (ex: não o colocares num site
-  indexado) e partilhares o link apenas com quem deve ter acesso —
-  mas tecnicamente qualquer pessoa com o URL do ficheiro consegue abri-lo
-  e ler os dados, pois não há verificação de identidade aqui.
+  -----------------------------------------------------------------
+  SOBRE A SEPARAÇÃO "QUEM VOTOU" vs "EM QUE OPÇÃO VOTOU":
+
+  Este painel foi alterado para NÃO mostrar, lado a lado, o ID de
+  quem votou e a opção escolhida por essa pessoa. A lista de
+  participantes mostra apenas ID/método/data. Os resultados por
+  opção são mostrados só como totais agregados (sem nomes).
+
+  ATENÇÃO — LIMITE TÉCNICO REAL: como cada documento da coleção
+  "votos" ainda guarda o ID da pessoa E a opção escolhida no MESMO
+  registo (é assim que o formulário de voto grava, para evitar voto
+  duplicado), qualquer pessoa com conhecimentos técnicos que abra o
+  separador "Rede" (Network) do browser enquanto esta página carrega
+  consegue ver a resposta bruta do Firestore, que inclui os dois
+  campos juntos. Esconder a coluna no ecrã impede a consulta casual,
+  mas NÃO é anonimato garantido ao nível dos dados.
+
+  Para anonimato real, a opção votada teria de ser gravada, no
+  formulário de voto (index.html), numa coleção separada sem
+  qualquer campo que identifique a pessoa, e a participação (quem
+  já votou, para bloquear voto duplicado) teria de ficar noutra
+  coleção sem o campo da opção. Isso implica alterar a página de
+  voto, não só este painel.
   =====================================================================
 -->
 
@@ -100,7 +115,12 @@
     padding:22px 20px;
     margin-bottom:20px;
   }
-  .card h2{margin:0 0 14px;font-size:1.1rem;}
+  .card h2{margin:0 0 4px;font-size:1.1rem;}
+  .card .subtitulo{
+    margin:0 0 14px;
+    font-size:.82rem;
+    color:var(--text-muted);
+  }
 
   .stats-grid{
     display:grid;
@@ -204,6 +224,7 @@
   }
   .msg.erro{background:#ffe6e6;color:var(--err);display:block;}
   .msg.info{background:#eaf2ff;color:#1a4c9c;display:block;}
+  .msg.aviso{background:#fff4e0;color:#8a5300;display:block;}
 
   .loading{
     text-align:center;
@@ -230,7 +251,8 @@
 
   <div class="toolbar">
     <button id="btnAtualizar">🔄 Atualizar dados</button>
-    <button class="secundario" id="btnExportarVotos">⬇️ Exportar votos (CSV)</button>
+    <button class="secundario" id="btnExportarParticipantes">⬇️ Exportar participantes (CSV)</button>
+    <button class="secundario" id="btnExportarResultados">⬇️ Exportar resultados (CSV)</button>
     <button class="secundario" id="btnExportarSugestoes">⬇️ Exportar sugestões (CSV)</button>
   </div>
 
@@ -262,23 +284,18 @@
       </div>
     </div>
 
-    <!-- RESULTADOS POR OPÇÃO -->
+    <!-- RESULTADOS POR OPÇÃO (agregado, sem ligação a pessoas) -->
     <div class="card">
       <h2>Resultados por opção</h2>
+      <p class="subtitulo">Apenas totais — nenhuma linha abaixo identifica quem escolheu cada opção.</p>
       <div id="barrasResultados"></div>
     </div>
 
-    <!-- LISTA DE VOTOS -->
+    <!-- LISTA DE PARTICIPANTES (sem a opção votada) -->
     <div class="card">
-      <h2>Todos os votos</h2>
+      <h2>Quem votou (participantes)</h2>
+      <p class="subtitulo">Confirma quem participou. A opção escolhida por cada pessoa não é mostrada aqui — só os totais acima.</p>
       <div class="filtros">
-        <select id="filtroOpcao">
-          <option value="">Todas as opções</option>
-          <option value="Feedback">Feedback</option>
-          <option value="Wave">Wave</option>
-          <option value="Eco">Eco</option>
-          <option value="Sem rede">Sem rede</option>
-        </select>
         <select id="filtroMetodo">
           <option value="">Todos os métodos</option>
           <option value="processo">Nº de Processo</option>
@@ -296,7 +313,6 @@
           <thead>
             <tr>
               <th data-col="id">ID</th>
-              <th data-col="opcao">Opção</th>
               <th data-col="metodo">Método</th>
               <th data-col="sugestao">Sugestão</th>
               <th data-col="timestamp">Data/Hora ⬍</th>
@@ -305,7 +321,7 @@
           <tbody id="corpoTabelaVotos"></tbody>
         </table>
       </div>
-      <div class="vazio" id="votosVazio" style="display:none;">Nenhum voto encontrado com estes filtros.</div>
+      <div class="vazio" id="votosVazio" style="display:none;">Nenhum participante encontrado com estes filtros.</div>
     </div>
 
     <!-- LISTA DE SUGESTÕES CONTÍNUAS -->
@@ -353,6 +369,9 @@
 
   const OPCOES_VALIDAS = ["Feedback", "Wave", "Eco", "Sem rede"];
 
+  // votosCache guarda "opcao" internamente só para calcular os totais
+  // agregados (barras). Essa coluna nunca é desenhada na tabela de
+  // participantes — ver renderTabelaVotos().
   let votosCache = [];
   let sugestoesCache = [];
   let ordemVotos = { col: 'timestamp', dir: 'desc' };
@@ -362,7 +381,8 @@
   const conteudo = document.getElementById('conteudo');
   const msgGlobal = document.getElementById('msgGlobal');
   const btnAtualizar = document.getElementById('btnAtualizar');
-  const btnExportarVotos = document.getElementById('btnExportarVotos');
+  const btnExportarParticipantes = document.getElementById('btnExportarParticipantes');
+  const btnExportarResultados = document.getElementById('btnExportarResultados');
   const btnExportarSugestoes = document.getElementById('btnExportarSugestoes');
 
   function mostrarErro(texto){
@@ -413,7 +433,7 @@
         const d = doc.data();
         return {
           id: doc.id,
-          opcao: d.opcao || '',
+          opcao: d.opcao || '',      // usado só para os totais agregados
           metodo: d.metodo || '',
           sugestao: d.sugestao || '',
           timestamp: d.timestamp || null
@@ -472,7 +492,7 @@
     return contagem;
   }
 
-  // ---------- Barras de resultados ----------
+  // ---------- Barras de resultados (agregado) ----------
   function renderBarras(){
     const contagem = contarPorOpcao();
     const total = votosCache.length;
@@ -498,15 +518,13 @@
     });
   }
 
-  // ---------- Tabela de votos ----------
+  // ---------- Tabela de participantes (SEM a opção votada) ----------
   function votosFiltrados(){
-    const opcaoFiltro = document.getElementById('filtroOpcao').value;
     const metodoFiltro = document.getElementById('filtroMetodo').value;
     const sugestaoFiltro = document.getElementById('filtroSugestao').value;
     const busca = document.getElementById('buscaVotos').value.trim().toLowerCase();
 
     let lista = votosCache.filter(v => {
-      if(opcaoFiltro && v.opcao !== opcaoFiltro) return false;
       if(metodoFiltro && v.metodo !== metodoFiltro) return false;
       if(sugestaoFiltro === 'com' && !(v.sugestao && v.sugestao.trim())) return false;
       if(sugestaoFiltro === 'sem' && v.sugestao && v.sugestao.trim()) return false;
@@ -553,10 +571,12 @@
     vazio.style.display = 'none';
 
     lista.forEach(v => {
+      // Nota: 'v.opcao' existe no objeto (para os totais) mas
+      // propositadamente NÃO é usado aqui, para não ligar a pessoa
+      // à opção escolhida nesta tabela.
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td><code>${escapeHTML(v.id)}</code></td>
-        <td><span class="tag">${escapeHTML(v.opcao)}</span></td>
         <td>${v.metodo === 'processo' ? 'Nº de Processo' : (v.metodo === 'numturma' ? 'Nº + Turma' : escapeHTML(v.metodo))}</td>
         <td class="sugestao-texto">${v.sugestao ? escapeHTML(v.sugestao) : '<span style="color:#999;">—</span>'}</td>
         <td>${formatarData(v.timestamp)}</td>
@@ -627,7 +647,7 @@
   });
 
   // ---------- Filtros ----------
-  ['filtroOpcao', 'filtroMetodo', 'filtroSugestao', 'buscaVotos'].forEach(id => {
+  ['filtroMetodo', 'filtroSugestao', 'buscaVotos'].forEach(id => {
     document.getElementById(id).addEventListener('input', renderTabelaVotos);
     document.getElementById(id).addEventListener('change', renderTabelaVotos);
   });
@@ -656,13 +676,28 @@
     URL.revokeObjectURL(url);
   }
 
-  btnExportarVotos.addEventListener('click', () => {
-    if(votosCache.length === 0){ mostrarInfo('Não há votos para exportar.'); return; }
+  // Participantes: sem a opção votada.
+  btnExportarParticipantes.addEventListener('click', () => {
+    if(votosCache.length === 0){ mostrarInfo('Não há participantes para exportar.'); return; }
     const linhas = votosFiltrados().map(v => [
-      v.id, v.opcao, v.metodo, v.sugestao || '', formatarData(v.timestamp)
+      v.id, v.metodo, v.sugestao || '', formatarData(v.timestamp)
     ]);
-    const csv = paraCSV(linhas, ['ID', 'Opção', 'Método', 'Sugestão', 'Data/Hora']);
-    descarregarCSV(csv, 'votos_radio.csv');
+    const csv = paraCSV(linhas, ['ID', 'Método', 'Sugestão', 'Data/Hora']);
+    descarregarCSV(csv, 'participantes_radio.csv');
+  });
+
+  // Resultados: só totais agregados por opção, sem nomes.
+  btnExportarResultados.addEventListener('click', () => {
+    if(votosCache.length === 0){ mostrarInfo('Não há resultados para exportar.'); return; }
+    const contagem = contarPorOpcao();
+    const total = votosCache.length;
+    const linhas = OPCOES_VALIDAS.map(op => {
+      const val = contagem[op];
+      const pct = total > 0 ? Math.round((val / total) * 100) : 0;
+      return [op, val, pct + '%'];
+    });
+    const csv = paraCSV(linhas, ['Opção', 'Votos', 'Percentagem']);
+    descarregarCSV(csv, 'resultados_agregados_radio.csv');
   });
 
   btnExportarSugestoes.addEventListener('click', () => {
