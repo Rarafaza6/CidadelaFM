@@ -505,6 +505,10 @@
           <input type="radio" name="metodo" value="numturma">
           <span>Nº + Turma</span>
         </label>
+        <label>
+          <input type="radio" name="metodo" value="professor">
+          <span>Sou professor(a)</span>
+        </label>
       </div>
 
       <div class="campo-grupo ativo" id="grupoProcesso">
@@ -522,6 +526,17 @@
         <div class="campo">
           <label class="field-label" for="inputTurma">Turma</label>
           <input type="text" id="inputTurma" placeholder="Ex: 10ºA" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="campo-grupo" id="grupoProfessor">
+        <div class="campo">
+          <label class="field-label" for="inputNome">Nome</label>
+          <input type="text" id="inputNome" placeholder="Ex: Maria Silva" autocomplete="off">
+        </div>
+        <div class="campo">
+          <label class="field-label" for="inputDisciplina">Disciplina</label>
+          <input type="text" id="inputDisciplina" placeholder="Ex: Matemática" autocomplete="off">
         </div>
       </div>
     </fieldset>
@@ -629,10 +644,13 @@
   const radiosMetodo = document.querySelectorAll('input[name="metodo"]');
   const grupoProcesso = document.getElementById('grupoProcesso');
   const grupoNumTurma = document.getElementById('grupoNumTurma');
+  const grupoProfessor = document.getElementById('grupoProfessor');
 
   const inputProcesso = document.getElementById('inputProcesso');
   const inputNumero = document.getElementById('inputNumero');
   const inputTurma = document.getElementById('inputTurma');
+  const inputNome = document.getElementById('inputNome');
+  const inputDisciplina = document.getElementById('inputDisciplina');
   const inputSugestao = document.getElementById('inputSugestao');
   const contadorSugestao = document.getElementById('contadorSugestao');
 
@@ -701,9 +719,15 @@
       if(r.value === 'processo' && r.checked){
         grupoProcesso.classList.add('ativo');
         grupoNumTurma.classList.remove('ativo');
+        grupoProfessor.classList.remove('ativo');
       } else if(r.value === 'numturma' && r.checked){
         grupoNumTurma.classList.add('ativo');
         grupoProcesso.classList.remove('ativo');
+        grupoProfessor.classList.remove('ativo');
+      } else if(r.value === 'professor' && r.checked){
+        grupoProfessor.classList.add('ativo');
+        grupoProcesso.classList.remove('ativo');
+        grupoNumTurma.classList.remove('ativo');
       }
       validarFormulario();
     });
@@ -725,15 +749,17 @@
     let idOk = false;
     if(metodoAtual() === 'processo'){
       idOk = inputProcesso.value.trim().length > 0;
-    } else {
+    } else if(metodoAtual() === 'numturma'){
       idOk = inputNumero.value.trim().length > 0 && inputTurma.value.trim().length > 0;
+    } else if(metodoAtual() === 'professor'){
+      idOk = inputNome.value.trim().length > 0 && inputDisciplina.value.trim().length > 0;
     }
     const opcaoOk = !!opcaoSelecionada();
     const leituraOk = confirmaLeitura.checked;
     btnVotar.disabled = !(idOk && opcaoOk && leituraOk);
   }
 
-  [inputProcesso, inputNumero, inputTurma, confirmaLeitura].forEach(el => {
+  [inputProcesso, inputNumero, inputTurma, inputNome, inputDisciplina, confirmaLeitura].forEach(el => {
     el.addEventListener('input', validarFormulario);
     el.addEventListener('change', validarFormulario);
   });
@@ -752,8 +778,10 @@
   function construirVoterKey(){
     if(metodoAtual() === 'processo'){
       return 'PROC_' + sanitizar(inputProcesso.value);
-    } else {
+    } else if(metodoAtual() === 'numturma'){
       return 'NT_' + sanitizar(inputTurma.value) + '_' + sanitizar(inputNumero.value);
+    } else {
+      return 'PROF_' + sanitizar(inputNome.value) + '_' + sanitizar(inputDisciplina.value);
     }
   }
 
@@ -782,8 +810,10 @@
     let idValido = true;
     if(metodo === 'processo'){
       if(!inputProcesso.value.trim()) idValido = false;
-    } else {
+    } else if(metodo === 'numturma'){
       if(!inputNumero.value.trim() || !inputTurma.value.trim()) idValido = false;
+    } else if(metodo === 'professor'){
+      if(!inputNome.value.trim() || !inputDisciplina.value.trim()) idValido = false;
     }
     if(!idValido){
       mostrarMsg('Preenche os campos de identificação.', 'erro');
