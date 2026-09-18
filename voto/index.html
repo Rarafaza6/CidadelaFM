@@ -50,7 +50,7 @@
      o comentário "TEXTO A LER ANTES DA VOTAÇÃO" — substitui o
      parágrafo de exemplo pelo texto definitivo.
 
-  4. A votação fecha automaticamente às 00:00 do dia 19/09 (ver
+  4. A votação fecha automaticamente às 23:59 do dia 23/09 (ver
      constante DATA_FECHO no <script> final). Passada essa hora,
      o formulário é escondido e é mostrada uma mensagem de
      "votação encerrada", tanto para quem abre a página depois
@@ -434,7 +434,7 @@
   <div class="card estado-final" id="estadoEncerrado" style="display:none;">
     <div class="emoji">🔒</div>
     <h2>Votação encerrada</h2>
-    <p>O período de votação terminou às 00:00 do dia 19/09. Obrigado a todos os que participaram!</p>
+    <p>O período de votação terminou às 23:59 do dia 23/09. Obrigado a todos os que participaram!</p>
   </div>
 
   <!-- TEXTO A LER ANTES DA VOTAÇÃO -->
@@ -582,9 +582,9 @@
   const OPCOES_VALIDAS = ["Feedback", "Wave", "Eco", "Sem rede"];
   const COOKIE_NAME = "radio_voto_feito";
 
-  // ---------- Data/hora de fecho da votação: 00:00 do dia 19/09 ----------
+  // ---------- Data/hora de fecho da votação: 23:59 do dia 23/09 ----------
   // Interpretado na hora local de quem visita a página.
-  const DATA_FECHO = new Date(2026, 8, 19, 4, 0, 0, 0); // mês 8 = setembro (0-indexado)
+  const DATA_FECHO = new Date(2026, 8, 23, 23, 59, 59, 0); // mês 8 = setembro (0-indexado)
 
   function votacaoEncerrada(){
     return new Date() >= DATA_FECHO;
