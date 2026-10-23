@@ -1,0 +1,103 @@
+rules_version = '2';
+
+// =====================================================================
+// REGRAS DA VOTAÇÃO — Rádio Wave 2026
+// Âmbito: APENAS o caminho  /votacao_2026/wave/...
+//
+// Como usar:
+//  • Se o projeto "cidadelafm" só serve a votação: cola este ficheiro todo.
+//  • Se o projeto tem outras regras (ex.: o resto do site): NÃO substituas
+//    tudo. Copia só o bloco "match /votacao_2026/wave/..." para dentro do
+//    teu "match /databases/{database}/documents" existente.
+//
+// Prazo: 26/out/2026 às 15:00 UTC (= 15:00 em Portugal nessa data,
+// pois a hora de verão termina a 25/out/2026).
+// =====================================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Funções auxiliares ----------
+    function votingOpen() {
+      return request.time < timestamp.date(2026, 10, 26) + duration.value(15, 'h');
+    }
+
+    // Ranking = lista com exatamente as 6 propostas (1..6), sem repetições.
+    function validRanking(r) {
+      return r is list
+        && r.size() == 6
+        && r.hasAll([1, 2, 3, 4, 5, 6]);
+    }
+
+    function str(v, max) {
+      return v is string && v.size() > 0 && v.size() <= max;
+    }
+
+    match /votacao_2026/wave {
+
+      // ---------- Votos públicos ----------
+      // O ID do documento é a identificação do votante (impede duplicados:
+      // "create" falha se o documento já existir).
+      match /public_votes/{voteId} {
+        allow create: if votingOpen()
+          && validRanking(request.resource.data.ranking)
+          && str(request.resource.data.voterKey, 200)
+          && str(request.resource.data.ballotId, 80)
+          && str(request.resource.data.auditLabel, 300)
+          && request.resource.data.type in ['student_process', 'student_class', 'teacher']
+          && request.resource.data.keys().hasOnly([
+               'ranking', 'voterKey', 'ballotId', 'auditLabel', 'type',
+               'process', 'classYear', 'classNumber', 'teacherName', 'subject',
+               'timestamp', 'dateStr'
+             ]);
+        allow read: if true;
+        allow update: if false;
+        allow delete: if true;   // eliminar votos falsos (painel de resultados)
+      }
+
+      // ---------- Equipa: quem já votou (sem escolha) ----------
+      match /team_members_voted/{memberId} {
+        allow create: if votingOpen()
+          && str(request.resource.data.name, 120)
+          && request.resource.data.keys().hasOnly(['name', 'timestamp', 'dateStr']);
+        allow read: if true;
+        allow update, delete: if false;
+      }
+
+      // ---------- Equipa: boletins secretos (sem nome nem hora) ----------
+      match /team_secret_ballots/{ballotId} {
+        allow create: if votingOpen()
+          && validRanking(request.resource.data.ranking)
+          && request.resource.data.keys().hasOnly(['ranking']);
+        allow read: if true;
+        allow update: if false;
+        allow delete: if true;   // permite anular um boletim inválido
+      }
+
+      // ---------- Sugestões ----------
+      match /suggestions/{suggestionId} {
+        allow create: if votingOpen()
+          && str(request.resource.data.text, 1000)
+          && request.resource.data.keys().hasOnly(['author', 'text', 'timestamp', 'dateStr']);
+        allow read: if true;
+        allow update: if false;
+        allow delete: if true;
+      }
+
+      // ---------- Registo de auditoria das eliminações (imutável) ----------
+      match /deletion_log/{logId} {
+        allow create: if true;
+        allow read: if true;
+        allow update, delete: if false;
+      }
+    }
+
+    // Tudo o resto deste ficheiro fica fechado por omissão.
+    // (Se partilhas o projeto, acrescenta aqui as regras das outras coleções.)
+  }
+}
+
+// NOTA DE SEGURANÇA
+// Sem servidor, "read" e "delete" têm de ficar abertos para o painel de
+// resultados funcionar (a palavra-passe é só verificada no browser).
+// Para blindar: ativar Firebase Authentication, criar a conta da equipa e
+// trocar "allow read/delete: if true" por "if request.auth != null".
