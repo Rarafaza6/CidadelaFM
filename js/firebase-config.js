@@ -24,29 +24,12 @@ window.firebaseServices = {
   auth: authInstance,
   functions: functionsInstance
 };
-window.showFirebaseError = function(container) {
+window.showFirebaseError = function (container) {
   if (!container) return;
   container.innerHTML = '<div class="firebase-error"><i class="ri-cloud-off-line"></i><strong>Ligação aos conteúdos indisponível.</strong><span>Confirma que o Cloud Firestore está criado e que as regras em <code>firestore.rules</code> foram publicadas.</span></div>';
 };
-// Dados iniciais de demonstração usados apenas para seed das coleções vazias.
-const DEFAULT_PODCASTS = [
-  {
-    id: "pod-1",
-    title: "Entrevista Exclusiva: Associação de Estudantes",
-    date: "05 de Setembro, 2026",
-    duration: "18:42",
-    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-    description: "Conversámos com os membros da AE sobre os projetos e eventos para este ano letivo na EBS da Cidadela."
-  },
-  {
-    id: "pod-2",
-    title: "Cultura & Música: Os Maiores Sucessos de Cascais",
-    date: "28 de Agosto, 2026",
-    duration: "24:15",
-    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-    description: "Destaque para os novos talentos musicais do concelho de Cascais e bandas da nossa escola."
-  }
-];
+// Coleções públicas iniciam vazias para aguardar conteúdos oficiais da Rádio
+const DEFAULT_PODCASTS = [];
 
 const DEFAULT_RUNDOWNS = [
   {
@@ -197,67 +180,11 @@ const DEFAULT_ANNOUNCEMENTS = [
   }
 ];
 
-const DEFAULT_ANNOUNCEMENT_IMAGE = 'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=1200&q=80';
+const DEFAULT_ANNOUNCEMENT_IMAGE = 'assets/logo-radio.jpg';
 
-const DEFAULT_LINKS = [
-  {
-    id: "link-1",
-    title: "Inscrições na Equipa da Rádio",
-    subtitle: "Junta-te aos nossos locutores e técnicos!",
-    url: "https://forms.gle/exemplo-inscricao",
-    icon: "ri-mic-line",
-    badge: "Aberto",
-    active: true
-  },
-  {
-    id: "link-2",
-    title: "Formulário de Inquérito de Opinião",
-    subtitle: "Que tipo de música queres ouvir no intervalo?",
-    url: "https://forms.gle/exemplo-inquerito",
-    icon: "ri-file-list-3-line",
-    badge: "Sondagem",
-    active: true
-  },
-  {
-    id: "link-3",
-    title: "Instagram da Rádio Cidadela",
-    subtitle: "@radio.cidadela.ebs",
-    url: "https://instagram.com",
-    icon: "ri-instagram-line",
-    badge: "Social",
-    active: true
-  }
-];
+const DEFAULT_LINKS = [];
 
-const DEFAULT_SUGGESTIONS = [
-  {
-    id: "sug-1",
-    songTitle: "Flowers",
-    artist: "Miley Cyrus",
-    artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/a2/6a/5d/a26a5d1b-326a-543e-a141-86640db7f95a/23UMGIM00832.rgb.jpg/100x100bb.jpg",
-    previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioVideo126/v4/91/25/7a/91257a07-ef02-b258-00aa-a51b54a32629/mzaf_16843468532467554902.plus.aac.p.m4a",
-    status: "pending",
-    timestamp: Date.now() - 3600000 * 2
-  },
-  {
-    id: "sug-2",
-    songTitle: "Flowers",
-    artist: "Miley Cyrus",
-    artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/a2/6a/5d/a26a5d1b-326a-543e-a141-86640db7f95a/23UMGIM00832.rgb.jpg/100x100bb.jpg",
-    previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioVideo126/v4/91/25/7a/91257a07-ef02-b258-00aa-a51b54a32629/mzaf_16843468532467554902.plus.aac.p.m4a",
-    status: "pending",
-    timestamp: Date.now() - 3600000 * 1
-  },
-  {
-    id: "sug-3",
-    songTitle: "As It Was",
-    artist: "Harry Styles",
-    artwork: "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/92/ff/45/92ff45ef-5544-77a8-12d7-dfb1d28fa3f8/886449992523.jpg/100x100bb.jpg",
-    previewUrl: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioVideo112/v4/10/37/10/103710be-0c24-e692-a169-1c9f4e24efbf/mzaf_12351214041180290135.plus.aac.p.m4a",
-    status: "played",
-    timestamp: Date.now() - 3600000 * 10
-  }
-];
+const DEFAULT_SUGGESTIONS = [];
 
 // Efemérides recorrentes para inspirar a programação e os avisos em antena.
 const EDITORIAL_CALENDAR_DATES = [
@@ -289,18 +216,18 @@ const EDITORIAL_CALENDAR_DATES = [
 // Lista anual de observâncias internacionais (ONU/UNESCO) e efemérides escolares relevantes.
 // Mantida separada para que o calendário apresente datas portuguesas sem depender de serviços externos.
 const INTERNATIONAL_THEME_DATES = [
-  ['01-04','Dia Mundial do Braille'],['01-24','Dia Internacional da Educação'],['01-26','Dia Internacional da Energia Limpa'],['01-27','Dia Internacional em Memória das Vítimas do Holocausto'],['01-28','Dia Internacional da Coexistência Pacífica'],
-  ['02-02','Dia Mundial das Zonas Húmidas'],['02-04','Dia Internacional da Fraternidade Humana'],['02-06','Dia Internacional da Tolerância Zero à Mutilação Genital Feminina'],['02-10','Dia Mundial das Leguminosas'],['02-10','Dia Internacional do Leopardo-Árabe'],['02-11','Dia Internacional das Mulheres e Raparigas na Ciência'],['02-12','Dia Internacional para a Prevenção do Extremismo Violento'],['02-17','Dia Mundial da Resiliência do Turismo'],['02-20','Dia Mundial da Justiça Social'],['02-21','Dia Internacional da Língua Materna'],
-  ['03-01','Dia da Discriminação Zero'],['03-01','Dia Mundial das Ervas Marinhas'],['03-03','Dia Mundial da Vida Selvagem'],['03-05','Dia da Sensibilização para o Desarmamento e Não-Proliferação'],['03-08','Dia Internacional da Mulher'],['03-10','Dia Internacional das Mulheres Juízas'],['03-15','Dia Internacional de Combate à Islamofobia'],['03-20','Dia Internacional da Felicidade'],['03-20','Dia da Língua Francesa'],['03-21','Dia Internacional das Florestas'],['03-21','Dia Internacional pela Eliminação da Discriminação Racial'],['03-21','Dia Mundial da Síndrome de Down'],['03-21','Dia Mundial da Água'],['03-22','Dia Mundial da Água'],['03-23','Dia Meteorológico Mundial'],['03-24','Dia Mundial da Tuberculose'],['03-25','Dia Internacional em Memória das Vítimas da Escravatura'],['03-30','Dia Internacional do Lixo Zero'],
-  ['04-02','Dia Mundial da Consciencialização do Autismo'],['04-04','Dia Internacional para Sensibilização sobre Minas'],['04-05','Dia Internacional da Consciência'],['04-06','Dia Internacional do Desporto para o Desenvolvimento e a Paz'],['04-07','Dia Mundial da Saúde'],['04-12','Dia Internacional do Voo Espacial Humano'],['04-14','Dia Mundial da Doença de Chagas'],['04-15','Dia Internacional do Bem-Estar'],['04-20','Dia da Língua Chinesa'],['04-21','Dia Mundial da Criatividade e Inovação'],['04-22','Dia Internacional da Mãe Terra'],['04-23','Dia Internacional das Raparigas nas TIC'],['04-23','Dia Mundial do Livro e dos Direitos de Autor'],['04-23','Dia da Língua Inglesa'],['04-23','Dia da Língua Espanhola'],['04-25','Dia Mundial da Malária'],['04-26','Dia Mundial da Propriedade Intelectual'],['04-28','Dia Mundial da Segurança e Saúde no Trabalho'],
-  ['05-02','Dia Mundial do Atum'],['05-03','Dia Mundial da Liberdade de Imprensa'],['05-05','Dia Mundial da Língua Portuguesa'],['05-08','Dia de Memória e Reconciliação pelas vítimas da Segunda Guerra Mundial'],['05-10','Dia Internacional da Argania'],['05-12','Dia Internacional da Saúde das Plantas'],['05-15','Dia Internacional das Famílias'],['05-16','Dia Internacional da Luz'],['05-17','Dia Mundial das Telecomunicações e da Sociedade da Informação'],['05-19','Dia Mundial do Fair Play'],['05-20','Dia Mundial das Abelhas'],['05-21','Dia Internacional do Chá'],['05-22','Dia Internacional da Biodiversidade'],['05-25','Dia Mundial do Futebol'],['05-29','Dia Internacional dos Capacetes Azuis da ONU'],['05-30','Dia Internacional da Batata'],['05-31','Dia Mundial sem Tabaco'],
-  ['06-01','Dia Global dos Pais'],['06-03','Dia Mundial da Bicicleta'],['06-04','Dia Internacional das Crianças Vítimas Inocentes de Agressão'],['06-05','Dia Mundial do Ambiente'],['06-07','Dia Mundial da Segurança dos Alimentos'],['06-08','Dia Mundial dos Oceanos'],['06-10','Dia Internacional do Diálogo entre Civilizações'],['06-11','Dia Internacional do Brincar'],['06-12','Dia Mundial contra o Trabalho Infantil'],['06-13','Dia Internacional da Consciencialização sobre o Albinismo'],['06-14','Dia Mundial do Dador de Sangue'],['06-15','Dia Mundial de Consciencialização da Violência contra a Pessoa Idosa'],['06-16','Dia Internacional das Remessas Familiares'],['06-17','Dia Mundial de Combate à Desertificação e Seca'],['06-18','Dia da Gastronomia Sustentável'],['06-19','Dia Internacional para a Eliminação da Violência Sexual em Conflito'],['06-20','Dia Mundial do Refugiado'],['06-21','Dia Internacional do Yoga'],['06-23','Dia das Nações Unidas para o Serviço Público'],['06-24','Dia Internacional das Mulheres na Diplomacia'],['06-25','Dia do Marinheiro'],['06-26','Dia Internacional contra o Abuso e Tráfico Ilícito de Drogas'],['06-27','Dia das Micro, Pequenas e Médias Empresas'],['06-29','Dia Internacional dos Trópicos'],['06-30','Dia Internacional dos Asteroides'],
-  ['07-05','Dia Internacional das Cooperativas'],['07-06','Dia Mundial do Desenvolvimento Rural'],['07-07','Dia Mundial da Língua Kiswahili'],['07-11','Dia Mundial da População'],['07-12','Dia Internacional da Esperança'],['07-15','Dia Mundial das Competências dos Jovens'],['07-18','Dia Internacional Nelson Mandela'],['07-20','Dia Mundial do Xadrez'],['07-20','Dia Internacional da Lua'],['07-25','Dia Mundial de Prevenção do Afogamento'],['07-28','Dia Mundial das Hepatites'],['07-30','Dia Internacional da Amizade'],['07-30','Dia Mundial contra o Tráfico de Pessoas'],
-  ['08-01','Início da Semana Mundial do Aleitamento Materno'],['08-09','Dia Internacional dos Povos Indígenas'],['08-11','Dia Mundial do Steelpan'],['08-19','Dia Mundial Humanitário'],['08-21','Dia Internacional de Homenagem às Vítimas do Terrorismo'],['08-23','Dia Internacional de Memória do Tráfico de Escravos e sua Abolição'],['08-27','Dia Mundial dos Lagos'],['08-29','Dia Internacional contra os Ensaios Nucleares'],['08-30','Dia Internacional das Vítimas de Desaparecimentos Forçados'],
-  ['09-05','Dia Internacional da Caridade'],['09-07','Dia Internacional do Ar Limpo para Céus Azuis'],['09-08','Dia Internacional da Literacia'],['09-09','Dia Internacional para Proteger a Educação contra Ataques'],['09-15','Dia Internacional da Democracia'],['09-16','Dia Internacional para a Preservação da Camada de Ozono'],['09-17','Dia Mundial da Segurança do Doente'],['09-18','Dia Internacional da Igualdade Salarial'],['09-20','Dia Mundial da Limpeza'],['09-21','Dia Internacional da Paz'],['09-23','Dia Internacional das Línguas Gestuais'],['09-27','Dia Mundial do Turismo'],['09-28','Dia Internacional do Acesso Universal à Informação'],['09-29','Dia Internacional de Consciencialização sobre Perdas e Desperdício Alimentar'],['09-30','Dia Internacional da Tradução'],
-  ['10-01','Dia Internacional das Pessoas Idosas'],['10-02','Dia Internacional da Não Violência'],['10-05','Dia Mundial do Professor'],['10-07','Dia Mundial do Algodão'],['10-09','Dia Mundial dos Correios'],['10-10','Dia Mundial da Saúde Mental'],['10-11','Dia Internacional da Rapariga'],['10-13','Dia Internacional para a Redução do Risco de Catástrofes'],['10-15','Dia Internacional das Mulheres Rurais'],['10-16','Dia Mundial da Alimentação'],['10-17','Dia Internacional para a Erradicação da Pobreza'],['10-24','Dia das Nações Unidas'],['10-24','Dia Mundial da Informação sobre Desenvolvimento'],['10-27','Dia Mundial do Património Audiovisual'],['10-29','Dia Internacional dos Cuidados e Apoio'],['10-31','Dia Mundial das Cidades'],
-  ['11-02','Dia Internacional pelo Fim da Impunidade dos Crimes contra Jornalistas'],['11-05','Dia Mundial de Consciencialização sobre Tsunamis'],['11-10','Dia Mundial da Ciência para a Paz e o Desenvolvimento'],['11-14','Dia Mundial da Diabetes'],['11-16','Dia Internacional da Tolerância'],['11-19','Dia Mundial da Sanita'],['11-20','Dia Mundial da Criança'],['11-21','Dia Mundial da Televisão'],['11-25','Dia Internacional pela Eliminação da Violência contra as Mulheres'],['11-26','Dia Mundial do Transporte Sustentável'],['11-29','Dia Internacional de Solidariedade com o Povo Palestiniano'],['11-30','Dia de Memória de Todas as Vítimas de Guerra Química'],
-  ['12-01','Dia Mundial de Luta contra a Sida'],['12-02','Dia Internacional para a Abolição da Escravatura'],['12-03','Dia Internacional das Pessoas com Deficiência'],['12-04','Dia Internacional dos Bancos'],['12-05','Dia Mundial do Solo'],['12-05','Dia Internacional do Voluntariado'],['12-07','Dia Internacional da Aviação Civil'],['12-09','Dia Internacional contra a Corrupção'],['12-10','Dia dos Direitos Humanos'],['12-11','Dia Internacional das Montanhas'],['12-12','Dia Internacional da Cobertura Universal de Saúde'],['12-18','Dia Internacional dos Migrantes'],['12-20','Dia Internacional da Solidariedade Humana'],['12-21','Dia Mundial da Meditação'],['12-21','Dia Mundial do Basquetebol'],['12-27','Dia Internacional de Preparação para Epidemias']
+  ['01-04', 'Dia Mundial do Braille'], ['01-24', 'Dia Internacional da Educação'], ['01-26', 'Dia Internacional da Energia Limpa'], ['01-27', 'Dia Internacional em Memória das Vítimas do Holocausto'], ['01-28', 'Dia Internacional da Coexistência Pacífica'],
+  ['02-02', 'Dia Mundial das Zonas Húmidas'], ['02-04', 'Dia Internacional da Fraternidade Humana'], ['02-06', 'Dia Internacional da Tolerância Zero à Mutilação Genital Feminina'], ['02-10', 'Dia Mundial das Leguminosas'], ['02-10', 'Dia Internacional do Leopardo-Árabe'], ['02-11', 'Dia Internacional das Mulheres e Raparigas na Ciência'], ['02-12', 'Dia Internacional para a Prevenção do Extremismo Violento'], ['02-17', 'Dia Mundial da Resiliência do Turismo'], ['02-20', 'Dia Mundial da Justiça Social'], ['02-21', 'Dia Internacional da Língua Materna'],
+  ['03-01', 'Dia da Discriminação Zero'], ['03-01', 'Dia Mundial das Ervas Marinhas'], ['03-03', 'Dia Mundial da Vida Selvagem'], ['03-05', 'Dia da Sensibilização para o Desarmamento e Não-Proliferação'], ['03-08', 'Dia Internacional da Mulher'], ['03-10', 'Dia Internacional das Mulheres Juízas'], ['03-15', 'Dia Internacional de Combate à Islamofobia'], ['03-20', 'Dia Internacional da Felicidade'], ['03-20', 'Dia da Língua Francesa'], ['03-21', 'Dia Internacional das Florestas'], ['03-21', 'Dia Internacional pela Eliminação da Discriminação Racial'], ['03-21', 'Dia Mundial da Síndrome de Down'], ['03-21', 'Dia Mundial da Água'], ['03-22', 'Dia Mundial da Água'], ['03-23', 'Dia Meteorológico Mundial'], ['03-24', 'Dia Mundial da Tuberculose'], ['03-25', 'Dia Internacional em Memória das Vítimas da Escravatura'], ['03-30', 'Dia Internacional do Lixo Zero'],
+  ['04-02', 'Dia Mundial da Consciencialização do Autismo'], ['04-04', 'Dia Internacional para Sensibilização sobre Minas'], ['04-05', 'Dia Internacional da Consciência'], ['04-06', 'Dia Internacional do Desporto para o Desenvolvimento e a Paz'], ['04-07', 'Dia Mundial da Saúde'], ['04-12', 'Dia Internacional do Voo Espacial Humano'], ['04-14', 'Dia Mundial da Doença de Chagas'], ['04-15', 'Dia Internacional do Bem-Estar'], ['04-20', 'Dia da Língua Chinesa'], ['04-21', 'Dia Mundial da Criatividade e Inovação'], ['04-22', 'Dia Internacional da Mãe Terra'], ['04-23', 'Dia Internacional das Raparigas nas TIC'], ['04-23', 'Dia Mundial do Livro e dos Direitos de Autor'], ['04-23', 'Dia da Língua Inglesa'], ['04-23', 'Dia da Língua Espanhola'], ['04-25', 'Dia Mundial da Malária'], ['04-26', 'Dia Mundial da Propriedade Intelectual'], ['04-28', 'Dia Mundial da Segurança e Saúde no Trabalho'],
+  ['05-02', 'Dia Mundial do Atum'], ['05-03', 'Dia Mundial da Liberdade de Imprensa'], ['05-05', 'Dia Mundial da Língua Portuguesa'], ['05-08', 'Dia de Memória e Reconciliação pelas vítimas da Segunda Guerra Mundial'], ['05-10', 'Dia Internacional da Argania'], ['05-12', 'Dia Internacional da Saúde das Plantas'], ['05-15', 'Dia Internacional das Famílias'], ['05-16', 'Dia Internacional da Luz'], ['05-17', 'Dia Mundial das Telecomunicações e da Sociedade da Informação'], ['05-19', 'Dia Mundial do Fair Play'], ['05-20', 'Dia Mundial das Abelhas'], ['05-21', 'Dia Internacional do Chá'], ['05-22', 'Dia Internacional da Biodiversidade'], ['05-25', 'Dia Mundial do Futebol'], ['05-29', 'Dia Internacional dos Capacetes Azuis da ONU'], ['05-30', 'Dia Internacional da Batata'], ['05-31', 'Dia Mundial sem Tabaco'],
+  ['06-01', 'Dia Global dos Pais'], ['06-03', 'Dia Mundial da Bicicleta'], ['06-04', 'Dia Internacional das Crianças Vítimas Inocentes de Agressão'], ['06-05', 'Dia Mundial do Ambiente'], ['06-07', 'Dia Mundial da Segurança dos Alimentos'], ['06-08', 'Dia Mundial dos Oceanos'], ['06-10', 'Dia Internacional do Diálogo entre Civilizações'], ['06-11', 'Dia Internacional do Brincar'], ['06-12', 'Dia Mundial contra o Trabalho Infantil'], ['06-13', 'Dia Internacional da Consciencialização sobre o Albinismo'], ['06-14', 'Dia Mundial do Dador de Sangue'], ['06-15', 'Dia Mundial de Consciencialização da Violência contra a Pessoa Idosa'], ['06-16', 'Dia Internacional das Remessas Familiares'], ['06-17', 'Dia Mundial de Combate à Desertificação e Seca'], ['06-18', 'Dia da Gastronomia Sustentável'], ['06-19', 'Dia Internacional para a Eliminação da Violência Sexual em Conflito'], ['06-20', 'Dia Mundial do Refugiado'], ['06-21', 'Dia Internacional do Yoga'], ['06-23', 'Dia das Nações Unidas para o Serviço Público'], ['06-24', 'Dia Internacional das Mulheres na Diplomacia'], ['06-25', 'Dia do Marinheiro'], ['06-26', 'Dia Internacional contra o Abuso e Tráfico Ilícito de Drogas'], ['06-27', 'Dia das Micro, Pequenas e Médias Empresas'], ['06-29', 'Dia Internacional dos Trópicos'], ['06-30', 'Dia Internacional dos Asteroides'],
+  ['07-05', 'Dia Internacional das Cooperativas'], ['07-06', 'Dia Mundial do Desenvolvimento Rural'], ['07-07', 'Dia Mundial da Língua Kiswahili'], ['07-11', 'Dia Mundial da População'], ['07-12', 'Dia Internacional da Esperança'], ['07-15', 'Dia Mundial das Competências dos Jovens'], ['07-18', 'Dia Internacional Nelson Mandela'], ['07-20', 'Dia Mundial do Xadrez'], ['07-20', 'Dia Internacional da Lua'], ['07-25', 'Dia Mundial de Prevenção do Afogamento'], ['07-28', 'Dia Mundial das Hepatites'], ['07-30', 'Dia Internacional da Amizade'], ['07-30', 'Dia Mundial contra o Tráfico de Pessoas'],
+  ['08-01', 'Início da Semana Mundial do Aleitamento Materno'], ['08-09', 'Dia Internacional dos Povos Indígenas'], ['08-11', 'Dia Mundial do Steelpan'], ['08-19', 'Dia Mundial Humanitário'], ['08-21', 'Dia Internacional de Homenagem às Vítimas do Terrorismo'], ['08-23', 'Dia Internacional de Memória do Tráfico de Escravos e sua Abolição'], ['08-27', 'Dia Mundial dos Lagos'], ['08-29', 'Dia Internacional contra os Ensaios Nucleares'], ['08-30', 'Dia Internacional das Vítimas de Desaparecimentos Forçados'],
+  ['09-05', 'Dia Internacional da Caridade'], ['09-07', 'Dia Internacional do Ar Limpo para Céus Azuis'], ['09-08', 'Dia Internacional da Literacia'], ['09-09', 'Dia Internacional para Proteger a Educação contra Ataques'], ['09-15', 'Dia Internacional da Democracia'], ['09-16', 'Dia Internacional para a Preservação da Camada de Ozono'], ['09-17', 'Dia Mundial da Segurança do Doente'], ['09-18', 'Dia Internacional da Igualdade Salarial'], ['09-20', 'Dia Mundial da Limpeza'], ['09-21', 'Dia Internacional da Paz'], ['09-23', 'Dia Internacional das Línguas Gestuais'], ['09-27', 'Dia Mundial do Turismo'], ['09-28', 'Dia Internacional do Acesso Universal à Informação'], ['09-29', 'Dia Internacional de Consciencialização sobre Perdas e Desperdício Alimentar'], ['09-30', 'Dia Internacional da Tradução'],
+  ['10-01', 'Dia Internacional das Pessoas Idosas'], ['10-02', 'Dia Internacional da Não Violência'], ['10-05', 'Dia Mundial do Professor'], ['10-07', 'Dia Mundial do Algodão'], ['10-09', 'Dia Mundial dos Correios'], ['10-10', 'Dia Mundial da Saúde Mental'], ['10-11', 'Dia Internacional da Rapariga'], ['10-13', 'Dia Internacional para a Redução do Risco de Catástrofes'], ['10-15', 'Dia Internacional das Mulheres Rurais'], ['10-16', 'Dia Mundial da Alimentação'], ['10-17', 'Dia Internacional para a Erradicação da Pobreza'], ['10-24', 'Dia das Nações Unidas'], ['10-24', 'Dia Mundial da Informação sobre Desenvolvimento'], ['10-27', 'Dia Mundial do Património Audiovisual'], ['10-29', 'Dia Internacional dos Cuidados e Apoio'], ['10-31', 'Dia Mundial das Cidades'],
+  ['11-02', 'Dia Internacional pelo Fim da Impunidade dos Crimes contra Jornalistas'], ['11-05', 'Dia Mundial de Consciencialização sobre Tsunamis'], ['11-10', 'Dia Mundial da Ciência para a Paz e o Desenvolvimento'], ['11-14', 'Dia Mundial da Diabetes'], ['11-16', 'Dia Internacional da Tolerância'], ['11-19', 'Dia Mundial da Sanita'], ['11-20', 'Dia Mundial da Criança'], ['11-21', 'Dia Mundial da Televisão'], ['11-25', 'Dia Internacional pela Eliminação da Violência contra as Mulheres'], ['11-26', 'Dia Mundial do Transporte Sustentável'], ['11-29', 'Dia Internacional de Solidariedade com o Povo Palestiniano'], ['11-30', 'Dia de Memória de Todas as Vítimas de Guerra Química'],
+  ['12-01', 'Dia Mundial de Luta contra a Sida'], ['12-02', 'Dia Internacional para a Abolição da Escravatura'], ['12-03', 'Dia Internacional das Pessoas com Deficiência'], ['12-04', 'Dia Internacional dos Bancos'], ['12-05', 'Dia Mundial do Solo'], ['12-05', 'Dia Internacional do Voluntariado'], ['12-07', 'Dia Internacional da Aviação Civil'], ['12-09', 'Dia Internacional contra a Corrupção'], ['12-10', 'Dia dos Direitos Humanos'], ['12-11', 'Dia Internacional das Montanhas'], ['12-12', 'Dia Internacional da Cobertura Universal de Saúde'], ['12-18', 'Dia Internacional dos Migrantes'], ['12-20', 'Dia Internacional da Solidariedade Humana'], ['12-21', 'Dia Mundial da Meditação'], ['12-21', 'Dia Mundial do Basquetebol'], ['12-27', 'Dia Internacional de Preparação para Epidemias']
 ];
 
 function formatDateKey(year, date) {
@@ -317,7 +244,7 @@ function getEasterSunday(year) {
 function getPortugalPublicHolidays(year) {
   const easter = getEasterSunday(year);
   const movable = (offset, title) => { const date = new Date(easter); date.setDate(easter.getDate() + offset); return { date: formatDateKey(year, date), title }; };
-  const fixed = [['01-01','Ano Novo'],['04-25','Dia da Liberdade'],['05-01','Dia do Trabalhador'],['06-10','Dia de Portugal, de Camões e das Comunidades Portuguesas'],['08-15','Assunção de Nossa Senhora'],['10-05','Implantação da República'],['11-01','Dia de Todos-os-Santos'],['12-01','Restauração da Independência'],['12-08','Imaculada Conceição'],['12-25','Natal']];
+  const fixed = [['01-01', 'Ano Novo'], ['04-25', 'Dia da Liberdade'], ['05-01', 'Dia do Trabalhador'], ['06-10', 'Dia de Portugal, de Camões e das Comunidades Portuguesas'], ['08-15', 'Assunção de Nossa Senhora'], ['10-05', 'Implantação da República'], ['11-01', 'Dia de Todos-os-Santos'], ['12-01', 'Restauração da Independência'], ['12-08', 'Imaculada Conceição'], ['12-25', 'Natal']];
   return [...fixed.map(([monthDay, title]) => ({ date: `${year}-${monthDay}`, title })), movable(-47, 'Terça-feira de Carnaval'), movable(-2, 'Sexta-feira Santa'), movable(0, 'Domingo de Páscoa'), movable(60, 'Corpo de Deus')].map((item, index) => ({ id: `pt-holiday-${year}-${index}`, ...item, category: 'Feriado em Portugal', notes: 'Feriado ou data de referência do calendário português.', source: 'portugal', readOnly: true }));
 }
 function getEditorialCalendarEvents() {
@@ -340,7 +267,9 @@ class RadioDatabase {
       calendarEvents: [],
       adminUsers: [],
       rundowns: [],
-      teamMemos: []
+      teamMemos: [],
+      polls: [],
+      tasks: []
     };
     this.error = null;
     this.readyPromise = this.initialize();
@@ -372,9 +301,11 @@ class RadioDatabase {
       this.loadCollection('rundowns', DEFAULT_RUNDOWNS),
       this.loadCollection('teamMemos', DEFAULT_TEAM_MEMOS),
       this.loadCollection('calendarEvents', []),
-      this.loadCollection('adminUsers', [])
+      this.loadCollection('adminUsers', []),
+      this.loadCollection('polls', []),
+      this.loadCollection('tasks', [])
     ]);
-    this.watchCollections(['suggestions', 'messages', 'rundowns', 'teamMemos', 'calendarEvents', 'adminUsers']);
+    this.watchCollections(['suggestions', 'messages', 'rundowns', 'teamMemos', 'calendarEvents', 'adminUsers', 'polls', 'tasks']);
     this.clearLegacyStorage(['radio_suggestions', 'radio_messages', 'radio_rundowns', 'radio_team_memos', 'radio_calendar_events', 'radio_admin_users']);
   }
 
@@ -410,7 +341,12 @@ class RadioDatabase {
     collectionNames.forEach(name => {
       try {
         firestore.collection(name).onSnapshot(snapshot => {
-          this.cache[name] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          if (!snapshot.empty) {
+            this.cache[name] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          } else if (!this.cache[name] || this.cache[name].length === 0) {
+            if (name === 'podcasts') this.cache.podcasts = [...DEFAULT_PODCASTS];
+            else if (name === 'announcements') this.cache.announcements = [...DEFAULT_ANNOUNCEMENTS];
+          }
           document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: name } }));
         }, error => {
           console.warn(`Aviso no listener da coleção '${name}':`, error.message || error);
@@ -501,11 +437,25 @@ class RadioDatabase {
     return [...this.cache.podcasts].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   }
 
+  getPodcast(id) {
+    return this.cache.podcasts.find(p => p.id === id) || null;
+  }
+
   addPodcast(podcast) {
     const newEntry = { id: 'pod-' + Date.now(), createdAt: Date.now(), ...podcast };
     this.cache.podcasts.unshift(newEntry);
     this.write('podcasts', newEntry.id, newEntry).catch(console.error);
     return newEntry;
+  }
+
+  updatePodcast(id, data) {
+    const index = this.cache.podcasts.findIndex(p => p.id === id);
+    if (index !== -1) {
+      this.cache.podcasts[index] = { ...this.cache.podcasts[index], ...data, updatedAt: Date.now() };
+      this.write('podcasts', id, this.cache.podcasts[index]).catch(console.error);
+      return this.cache.podcasts[index];
+    }
+    return null;
   }
 
   deletePodcast(id) {
@@ -650,14 +600,54 @@ class RadioDatabase {
     this.remove('calendarEvents', id).catch(console.error);
   }
 
-  // UTILIZADORES / ADMINISTRADORES (perfil usado na agenda partilhada)
+  // UTILIZADORES / ADMINISTRADORES (RBAC - Google Workspace Style)
   getAdminUsers() {
-    return [...this.cache.adminUsers].sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'pt'));
+    return [...(this.cache.adminUsers || [])].map(user => {
+      // Normalize user with RBAC defaults for backwards compatibility
+      const roleKey = user.roleKey || (user.role === 'Administrador' ? 'super_admin' : (user.role || 'super_admin'));
+      const permissions = user.permissions || (roleKey === 'super_admin' ? {
+        access_aovivo: true,
+        manage_rundowns: true,
+        manage_songs: true,
+        manage_podcasts: true,
+        manage_announcements: true,
+        manage_links: true,
+        manage_messages: true,
+        manage_polls: true,
+        manage_calendar: true,
+        manage_tasks: true,
+        manage_memos: true,
+        manage_users: true,
+        system_config: true
+      } : {});
+
+      return {
+        ...user,
+        roleKey,
+        roleTitle: user.roleTitle || (roleKey === 'super_admin' ? 'Super Administrador' : user.role || 'Super Administrador'),
+        status: user.status || 'active',
+        avatarColor: user.avatarColor || 'indigo',
+        position: user.position || 'Membro da Equipa',
+        permissions
+      };
+    }).sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'pt'));
   }
 
   saveAdminUser(user) {
     const id = user.id || `user-${Date.now()}`;
-    const entry = { ...user, id, role: 'Administrador', updatedAt: Date.now() };
+    const roleKey = user.roleKey || 'super_admin';
+    const entry = {
+      ...user,
+      id,
+      roleKey,
+      roleTitle: user.roleTitle || 'Super Administrador',
+      status: user.status || 'active',
+      avatarColor: user.avatarColor || 'indigo',
+      position: user.position || 'Membro da Equipa',
+      permissions: user.permissions || {},
+      updatedAt: Date.now()
+    };
+    if (!this.cache.adminUsers) this.cache.adminUsers = [];
     const index = this.cache.adminUsers.findIndex(item => item.id === id);
     if (index === -1) this.cache.adminUsers.push(entry);
     else this.cache.adminUsers[index] = { ...this.cache.adminUsers[index], ...entry };
@@ -665,8 +655,17 @@ class RadioDatabase {
     return entry;
   }
 
+  updateAdminUserStatus(id, status) {
+    const user = (this.cache.adminUsers || []).find(u => u.id === id);
+    if (user) {
+      user.status = status;
+      user.updatedAt = Date.now();
+      this.write('adminUsers', id, { status, updatedAt: Date.now() }).catch(console.error);
+    }
+  }
+
   deleteAdminUser(id) {
-    this.cache.adminUsers = this.cache.adminUsers.filter(user => user.id !== id);
+    this.cache.adminUsers = (this.cache.adminUsers || []).filter(user => user.id !== id);
     this.remove('adminUsers', id).catch(console.error);
   }
 
@@ -699,9 +698,9 @@ class RadioDatabase {
     if (!this.cache.rundowns) this.cache.rundowns = [];
     const found = this.cache.rundowns.find(r => r.date === dateKey || r.id === `script-${dateKey}` || r.id === dateKey);
     if (found) return found;
-    
+
     // Generate clean 4-step template if not present
-    const content = (typeof generateDefaultScriptTemplate === 'function') 
+    const content = (typeof generateDefaultScriptTemplate === 'function')
       ? generateDefaultScriptTemplate(dateKey)
       : `[Inicio da Emissão]\n- Bom dia Cidadela! São xx:xx, XºF, ${dateKey}\n\n[Eventos]\nSem eventos hoje\n\n[Avisos]\nSem avisos hoje\n\n[Musica Começa]`;
 
@@ -753,6 +752,136 @@ class RadioDatabase {
     this.cache.teamMemos = (this.cache.teamMemos || []).filter(m => m.id !== id);
     this.remove('teamMemos', id).catch(console.error);
   }
+
+  // ============================================================
+  // SONDAGENS / VOTAÇÕES (POLLS)
+  // ============================================================
+  getPolls() {
+    return [...(this.cache.polls || [])].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  }
+
+  savePoll(poll) {
+    const id = poll.id || `poll-${Date.now()}`;
+    const entry = { ...poll, id, updatedAt: Date.now() };
+    if (!this.cache.polls) this.cache.polls = [];
+    const index = this.cache.polls.findIndex(item => item.id === id);
+    if (index === -1) this.cache.polls.unshift(entry);
+    else this.cache.polls[index] = { ...this.cache.polls[index], ...entry };
+    this.write('polls', id, entry).catch(console.error);
+    return entry;
+  }
+
+  deletePoll(id) {
+    this.cache.polls = (this.cache.polls || []).filter(p => p.id !== id);
+    this.remove('polls', id).catch(console.error);
+  }
+
+  closePoll(id) {
+    const index = (this.cache.polls || []).findIndex(p => p.id === id);
+    if (index !== -1) {
+      this.cache.polls[index].closed = true;
+      this.cache.polls[index].closedAt = Date.now();
+      this.write('polls', id, { closed: true, closedAt: Date.now() }).catch(console.error);
+    }
+  }
+
+  async addVote(pollId, optionIndex, voterIdentifier) {
+    // Hash the voter identifier to avoid storing raw student numbers
+    const identHash = await this._hashIdentifier(`${pollId}:${voterIdentifier}`);
+    const voteId = `vote-${pollId}-${identHash.slice(0, 12)}`;
+    const entry = {
+      id: voteId,
+      pollId,
+      optionIndex,
+      voterHash: identHash,
+      createdAt: Date.now()
+    };
+    // Check local de-dup
+    return this.write('pollVotes', voteId, entry);
+  }
+
+  async checkAlreadyVoted(pollId, voterIdentifier) {
+    const identHash = await this._hashIdentifier(`${pollId}:${voterIdentifier}`);
+    const voteId = `vote-${pollId}-${identHash.slice(0, 12)}`;
+    try {
+      const doc = await firestore.collection('pollVotes').doc(voteId).get();
+      return doc.exists;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async getPollVoteCounts(pollId) {
+    try {
+      const snapshot = await firestore.collection('pollVotes').where('pollId', '==', pollId).get();
+      const counts = {};
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        counts[data.optionIndex] = (counts[data.optionIndex] || 0) + 1;
+      });
+      return counts;
+    } catch (e) {
+      return {};
+    }
+  }
+
+  async _hashIdentifier(str) {
+    if (window.crypto && window.crypto.subtle) {
+      try {
+        const msgBuffer = new TextEncoder().encode(str);
+        const hashBuffer = await window.crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      } catch (e) { }
+    }
+    // Fallback simples
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+    }
+    return Math.abs(hash).toString(16).padStart(8, '0');
+  }
+
+  // ============================================================
+  // GESTÃO DE TAREFAS (TASKS)
+  // ============================================================
+  getTasks() {
+    return [...(this.cache.tasks || [])].sort((a, b) => {
+      // Sort by: priority (urgent first), then by due date, then creation date
+      const priorityOrder = { urgent: 0, high: 1, normal: 2, low: 3 };
+      const pa = priorityOrder[a.priority] ?? 2;
+      const pb = priorityOrder[b.priority] ?? 2;
+      if (pa !== pb) return pa - pb;
+      if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+  }
+
+  saveTask(task) {
+    const id = task.id || `task-${Date.now()}`;
+    const entry = { ...task, id, updatedAt: Date.now() };
+    if (!this.cache.tasks) this.cache.tasks = [];
+    const index = this.cache.tasks.findIndex(item => item.id === id);
+    if (index === -1) this.cache.tasks.unshift(entry);
+    else this.cache.tasks[index] = { ...this.cache.tasks[index], ...entry };
+    this.write('tasks', id, entry).catch(console.error);
+    return entry;
+  }
+
+  updateTaskStatus(id, status) {
+    const index = (this.cache.tasks || []).findIndex(t => t.id === id);
+    if (index !== -1) {
+      this.cache.tasks[index].status = status;
+      this.cache.tasks[index].updatedAt = Date.now();
+      if (status === 'done') this.cache.tasks[index].doneAt = Date.now();
+      this.write('tasks', id, { status, updatedAt: Date.now(), ...(status === 'done' ? { doneAt: Date.now() } : {}) }).catch(console.error);
+    }
+  }
+
+  deleteTask(id) {
+    this.cache.tasks = (this.cache.tasks || []).filter(t => t.id !== id);
+    this.remove('tasks', id).catch(console.error);
+  }
 }
 
 // Instância Global da Base de Dados
@@ -771,3 +900,55 @@ function escapeHtmlForStorage(text) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
+/* ==========================================================================
+   OFFLINE HOOKS: MONITORIZAÇÃO DE CONECTIVIDADE
+   ========================================================================== */
+
+const _onlineStatus = {
+  isOnline: navigator.onLine,
+  wasOnline: navigator.onLine,
+  listeners: [],
+  lastChange: Date.now()
+};
+
+window.getConnectionStatus = function () {
+  return { ..._onlineStatus };
+};
+
+window.onConnectionChange = function (callback) {
+  if (typeof callback === 'function') {
+    _onlineStatus.listeners.push(callback);
+  }
+  return function unsubscribe() {
+    _onlineStatus.listeners = _onlineStatus.listeners.filter(l => l !== callback);
+  };
+};
+
+function _notifyConnectionChange(isOnline) {
+  _onlineStatus.isOnline = isOnline;
+  _onlineStatus.lastChange = Date.now();
+  _onlineStatus.listeners.forEach(fn => {
+    try { fn(isOnline); } catch (_) { }
+  });
+  document.dispatchEvent(new CustomEvent('radio-connection-change', {
+    detail: { online: isOnline, timestamp: Date.now() }
+  }));
+}
+
+if (window.addEventListener) {
+  window.addEventListener('online', () => {
+    _notifyConnectionChange(true);
+  }, { passive: true });
+
+  window.addEventListener('offline', () => {
+    _notifyConnectionChange(false);
+  }, { passive: true });
+}
+
+window.firebaseServices.online = function () {
+  return _onlineStatus.isOnline;
+};
+
+window.firebaseServices.onConnectionChange = window.onConnectionChange;
+window.firebaseServices.getConnectionStatus = window.getConnectionStatus;

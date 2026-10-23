@@ -1,183 +1,381 @@
 <!DOCTYPE html>
 <html lang="pt">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rádio Escolar | EBS da Cidadela • Cascais</title>
-  <meta name="description" content="Plataforma oficial da Rádio Escolar da Escola Básica e Secundária da Cidadela em parceria com a Câmara Municipal de Cascais. Pede músicas, ouve podcasts e acompanha as notícias.">
-  <meta name="theme-color" content="#070913">
-
-  <!-- Open Graph / Facebook -->
+  <meta name="description"
+    content="Plataforma oficial da Rádio Escolar da Escola Básica e Secundária da Cidadela em parceria com a Câmara Municipal de Cascais. Pede músicas, ouve podcasts e acompanha as notícias.">
+  <meta name="theme-color" content="#06080f">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://radio-cidadela.pt/">
   <meta property="og:title" content="Rádio Escolar | EBS da Cidadela • Cascais">
-  <meta property="og:description" content="A voz e a música dos alunos da Escola Básica e Secundária da Cidadela em parceria com a Câmara Municipal de Cascais.">
+  <meta property="og:description"
+    content="A voz e a música dos alunos da EBS da Cidadela em parceria com a Câmara Municipal de Cascais.">
   <meta property="og:image" content="assets/logo-radio.jpg">
   <meta property="og:locale" content="pt_PT">
-
-  <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image">
   <meta property="twitter:title" content="Rádio Escolar | EBS da Cidadela • Cascais">
-  <meta property="twitter:description" content="A voz e a música dos alunos da Escola Básica e Secundária da Cidadela.">
+  <meta property="twitter:description" content="A voz e a música dos alunos da EBS da Cidadela.">
   <meta property="twitter:image" content="assets/logo-radio.jpg">
-
   <link rel="icon" type="image/jpeg" href="assets/logo-radio.jpg">
   <link rel="apple-touch-icon" href="assets/logo-radio.jpg">
-  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
   <link rel="stylesheet" href="css/styles.css">
+  <script src="js/maintenance-guard.js"></script>
 </head>
+
 <body>
 
-  <!-- Topo Institucional Discreto -->
-  <div class="top-sub-bar">
-    <div class="container top-sub-bar-content">
-      <div>
-        <i class="ri-government-line" style="color: var(--primary-blue);"></i>
-        <span>Agrupamento de Escolas da Cidadela • Parceria com a Câmara Municipal de Cascais</span>
-      </div>
+  <!-- Topo Institucional -->
+  <div class="hv2-topbar">
+    <div class="hv2-topbar-inner">
+      <i class="ri-government-line" aria-hidden="true"></i>
+      <span>
+        <a href="https://aecidadela.pt" target="_blank" rel="noopener noreferrer" class="hv2-topbar-link">Agrupamento de Escolas da Cidadela</a>
+        <span class="hv2-topbar-sep">•</span>
+        <span class="hv2-topbar-muted">Parceria com a</span>
+        <a href="https://www.cascais.pt" target="_blank" rel="noopener noreferrer" class="hv2-topbar-link">Câmara Municipal de Cascais</a>
+      </span>
     </div>
   </div>
 
   <!-- Navegação Principal -->
-  <nav class="navbar">
-    <div class="container nav-content">
-      
-      <div class="brand-group">
-        <a href="index.html" style="display: flex; align-items: center; gap: 0.85rem;">
-          <img src="assets/logo-radio.jpg" alt="Logótipo da Rádio Escolar" class="logo-radio-header">
-          <div class="brand-text">
-            <h1>RÁDIO ESCOLAR</h1>
-            <span>EBS CIDADELA</span>
-          </div>
-        </a>
-      </div>
+  <nav class="hv2-nav" id="mainNav" aria-label="Navegação principal">
+    <div class="hv2-nav-inner">
+      <a href="index.html" class="hv2-brand" aria-label="Rádio Escolar — Página Principal">
+        <div class="hv2-logo-wrap">
+          <img src="assets/logo-radio.jpg" alt="Logótipo Rádio Escolar">
+        </div>
+        <div class="hv2-brand-text">
+          <strong>RÁDIO ESCOLAR</strong>
+          <span>EBS CIDADELA</span>
+        </div>
+      </a>
 
-      <ul class="nav-links">
-        <li><a href="index.html" class="active">Início</a></li>
+      <ul class="hv2-nav-links" role="list">
+        <li><a href="index.html" class="active" aria-current="page">Início</a></li>
         <li><a href="podcasts.html">Podcasts</a></li>
         <li><a href="noticias.html">Notícias</a></li>
-        <li><a href="mensagem.html" class="message-nav-button"><i class="ri-chat-heart-line"></i> Enviar mensagem</a></li>
-        <li><a href="pedir-musica.html" class="btn-cta-highlight"><i class="ri-music-2-fill"></i> Pedir Música</a></li>
+        <li><a href="mensagem.html" class="message-nav-button"><i class="ri-chat-heart-line" aria-hidden="true"></i> Fala Connosco</a></li>
       </ul>
+
+      <a href="pedir-musica.html" class="hv2-nav-cta" id="navCtaBtn">
+        <i class="ri-music-2-fill" aria-hidden="true"></i>
+        <span>Pedir Música</span>
+      </a>
+
+      <button class="hv2-hamburger" id="navBurger" aria-label="Abrir menu de navegação" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </nav>
 
+  <!-- Menu Mobile Drawer -->
+  <div class="hv2-nav-mobile" id="mobileMenu" aria-hidden="true">
+    <button class="hv2-mobile-close" id="mobileClose" aria-label="Fechar menu">
+      <i class="ri-close-line" aria-hidden="true"></i>
+    </button>
+    <a href="index.html" class="active">Início</a>
+    <a href="podcasts.html">Podcasts</a>
+    <a href="noticias.html">Notícias</a>
+    <a href="mensagem.html" class="message-nav-button" style="justify-content: center; width: 100%;"><i class="ri-chat-heart-line" aria-hidden="true"></i> Fala Connosco</a>
+    <a href="pedir-musica.html" class="hv2-btn-primary">
+      <i class="ri-music-2-fill" aria-hidden="true"></i> Pedir Música
+    </a>
+  </div>
+
   <!-- Hero Section -->
-  <header class="landing-hero">
-    <div class="container">
-      <div class="hero-wrapper">
-        
-        <!-- Conteúdo da Esquerda -->
-        <div class="hero-content-side">
+  <header class="hv2-hero" id="hero">
+    <div class="hv2-hero-bg" aria-hidden="true">
+      <div class="hv2-orb hv2-orb-1"></div>
+      <div class="hv2-orb hv2-orb-2"></div>
+      <div class="hv2-orb hv2-orb-3"></div>
+      <div class="hv2-hero-grid"></div>
+    </div>
 
-          <h1>A tua música no intervalo das 10:00.</h1>
-          
-          <p>
-            Plataforma de comunicação dinamizada pelos alunos da Escola Básica e Secundária da Cidadela em parceria com a Câmara Municipal de Cascais. Pede os teus temas favoritos, ouve os podcasts e descobre as novidades.
-          </p>
+    <div class="hv2-hero-inner">
+      <div class="hv2-hero-content hv2-animate">
 
-          <div class="hero-btn-group">
-            <a href="pedir-musica.html" class="btn-cta-highlight" style="padding: 0.9rem 1.8rem !important; font-size: 1.05rem;">
-              <i class="ri-music-2-fill"></i> Pedir Música
-            </a>
-            <a href="podcasts.html" class="card-box" style="padding: 0.9rem 1.6rem; color: #ffffff; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; border-radius: var(--radius-full);">
-              <i class="ri-headphones-line" style="color: var(--primary-blue);"></i> Ouvir Podcasts
-            </a>
-          </div>
+        <br><br>
+
+        <h1 class="hv2-hero-title">
+          A
+          <span class="accent-blue">tua</span> rádio <br>das <span class="accent-gold">10:00</span>!
+        </h1>
+
+        <p class="hv2-hero-sub">
+          A plataforma oficial de comunicação e entretenimento dinamizada pelos alunos da Escola Básica e Secundária da
+          Cidadela em parceria com a Câmara Municipal de Cascais. Pede temas, ouve podcasts e fica a par de tudo.
+        </p>
+
+        <div class="hv2-hero-ctas">
+          <a href="pedir-musica.html" class="hv2-btn-primary" id="heroBtnPedirMusica">
+            <i class="ri-music-2-fill" aria-hidden="true"></i> Pedir Música
+          </a>
+          <a href="podcasts.html" class="hv2-btn-secondary" id="heroBtnPodcasts">
+            <i class="ri-headphones-fill" aria-hidden="true"></i> Ouvir Podcasts
+          </a>
+          <a href="mensagem.html" class="hv2-btn-secondary" id="heroBtnMensagem">
+            <i class="ri-chat-heart-line" aria-hidden="true"></i> Fala Connosco
+          </a>
         </div>
 
-        <!-- Logótipo da Rádio em Destaque no Lado Direito -->
-        <div class="hero-logo-card">
-          <img src="assets/logo-radio.jpg" alt="Logótipo da Rádio Escolar" class="hero-logo-img">
-          
-          <h3 style="font-size: 1.3rem; margin-bottom: 0.2rem;">Rádio Cidadela</h3>
-          <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 1rem;">EBS da Cidadela • Cascais</p>
-          
-          <div class="waveform-bars" style="justify-content: center; opacity: 0.85;">
-            <div class="waveform-bar" style="height: 40%;"></div>
-            <div class="waveform-bar" style="height: 70%;"></div>
-            <div class="waveform-bar" style="height: 90%;"></div>
-            <div class="waveform-bar" style="height: 60%;"></div>
-            <div class="waveform-bar" style="height: 30%;"></div>
-          </div>
-        </div>
 
       </div>
+
+      <div class="hv2-hero-visual hv2-animate hv2-animate-d2" aria-hidden="true">
+        <div class="hv2-radio-globe">
+          <div class="hv2-globe-glow"></div>
+          <div class="hv2-globe-ring"></div>
+          <div class="hv2-globe-ring-2"></div>
+          <div class="hv2-globe-center">
+            <img src="assets/logo-radio.jpg" alt="Logótipo Rádio Escolar">
+          </div>
+        </div>
+
+        <div class="hv2-waveform" aria-label="Equalizador gráfico de áudio">
+          <div class="hv2-waveform-bar"></div>
+          <div class="hv2-waveform-bar"></div>
+          <div class="hv2-waveform-bar"></div>
+          <div class="hv2-waveform-bar"></div>
+          <div class="hv2-waveform-bar"></div>
+          <div class="hv2-waveform-bar"></div>
+          <div class="hv2-waveform-bar"></div>
+          <div class="hv2-waveform-bar"></div>
+          <div class="hv2-waveform-bar"></div>
+          <div class="hv2-waveform-bar"></div>
+          <div class="hv2-waveform-bar"></div>
+          <div class="hv2-waveform-bar"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hv2-scroll-hint" aria-hidden="true">
+      <i class="ri-arrow-down-s-line"></i>
+      <span>Explorar</span>
     </div>
   </header>
 
-  <!-- Conteúdo Principal -->
-  <main class="container">
+  <!-- Secção de Acesso Rápido -->
+  <section class="hv2-qa" aria-label="Acesso Rápido aos Serviços da Rádio">
+    <div class="hv2-section">
+      <div class="hv2-qa-grid">
 
-    <section class="home-message-section home-message-section-quiet">
-      <div class="home-message-banner">
-        <div>
-          <span class="message-section-label"><i class="ri-chat-heart-line"></i> Fala connosco</span>
-          <h2>Fala connosco</h2>
-          <p>Uma mensagem curta, um parabéns ou um abraço para passar numa próxima emissão.</p>
+        <a href="pedir-musica.html" class="hv2-qa-card music" id="qaMusicCard">
+          <div class="hv2-qa-icon">
+            <i class="ri-music-2-fill" aria-hidden="true"></i>
+          </div>
+          <div>
+            <h2 class="hv2-qa-title">Pedir Música</h2>
+            <p class="hv2-qa-desc">Pesquisa no catálogo oficial e escolhe os teus temas para a playlist do intervalo.
+            </p>
+          </div>
+          <i class="ri-arrow-right-line hv2-qa-arrow" aria-hidden="true"></i>
+        </a>
+
+        <a href="podcasts.html" class="hv2-qa-card podcast" id="qaPodcastCard">
+          <div class="hv2-qa-icon">
+            <i class="ri-headphones-line" aria-hidden="true"></i>
+          </div>
+          <div>
+            <h2 class="hv2-qa-title">Podcasts</h2>
+            <p class="hv2-qa-desc">Ouve episódios temáticos, debates e entrevistas produzidas pelos alunos da escola.
+            </p>
+          </div>
+          <i class="ri-arrow-right-line hv2-qa-arrow" aria-hidden="true"></i>
+        </a>
+
+        <a href="noticias.html" class="hv2-qa-card news" id="qaNewsCard">
+          <div class="hv2-qa-icon">
+            <i class="ri-article-line" aria-hidden="true"></i>
+          </div>
+          <div>
+            <h2 class="hv2-qa-title">Notícias</h2>
+            <p class="hv2-qa-desc">Acompanha comunicados, convocatórias, eventos e informações da equipa da rádio.</p>
+          </div>
+          <i class="ri-arrow-right-line hv2-qa-arrow" aria-hidden="true"></i>
+        </a>
+
+        <a href="mensagem.html" class="hv2-qa-card message" id="qaMessageCard">
+          <div class="hv2-qa-icon">
+            <i class="ri-chat-heart-line" aria-hidden="true"></i>
+          </div>
+          <div>
+            <h2 class="hv2-qa-title">Fala Connosco</h2>
+            <p class="hv2-qa-desc">Envia dedicatórias aos colegas, parabéns ou recados para serem lidos em antena.</p>
+          </div>
+          <i class="ri-arrow-right-line hv2-qa-arrow" aria-hidden="true"></i>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <main>
+
+    <!-- Podcasts em Destaque -->
+    <section class="hv2-section-wrap alt-bg" aria-labelledby="podcastsHeading">
+      <div class="hv2-section">
+        <header class="hv2-sec-header">
+          <div>
+            <span class="hv2-kicker">
+              <i class="ri-mic-line" aria-hidden="true"></i> Emissões Gravadas
+            </span>
+            <h2 class="hv2-sec-title" id="podcastsHeading">Últimos Podcasts</h2>
+          </div>
+          <a href="podcasts.html" class="hv2-see-all" id="seeAllPodcasts">
+            Ver todos os podcasts <i class="ri-arrow-right-line" aria-hidden="true"></i>
+          </a>
+        </header>
+
+        <div class="hv2-podcast-grid" id="homePodcastsContainer" aria-live="polite">
+          <!-- Preenchido via app.js -->
         </div>
-        <a class="message-banner-button" href="mensagem.html"><i class="ri-send-plane-line"></i> Enviar mensagem</a>
       </div>
     </section>
 
-    <!-- Podcasts Recentes -->
-    <section style="margin-bottom: 4rem;">
-      <div class="home-section-title">
-        <h2><i class="ri-mic-line" style="color: var(--primary-blue);"></i> Podcasts Recentes</h2>
-        <a href="podcasts.html" style="font-weight: 600; font-size: 0.95rem;">Ver Todos →</a>
-      </div>
+    <!-- Notícias e Comunicados Oficiais -->
+    <section class="hv2-section-wrap" aria-labelledby="newsHeading">
+      <div class="hv2-section">
+        <header class="hv2-sec-header">
+          <div>
+            <span class="hv2-kicker">
+              <i class="ri-megaphone-line" aria-hidden="true"></i> Comunicação Oficial
+            </span>
+            <h2 class="hv2-sec-title" id="newsHeading">Mural de Notícias &amp; Comunicados</h2>
+          </div>
+          <a href="noticias.html" class="hv2-see-all" id="seeAllNews">
+            Ver todas as notícias <i class="ri-arrow-right-line" aria-hidden="true"></i>
+          </a>
+        </header>
 
-      <div class="home-grid-3" id="homePodcastsContainer">
-        <!-- Renderizado via js/app.js -->
-      </div>
-    </section>
-
-    <!-- Notícias Recentes -->
-    <section style="margin-bottom: 4rem;">
-      <div class="home-section-title">
-        <h2><i class="ri-article-line" style="color: var(--primary-blue);"></i> Últimos Comunicados</h2>
-        <a href="noticias.html" style="font-weight: 600; font-size: 0.95rem;">Ver Notícias →</a>
-      </div>
-
-      <div class="home-grid-3" id="announcementsContainer">
-        <!-- Renderizado via js/app.js -->
+        <div class="hv2-news-grid" id="announcementsContainer" aria-live="polite">
+          <!-- Preenchido via app.js -->
+        </div>
       </div>
     </section>
 
   </main>
 
-  <!-- Rodapé Institucional (Sem Caixa Externa e com Pontos de Divisão) -->
-  <footer class="footer-pro">
-    <div class="container footer-pro-content">
-      
-      <div class="footer-credits-top">
-        &copy; Rádio Escolar 2026
-        <span>Site desenvolvido por Rafael Diogo</span>
+  <!-- Rodapé Institucional -->
+  <footer class="hv2-footer" role="contentinfo">
+    <div class="hv2-footer-inner">
+
+      <!-- Grelha Principal do Rodapé -->
+      <div class="hv2-footer-main">
+
+        <!-- Coluna 1: Identidade da Rádio Escolar -->
+        <div class="hv2-footer-col hv2-footer-col-brand">
+          <a href="index.html" class="hv2-footer-brand-link" aria-label="Rádio Escolar - Início">
+            <img src="assets/logo-radio.jpg" alt="Logótipo Rádio Escolar" class="hv2-footer-radio-logo">
+            <div>
+              <strong class="hv2-footer-title">RÁDIO ESCOLAR</strong>
+              <span class="hv2-footer-subtitle">EBS CIDADELA</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- Coluna 2: Navegação Rápida -->
+        <div class="hv2-footer-col hv2-footer-col-nav">
+          <h4 class="hv2-footer-heading">Navegação</h4>
+          <ul class="hv2-footer-list" role="list">
+            <li><a href="index.html"><i class="ri-home-4-line" aria-hidden="true"></i> Início</a></li>
+            <li><a href="pedir-musica.html"><i class="ri-music-2-line" aria-hidden="true"></i> Pedir Música</a></li>
+            <li><a href="podcasts.html"><i class="ri-mic-line" aria-hidden="true"></i> Podcasts</a></li>
+            <li><a href="noticias.html"><i class="ri-newspaper-line" aria-hidden="true"></i> Notícias</a></li>
+            <li><a href="mensagem.html"><i class="ri-chat-heart-line" aria-hidden="true"></i> Fala Connosco</a></li>
+            <li><a href="links.html"><i class="ri-links-line" aria-hidden="true"></i> Links Rápidos</a></li>
+          </ul>
+        </div>
+
+        <!-- Coluna 3: Entidades & Parcerias -->
+        <div class="hv2-footer-col hv2-footer-col-partners">
+          <h4 class="hv2-footer-heading">Entidades & Parcerias</h4>
+          <div class="hv2-partner-cards">
+            <!-- Parceria: Cascais -->
+            <div class="hv2-partner-item">
+              <span class="hv2-partner-tag">Parceria</span>
+              <a href="https://www.cascais.pt" target="_blank" rel="noopener noreferrer" class="hv2-partner-link" title="Câmara Municipal de Cascais" aria-label="Câmara Municipal de Cascais">
+                <img src="assets/logo-cmc.jpg" alt="Câmara Municipal de Cascais" class="hv2-partner-img hv2-img-cmc">
+              </a>
+            </div>
+
+            <!-- Produção: Criativa -->
+            <div class="hv2-partner-item">
+              <span class="hv2-partner-tag">Produção</span>
+              <a href="https://criativa.org" target="_blank" rel="noopener noreferrer" class="hv2-partner-link" title="Criativa.org" aria-label="Criativa.org">
+                <img src="assets/logo-criativa.jpg" alt="Criativa.org" class="hv2-partner-img hv2-img-criativa">
+              </a>
+            </div>
+
+            <!-- Escola: AE Cidadela -->
+            <div class="hv2-partner-item">
+              <span class="hv2-partner-tag">Escola</span>
+              <a href="https://aecidadela.pt" target="_blank" rel="noopener noreferrer" class="hv2-partner-link" title="Agrupamento de Escolas da Cidadela" aria-label="Agrupamento de Escolas da Cidadela">
+                <img src="assets/logo-cidadela.png" alt="Agrupamento de Escolas da Cidadela" class="hv2-partner-img hv2-img-cidadela">
+              </a>
+            </div>
+          </div>
+        </div>
+
       </div>
 
-      <!-- Logótipos sem caixa externa e com pontos de divisão -->
-      <div class="footer-emblem-wrap">
-        <img src="assets/logo-radio.jpg" alt="Rádio Escolar Logo" class="footer-logo-item">
+      <!-- Barra Inferior (Direitos e Acesso) -->
+      <div class="hv2-footer-bottom">
+        <div class="hv2-footer-copy">
+          &copy; 2026 <strong>Rádio Escolar EBS Cidadela</strong> <span>• Desenvolvido por Rafael Diogo</span>
+        </div>
+
+        <div>
+          <a href="admin.html" class="hv2-footer-admin-link">
+            <i class="ri-lock-2-line" aria-hidden="true"></i> Área Reservada
+          </a>
+        </div>
       </div>
 
-      <div class="footer-institution-text">
-        A Rádio Escolar faz parte do <strong>Agrupamento de Escolas da Cidadela</strong>,<br>
-        desenvolvida em parceria oficial com a <strong>Câmara Municipal de Cascais</strong>.
-      </div>
-
-      <nav class="footer-nav-links">
-        <a href="index.html">Início</a> •
-        <a href="pedir-musica.html">Pedir Música</a> •
-        <a href="podcasts.html">Podcasts</a> •
-        <a href="noticias.html">Notícias</a> •
-        <a href="links.html">Links Rápidos</a> •
-        <a href="admin.html" style="color: var(--text-muted);">Área Reservada</a>
-      </nav>
     </div>
   </footer>
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="js/firebase-config.js"></script>
+  <!-- Firebase & Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
   <script src="js/app.js"></script>
+
+  <script>
+    (function () {
+      // Mobile Drawer Toggle
+      var burger = document.getElementById('navBurger');
+      var menu = document.getElementById('mobileMenu');
+      var close = document.getElementById('mobileClose');
+
+      function openMenu() {
+        menu.classList.add('open');
+        burger.setAttribute('aria-expanded', 'true');
+        menu.removeAttribute('aria-hidden');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeMenu() {
+        menu.classList.remove('open');
+        burger.setAttribute('aria-expanded', 'false');
+        menu.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      }
+
+      if (burger) burger.addEventListener('click', openMenu);
+      if (close) close.addEventListener('click', closeMenu);
+      if (menu) menu.addEventListener('click', function (e) { if (e.target === menu) closeMenu(); });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && menu && menu.classList.contains('open')) closeMenu();
+      });
+    })();
+  </script>
+
 </body>
+
 </html>

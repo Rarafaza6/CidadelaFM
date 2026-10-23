@@ -14,7 +14,16 @@ function renderArticle() {
   const article = id ? publicArticles.find(item => item.id === id || item.slug === id) || null : null;
 
   if (!article) {
-    target.innerHTML = '<div class="empty-state"><i class="ri-file-warning-line"></i><h1>Artigo não encontrado</h1><p>Este artigo pode ter sido removido ou o endereço está incompleto.</p><a class="btn-submit-main" href="noticias.html">Ver todas as notícias</a></div>';
+    target.innerHTML = `
+      <div class="hv2-empty-state" style="padding: 4rem 1.5rem;">
+        <div class="hv2-empty-icon"><i class="ri-file-warning-line"></i></div>
+        <h2>Artigo não encontrado</h2>
+        <p>Este artigo pode ter sido removido ou o endereço está incompleto.</p>
+        <div style="margin-top: 1.5rem;">
+          <a class="hv2-btn-primary" href="noticias.html" style="display: inline-flex;"><i class="ri-newspaper-line"></i> Ver todas as notícias</a>
+        </div>
+      </div>
+    `;
     return;
   }
 
@@ -22,6 +31,7 @@ function renderArticle() {
   const related = publicArticles.filter(item => item.id !== article.id).slice(0, 3);
   const canonicalUrl = window.location.href;
   const safeContent = article.content || `<p>${escapeHtml(article.excerpt || '')}</p>`;
+  const coverImg = article.image || 'assets/logo-radio.jpg';
 
   target.innerHTML = `
     <header class="article-header">
@@ -33,7 +43,7 @@ function renderArticle() {
         <span><i class="ri-time-line"></i> ${escapeHtml(article.readTime || '2 min de leitura')}</span>
       </div>
     </header>
-    <figure class="article-cover-wrapper"><img class="article-cover-img" src="${escapeHtml(article.image)}" alt="${escapeHtml(article.title)}"></figure>
+    <figure class="article-cover-wrapper"><img class="article-cover-img" src="${escapeHtml(coverImg)}" alt="${escapeHtml(article.title)}" onerror="this.onerror=null;this.src='assets/logo-radio.jpg';"></figure>
     <article class="article-body-text">${safeContent}</article>
     <section class="article-share-panel"><strong>Partilha este artigo</strong><div class="share-buttons-group"><button class="btn-share" type="button" onclick="copyArticleLink()"><i class="ri-link"></i> Copiar ligação</button><a class="btn-share whatsapp" href="https://wa.me/?text=${encodeURIComponent(article.title + ' ' + canonicalUrl)}" target="_blank" rel="noopener"><i class="ri-whatsapp-line"></i> WhatsApp</a><button class="btn-share" type="button" onclick="window.print()"><i class="ri-printer-line"></i> Imprimir</button></div></section>
     ${related.length ? `<section class="related-articles"><div class="home-section-title"><h2><i class="ri-compass-3-line" style="color:var(--primary-blue)"></i> Artigos relacionados</h2></div><div class="home-grid-3">${related.map(renderRelatedCard).join('')}</div></section>` : ''}
@@ -41,7 +51,8 @@ function renderArticle() {
 }
 
 function renderRelatedCard(article) {
-  return `<a class="card-box related-article-card" href="artigo.html?id=${encodeURIComponent(article.id)}"><img src="${escapeHtml(article.image)}" alt="" loading="lazy"><div><span class="news-card-category">${escapeHtml(article.category || article.tag || 'Notícia')}</span><h3>${escapeHtml(article.title)}</h3><small><i class="ri-time-line"></i> ${escapeHtml(article.readTime || '2 min de leitura')}</small></div></a>`;
+  const coverImg = article.image || 'assets/logo-radio.jpg';
+  return `<a class="card-box related-article-card" href="artigo.html?id=${encodeURIComponent(article.id)}"><img src="${escapeHtml(coverImg)}" alt="" loading="lazy" onerror="this.onerror=null;this.src='assets/logo-radio.jpg';"><div><span class="news-card-category">${escapeHtml(article.category || article.tag || 'Notícia')}</span><h3>${escapeHtml(article.title)}</h3><small><i class="ri-time-line"></i> ${escapeHtml(article.readTime || '2 min de leitura')}</small></div></a>`;
 }
 
 window.copyArticleLink = function() {

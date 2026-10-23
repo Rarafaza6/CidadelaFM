@@ -1,24 +1,310 @@
 <!DOCTYPE html>
 <html lang="pt">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Enviar Mensagem | Rádio Escolar EBS Cidadela</title>
-  <meta name="description" content="Envia uma dedicatória ou mensagem para a Rádio Escolar EBS Cidadela.">
-  <meta name="theme-color" content="#070913">
+  <title>Fala Connosco | Rádio Escolar • EBS Cidadela</title>
+  <meta name="description"
+    content="Envia dedicatórias, mensagens de parabéns ou sugestões diretamente para a equipa da Rádio Escolar da EBS da Cidadela em parceria com a Câmara Municipal de Cascais.">
+  <meta name="theme-color" content="#06080f">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Fala Connosco | Rádio Escolar EBS Cidadela">
+  <meta property="og:description"
+    content="Envia mensagens e dedicatórias para serem lidas ao microfone na rádio da escola.">
+  <meta property="og:image" content="assets/logo-radio.jpg">
   <link rel="icon" type="image/jpeg" href="assets/logo-radio.jpg">
   <link rel="apple-touch-icon" href="assets/logo-radio.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
   <link rel="stylesheet" href="css/styles.css">
+  <script src="js/maintenance-guard.js"></script>
 </head>
+
 <body>
-  <div class="top-sub-bar"><div class="container top-sub-bar-content"><div><i class="ri-government-line" style="color:var(--primary-blue);"></i> <span>Rádio Escolar EBS Cidadela • Cascais</span></div></div></div>
-  <nav class="navbar"><div class="container nav-content">
-    <div class="brand-group"><a href="index.html" style="display:flex;align-items:center;gap:.85rem"><img src="assets/logo-radio.jpg" alt="Logótipo da Rádio Escolar" class="logo-radio-header"><div class="brand-text"><h1>RÁDIO ESCOLAR</h1><span>EBS CIDADELA</span></div></a></div>
-    <ul class="nav-links"><li><a href="index.html">Início</a></li><li><a href="podcasts.html">Podcasts</a></li><li><a href="noticias.html">Notícias</a></li><li><a href="mensagem.html" class="message-nav-button active"><i class="ri-chat-heart-line"></i> Enviar mensagem</a></li><li><a href="pedir-musica.html" class="btn-cta-highlight"><i class="ri-music-2-fill"></i> Pedir Música</a></li></ul>
-  </div></nav>
-  <main class="container message-page"><a href="index.html" class="btn-back-link"><i class="ri-arrow-left-line"></i> Voltar ao início</a><section class="message-page-layout"><div class="message-page-intro"><span class="message-section-label"><i class="ri-chat-heart-line"></i> Fala connosco</span><h1>Fala connosco</h1><p>Queres dar os parabéns a alguém, mandar um abraço ou deixar uma mensagem para a equipa? Escreve aqui. Talvez a tua mensagem chegue ao microfone numa próxima emissão.</p><div class="message-page-note"><i class="ri-information-line"></i><span>Usa o teu nome, email e turma para sabermos quem enviou.</span></div></div><section class="card-box community-message-card message-page-card"><form id="messageForm"><label class="form-label" for="messageText">A tua mensagem</label><textarea id="messageText" class="form-input-lg" rows="6" maxlength="280" placeholder="Ex: Parabéns, Inês! Que tenhas um dia incrível!" required></textarea><div class="message-form-grid"><div><label class="form-label" for="messageName">Nome</label><input id="messageName" class="form-input-lg" maxlength="80" required placeholder="O teu nome"></div><div><label class="form-label" for="messageClass">Turma</label><input id="messageClass" class="form-input-lg" maxlength="30" required placeholder="Ex: 10.º A"></div></div><label class="form-label" for="messageEmail">Email</label><input id="messageEmail" class="form-input-lg" type="email" maxlength="160" required placeholder="nome@exemplo.com"><input id="messageWebsite" class="message-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true"><button class="btn-submit-main" type="submit"><i class="ri-send-plane-line"></i> Enviar mensagem</button></form><div id="messageAlertContainer"></div><small class="privacy-note"><i class="ri-lock-line"></i> A mensagem é enviada diretamente para a equipa da rádio.</small></section></section></main>
-  <footer class="footer-pro"><div class="container footer-pro-content"><div class="footer-credits-top">&copy; Rádio Escolar 2026 <span>Site desenvolvido por Rafael Diogo</span></div><div class="footer-emblem-wrap"><img src="assets/logo-radio.jpg" alt="Rádio Escolar Logo" class="footer-logo-item"></div><nav class="footer-nav-links"><a href="index.html">Início</a> • <a href="pedir-musica.html">Pedir Música</a> • <a href="podcasts.html">Podcasts</a> • <a href="noticias.html">Notícias</a> • <a href="links.html">Links Rápidos</a></nav></div></footer>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="js/firebase-config.js"></script><script src="js/app.js"></script>
+
+  <!-- Topo Institucional -->
+  <div class="hv2-topbar">
+    <div class="hv2-topbar-inner">
+      <i class="ri-government-line" aria-hidden="true"></i>
+      <span>
+        <a href="https://aecidadela.pt" target="_blank" rel="noopener noreferrer" class="hv2-topbar-link">Agrupamento de Escolas da Cidadela</a>
+        <span class="hv2-topbar-sep">•</span>
+        <span class="hv2-topbar-muted">Parceria com a</span>
+        <a href="https://www.cascais.pt" target="_blank" rel="noopener noreferrer" class="hv2-topbar-link">Câmara Municipal de Cascais</a>
+      </span>
+    </div>
+  </div>
+
+  <!-- Navegação Principal -->
+  <nav class="hv2-nav" id="mainNav" aria-label="Navegação principal">
+    <div class="hv2-nav-inner">
+      <a href="index.html" class="hv2-brand" aria-label="Rádio Escolar — Página Principal">
+        <div class="hv2-logo-wrap">
+          <img src="assets/logo-radio.jpg" alt="Logótipo Rádio Escolar">
+        </div>
+        <div class="hv2-brand-text">
+          <strong>RÁDIO ESCOLAR</strong>
+          <span>EBS CIDADELA</span>
+        </div>
+      </a>
+
+      <ul class="hv2-nav-links" role="list">
+        <li><a href="index.html">Início</a></li>
+        <li><a href="podcasts.html">Podcasts</a></li>
+        <li><a href="noticias.html">Notícias</a></li>
+        <li><a href="mensagem.html" class="message-nav-button active" aria-current="page"><i class="ri-chat-heart-line" aria-hidden="true"></i> Fala Connosco</a></li>
+      </ul>
+
+      <a href="pedir-musica.html" class="hv2-nav-cta" id="navCtaBtn">
+        <i class="ri-music-2-fill" aria-hidden="true"></i>
+        <span>Pedir Música</span>
+      </a>
+
+      <button class="hv2-hamburger" id="navBurger" aria-label="Abrir menu de navegação" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Menu Mobile Drawer -->
+  <div class="hv2-nav-mobile" id="mobileMenu" aria-hidden="true">
+    <button class="hv2-mobile-close" id="mobileClose" aria-label="Fechar menu">
+      <i class="ri-close-line" aria-hidden="true"></i>
+    </button>
+    <a href="index.html">Início</a>
+    <a href="podcasts.html">Podcasts</a>
+    <a href="noticias.html">Notícias</a>
+    <a href="mensagem.html" class="message-nav-button active" style="justify-content: center; width: 100%;"><i class="ri-chat-heart-line" aria-hidden="true"></i> Fala Connosco</a>
+    <a href="pedir-musica.html" class="hv2-btn-primary">
+      <i class="ri-music-2-fill" aria-hidden="true"></i> Pedir Música
+    </a>
+  </div>
+
+  <!-- Cabeçalho da Página -->
+  <header class="hv2-page-header">
+    <div class="hv2-hero-bg" aria-hidden="true">
+      <div class="hv2-orb hv2-orb-3" style="width: 500px; height: 500px; top: -100px; left: -50px; background: radial-gradient(circle, rgba(245, 158, 11, 0.15) 0%, transparent 70%);"></div>
+      <div class="hv2-orb hv2-orb-1" style="width: 350px; height: 350px; top: 30%; right: 15%;"></div>
+      <div class="hv2-hero-grid"></div>
+    </div>
+
+    <div class="hv2-page-header-inner hv2-animate">
+      <a href="index.html" class="hv2-back-btn">
+        <i class="ri-arrow-left-line" aria-hidden="true"></i> Voltar ao Início
+      </a>
+      <br>
+      <span class="hv2-kicker" style="color: #f59e0b;">
+        <i class="ri-chat-heart-line" aria-hidden="true"></i> Voz da Comunidade
+      </span>
+      <h1 class="hv2-page-title">
+        Fala <span class="accent-gold">Connosco</span>
+      </h1>
+      <p class="hv2-page-sub">
+        Queres dar os parabéns a alguém, mandar um abraço ou deixar uma sugestão para a equipa da rádio? Escreve aqui para que a tua mensagem chegue à antena.
+      </p>
+    </div>
+  </header>
+
+  <!-- Conteúdo Principal -->
+  <main class="hv2-main-content">
+    
+    <div class="hv2-message-grid">
+      
+      <!-- Informação e Dicas -->
+      <aside class="hv2-guidelines hv2-animate hv2-animate-d1" aria-labelledby="msgTipsHeading">
+        <h3 id="msgTipsHeading" style="font-size: 1.2rem; margin-bottom: 1.25rem; color: #fff; display: flex; align-items: center; gap: 0.6rem;">
+          <i class="ri-information-line" style="color: #f59e0b;" aria-hidden="true"></i> Como Funciona?
+        </h3>
+
+        <div class="hv2-rule-item">
+          <div class="hv2-rule-num" style="background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.25); color: #f59e0b;">1</div>
+          <div class="hv2-rule-content">
+            <strong>Dedicatórias & Mensagens</strong>
+            <p>Podes felicitar amigos, agradecer a professores ou sugerir novos conteúdos para o próximo programa.</p>
+          </div>
+        </div>
+
+        <div class="hv2-rule-item">
+          <div class="hv2-rule-num" style="background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.25); color: #f59e0b;">2</div>
+          <div class="hv2-rule-content">
+            <strong>Identificação do Aluno</strong>
+            <p>Indica o teu nome, turma e email institucional para sabermos quem enviou.</p>
+          </div>
+        </div>
+
+        <div class="hv2-rule-item">
+          <div class="hv2-rule-num" style="background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.25); color: #f59e0b;">3</div>
+          <div class="hv2-rule-content">
+            <strong>Privacidade & Moderação</strong>
+            <p>As mensagens são privadas e moderadas previamente pela redação da Rádio Cidadela.</p>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Formulário de Mensagem -->
+      <section class="hv2-glass-card hv2-animate hv2-animate-d2" aria-labelledby="formMessageHeading">
+        <h2 id="formMessageHeading" style="font-size: 1.35rem; margin-bottom: 1.25rem; color: #fff; display: flex; align-items: center; gap: 0.6rem;">
+          <i class="ri-edit-2-line" style="color: #f59e0b;" aria-hidden="true"></i> Escrever Mensagem
+        </h2>
+
+        <form id="messageForm">
+          <div>
+            <label class="hv2-form-label" for="messageText">A tua mensagem</label>
+            <textarea id="messageText" class="hv2-form-textarea" rows="5" maxlength="280" placeholder="Ex: Parabéns, Leonor! Que tenhas um dia incrível!" required></textarea>
+          </div>
+
+          <div class="hv2-input-row">
+            <div>
+              <label class="hv2-form-label" for="messageName">Nome</label>
+              <input id="messageName" class="hv2-form-input" maxlength="80" required placeholder="O teu nome completo">
+            </div>
+            <div>
+              <label class="hv2-form-label" for="messageClass">Turma</label>
+              <input id="messageClass" class="hv2-form-input" maxlength="30" required placeholder="Ex: 10.º A">
+            </div>
+          </div>
+
+          <div>
+            <label class="hv2-form-label" for="messageEmail">Email</label>
+            <input id="messageEmail" class="hv2-form-input" type="email" maxlength="160" required placeholder="aluno@escola.pt">
+          </div>
+
+          <!-- Anti-spam Honeypot -->
+          <input id="messageWebsite" class="message-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" style="display: none;">
+
+          <button class="hv2-btn-primary" type="submit" style="width: 100%; justify-content: center; font-size: 1rem; padding: 0.95rem; background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 8px 32px rgba(245, 158, 11, 0.4);">
+            <i class="ri-send-plane-fill" aria-hidden="true"></i> Enviar Mensagem
+          </button>
+        </form>
+
+        <div id="messageAlertContainer" style="margin-top: 1.25rem;" aria-live="polite"></div>
+
+        <div style="display: flex; align-items: center; gap: 0.4rem; color: #64748b; font-size: 0.8rem; margin-top: 1.25rem;">
+          <i class="ri-lock-line" aria-hidden="true"></i>
+          <span>A mensagem é enviada de forma segura diretamente para a equipa da rádio.</span>
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- Rodapé Institucional -->
+  <footer class="hv2-footer" role="contentinfo">
+    <div class="hv2-footer-inner">
+
+      <!-- Grelha Principal do Rodapé -->
+      <div class="hv2-footer-main">
+
+        <!-- Coluna 1: Identidade da Rádio Escolar -->
+        <div class="hv2-footer-col hv2-footer-col-brand">
+          <a href="index.html" class="hv2-footer-brand-link" aria-label="Rádio Escolar - Início">
+            <img src="assets/logo-radio.jpg" alt="Logótipo Rádio Escolar" class="hv2-footer-radio-logo">
+            <div>
+              <strong class="hv2-footer-title">RÁDIO ESCOLAR</strong>
+              <span class="hv2-footer-subtitle">EBS CIDADELA</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- Coluna 2: Navegação Rápida -->
+        <div class="hv2-footer-col hv2-footer-col-nav">
+          <h4 class="hv2-footer-heading">Navegação</h4>
+          <ul class="hv2-footer-list" role="list">
+            <li><a href="index.html"><i class="ri-home-4-line" aria-hidden="true"></i> Início</a></li>
+            <li><a href="pedir-musica.html"><i class="ri-music-2-line" aria-hidden="true"></i> Pedir Música</a></li>
+            <li><a href="podcasts.html"><i class="ri-mic-line" aria-hidden="true"></i> Podcasts</a></li>
+            <li><a href="noticias.html"><i class="ri-newspaper-line" aria-hidden="true"></i> Notícias</a></li>
+            <li><a href="mensagem.html"><i class="ri-chat-heart-line" aria-hidden="true"></i> Fala Connosco</a></li>
+            <li><a href="links.html"><i class="ri-links-line" aria-hidden="true"></i> Links Rápidos</a></li>
+          </ul>
+        </div>
+
+        <!-- Coluna 3: Entidades & Parcerias -->
+        <div class="hv2-footer-col hv2-footer-col-partners">
+          <h4 class="hv2-footer-heading">Entidades & Parcerias</h4>
+          <div class="hv2-partner-cards">
+            <!-- Parceria: Cascais -->
+            <div class="hv2-partner-item">
+              <span class="hv2-partner-tag">Parceria</span>
+              <a href="https://www.cascais.pt" target="_blank" rel="noopener noreferrer" class="hv2-partner-link" title="Câmara Municipal de Cascais" aria-label="Câmara Municipal de Cascais">
+                <img src="assets/logo-cmc.jpg" alt="Câmara Municipal de Cascais" class="hv2-partner-img hv2-img-cmc">
+              </a>
+            </div>
+
+            <!-- Produção: Criativa -->
+            <div class="hv2-partner-item">
+              <span class="hv2-partner-tag">Produção</span>
+              <a href="https://criativa.org" target="_blank" rel="noopener noreferrer" class="hv2-partner-link" title="Criativa.org" aria-label="Criativa.org">
+                <img src="assets/logo-criativa.jpg" alt="Criativa.org" class="hv2-partner-img hv2-img-criativa">
+              </a>
+            </div>
+
+            <!-- Escola: AE Cidadela -->
+            <div class="hv2-partner-item">
+              <span class="hv2-partner-tag">Escola</span>
+              <a href="https://aecidadela.pt" target="_blank" rel="noopener noreferrer" class="hv2-partner-link" title="Agrupamento de Escolas da Cidadela" aria-label="Agrupamento de Escolas da Cidadela">
+                <img src="assets/logo-cidadela.png" alt="Agrupamento de Escolas da Cidadela" class="hv2-partner-img hv2-img-cidadela">
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Barra Inferior (Direitos e Acesso) -->
+      <div class="hv2-footer-bottom">
+        <div class="hv2-footer-copy">
+          &copy; 2026 <strong>Rádio Escolar EBS Cidadela</strong> <span>• Desenvolvido por Rafael Diogo</span>
+        </div>
+
+        <div>
+          <a href="admin.html" class="hv2-footer-admin-link">
+            <i class="ri-lock-2-line" aria-hidden="true"></i> Área Reservada
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- Firebase & Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/app.js"></script>
+
+  <script>
+    (function () {
+      var burger = document.getElementById('navBurger');
+      var menu = document.getElementById('mobileMenu');
+      var close = document.getElementById('mobileClose');
+
+      function openMenu() {
+        menu.classList.add('open');
+        burger.setAttribute('aria-expanded', 'true');
+        menu.removeAttribute('aria-hidden');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeMenu() {
+        menu.classList.remove('open');
+        burger.setAttribute('aria-expanded', 'false');
+        menu.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      }
+
+      if (burger) burger.addEventListener('click', openMenu);
+      if (close) close.addEventListener('click', closeMenu);
+      if (menu) menu.addEventListener('click', function (e) { if (e.target === menu) closeMenu(); });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && menu && menu.classList.contains('open')) closeMenu();
+      });
+    })();
+  </script>
+
 </body>
+
 </html>

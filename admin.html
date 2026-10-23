@@ -1,41 +1,48 @@
 <!DOCTYPE html>
 <html lang="pt">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Painel de Gestão | Rádio Escolar EBS Cidadela</title>
   <meta name="robots" content="noindex, nofollow">
-  
+
   <meta name="theme-color" content="#070913">
   <link rel="icon" type="image/jpeg" href="assets/logo-radio.jpg">
   <link rel="apple-touch-icon" href="assets/logo-radio.jpg">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
   <link rel="stylesheet" href="css/styles.css">
+  <script src="js/maintenance-guard.js"></script>
 </head>
+
 <body class="admin-page">
 
   <!-- MODAL DE AUTENTICAÇÃO -->
   <div class="modal-overlay active" id="adminAuthModal">
     <div class="card-panel modal-window" style="text-align: center;">
       <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 1.25rem;">
-        <img src="assets/logo-radio.jpg" alt="Logótipo Rádio" style="height: 44px; border-radius: 10px; box-shadow: 0 0 20px rgba(2,132,199,0.4);">
+        <img src="assets/logo-radio.jpg" alt="Logótipo Rádio"
+          style="height: 44px; border-radius: 10px; box-shadow: 0 0 20px rgba(2,132,199,0.4);">
       </div>
       <h2 style="font-size: 1.4rem;">Painel de Gestão da Rádio</h2>
       <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.5rem;">
         Entra com a conta autorizada da equipa da rádio.
       </p>
       <div class="form-group" style="margin-bottom: 0.75rem;">
-        <input type="email" id="adminEmailInput" class="form-input-lg" placeholder="Email da equipa" autocomplete="username" required>
+        <input type="email" id="adminEmailInput" class="form-input-lg" placeholder="Email da equipa"
+          autocomplete="username" required>
       </div>
       <div class="form-group" style="margin-bottom: 1rem;">
-        <input type="password" id="adminPasswordInput" class="form-input-lg" placeholder="Palavra-passe" autocomplete="current-password" required>
+        <input type="password" id="adminPasswordInput" class="form-input-lg" placeholder="Palavra-passe"
+          autocomplete="current-password" required>
       </div>
       <div id="authAlert" style="margin-bottom: 1rem;"></div>
       <button id="btnLogin" class="btn-submit-main" style="width: 100%;">
         <i class="ri-lock-unlock-line"></i> Autenticar no Painel
       </button>
       <div style="margin-top: 1.5rem;">
-        <a href="index.html" style="font-size: 0.85rem; color: var(--text-muted);"><i class="ri-arrow-left-line"></i> Regressar ao site público</a>
+        <a href="index.html" style="font-size: 0.85rem; color: var(--text-muted);"><i class="ri-arrow-left-line"></i>
+          Regressar ao site público</a>
       </div>
     </div>
   </div>
@@ -55,11 +62,13 @@
 
       <!-- MODE SWITCHER -->
       <div class="admin-mode-switcher" role="tablist" aria-label="Modo do painel">
-        <button class="admin-mode-btn active" id="btnModeEditorial" onclick="switchAdminMode('editorial')" role="tab" aria-selected="true">
+        <button class="admin-mode-btn active" id="btnModeEditorial" onclick="switchAdminMode('editorial')" role="tab"
+          aria-selected="true">
           <i class="ri-edit-box-line"></i>
           <span>Editorial</span>
         </button>
-        <button class="admin-mode-btn" id="btnModeAoVivo" onclick="switchAdminMode('aovivo')" role="tab" aria-selected="false">
+        <button class="admin-mode-btn" id="btnModeAoVivo" data-permission="access_aovivo"
+          onclick="switchAdminMode('aovivo')" role="tab" aria-selected="false">
           <i class="ri-broadcast-line"></i>
           <span>Ao Vivo</span>
           <span class="admin-live-dot"></span>
@@ -67,8 +76,9 @@
       </div>
 
       <div class="admin-topbar-actions">
-        <a href="index.html" class="btn-action" title="Ver website"><i class="ri-external-link-line"></i> Website</a>
-        <button id="btnLogout" class="btn-action" title="Terminar sessão"><i class="ri-logout-box-r-line"></i> Sair</button>
+        <button id="btnLogout" class="btn-action" title="Terminar sessão"
+          onclick="if(window._logoutConfirm!==false){window._logoutConfirm=true;document.getElementById('adminShell').style.animation='fadeOut 0.3s ease forwards';setTimeout(function(){window._logoutConfirm=false;location.href='index.html';},300)}"><i
+            class="ri-logout-box-r-line"></i> Sair</button>
       </div>
     </header>
 
@@ -80,22 +90,34 @@
       <!-- SIDEBAR VERTICAL (NOTION-STYLE WORKSPACE) -->
       <nav class="admin-sidebar" aria-label="Navegação do painel">
 
+        <!-- CARD DE SESSÃO DO UTILIZADOR (GOOGLE WORKSPACE STYLE) -->
+        <div class="sidebar-user-card" id="sidebarUserCard">
+          <div class="sidebar-user-avatar" id="sidebarUserAvatar">--</div>
+          <div class="sidebar-user-info">
+            <span class="sidebar-user-name" id="sidebarUserName">A autenticar...</span>
+            <span class="sidebar-user-role" id="sidebarUserRole">Membro</span>
+          </div>
+        </div>
+
         <!-- KPIs compactos na sidebar -->
         <div class="sidebar-kpis">
           <div class="sidebar-kpi" title="Músicas pendentes">
             <i class="ri-music-2-line"></i>
             <span id="sideKpiSongs">0</span>
-            <small style="font-size: 0.62rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Músicas</small>
+            <small
+              style="font-size: 0.62rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Músicas</small>
           </div>
           <div class="sidebar-kpi" title="Mensagens por ler">
             <i class="ri-chat-3-line"></i>
             <span id="sideKpiMessages">0</span>
-            <small style="font-size: 0.62rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Inbox</small>
+            <small
+              style="font-size: 0.62rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Inbox</small>
           </div>
           <div class="sidebar-kpi" title="Links ativos">
             <i class="ri-links-line"></i>
             <span id="sideKpiLinks">0</span>
-            <small style="font-size: 0.62rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Links</small>
+            <small
+              style="font-size: 0.62rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Links</small>
           </div>
         </div>
 
@@ -106,31 +128,35 @@
           <li>
             <button class="sidebar-nav-item active" data-target="sec-resumo" onclick="switchAdminSection('sec-resumo')">
               <i class="ri-dashboard-3-line"></i>
-              <span>Hoje</span>
+              <span>Mural</span>
             </button>
           </li>
           <li>
-            <button class="sidebar-nav-item" data-target="sec-guioes" onclick="switchAdminSection('sec-guioes')">
+            <button class="sidebar-nav-item" data-target="sec-guioes" data-permission="manage_rundowns"
+              onclick="switchAdminSection('sec-guioes')">
               <i class="ri-file-list-3-line" style="color: #38bdf8;"></i>
               <span>Guiões &amp; Alinhamento</span>
             </button>
           </li>
           <li>
-            <button class="sidebar-nav-item" data-target="sec-musicas" onclick="switchAdminSection('sec-musicas')">
+            <button class="sidebar-nav-item" data-target="sec-musicas" data-permission="manage_songs"
+              onclick="switchAdminSection('sec-musicas')">
               <i class="ri-fire-line" style="color: #f59e0b;"></i>
               <span>Músicas Pedidas</span>
               <span class="sidebar-badge" id="sideNavBadgeSongs"></span>
             </button>
           </li>
           <li>
-            <button class="sidebar-nav-item" data-target="sec-mensagens" onclick="switchAdminSection('sec-mensagens')">
+            <button class="sidebar-nav-item" data-target="sec-mensagens" data-permission="manage_messages"
+              onclick="switchAdminSection('sec-mensagens')">
               <i class="ri-chat-heart-line" style="color: #a855f7;"></i>
               <span>Mensagens</span>
               <span class="sidebar-badge sidebar-badge-alert" id="sideNavBadgeMessages"></span>
             </button>
           </li>
           <li>
-            <button class="sidebar-nav-item" data-target="sec-calendario" onclick="switchAdminSection('sec-calendario')">
+            <button class="sidebar-nav-item" data-target="sec-calendario" data-permission="manage_calendar"
+              onclick="switchAdminSection('sec-calendario')">
               <i class="ri-calendar-event-line" style="color: #38bdf8;"></i>
               <span>Calendário</span>
             </button>
@@ -142,19 +168,22 @@
         <div class="sidebar-section-label">Conteúdos</div>
         <ul class="sidebar-nav" role="list">
           <li>
-            <button class="sidebar-nav-item" data-target="sec-anuncios" onclick="switchAdminSection('sec-anuncios')">
+            <button class="sidebar-nav-item" data-target="sec-anuncios" data-permission="manage_announcements"
+              onclick="switchAdminSection('sec-anuncios')">
               <i class="ri-article-line"></i>
               <span>Notícias</span>
             </button>
           </li>
           <li>
-            <button class="sidebar-nav-item" data-target="sec-podcasts" onclick="switchAdminSection('sec-podcasts')">
+            <button class="sidebar-nav-item" data-target="sec-podcasts" data-permission="manage_podcasts"
+              onclick="switchAdminSection('sec-podcasts')">
               <i class="ri-headphones-line"></i>
               <span>Podcasts</span>
             </button>
           </li>
           <li>
-            <button class="sidebar-nav-item" data-target="sec-links" onclick="switchAdminSection('sec-links')">
+            <button class="sidebar-nav-item" data-target="sec-links" data-permission="manage_links"
+              onclick="switchAdminSection('sec-links')">
               <i class="ri-links-line"></i>
               <span>Links Rápidos</span>
             </button>
@@ -163,12 +192,28 @@
 
         <div class="sidebar-divider"></div>
 
-        <div class="sidebar-section-label">Equipa</div>
+        <div class="sidebar-section-label">Equipa &amp; Administração</div>
         <ul class="sidebar-nav" role="list">
           <li>
-            <button class="sidebar-nav-item" data-target="sec-utilizadores" onclick="switchAdminSection('sec-utilizadores')">
-              <i class="ri-team-line"></i>
-              <span>Utilizadores</span>
+            <button class="sidebar-nav-item" data-target="sec-tarefas" data-permission="manage_tasks"
+              onclick="switchAdminSection('sec-tarefas')">
+              <i class="ri-todo-line" style="color: #34d399;"></i>
+              <span>Tarefas</span>
+              <span class="sidebar-badge" id="sideNavBadgeTasks"></span>
+            </button>
+          </li>
+          <li>
+            <button class="sidebar-nav-item" data-target="sec-votacoes" data-permission="manage_polls"
+              onclick="switchAdminSection('sec-votacoes')">
+              <i class="ri-bar-chart-2-line" style="color: #a78bfa;"></i>
+              <span>Votações</span>
+            </button>
+          </li>
+          <li>
+            <button class="sidebar-nav-item" data-target="sec-utilizadores" data-permission="manage_users"
+              onclick="switchAdminSection('sec-utilizadores')">
+              <i class="ri-shield-user-line" style="color: #f43f5e;"></i>
+              <span>Utilizadores &amp; Perfis</span>
             </button>
           </li>
         </ul>
@@ -187,35 +232,59 @@
               <p id="dailyDateLabel">Agenda, avisos e momentos para levar ao ar.</p>
             </div>
             <div class="admin-command-actions">
-              <button class="btn-action" onclick="goToCurrentMonth(); switchAdminSection('sec-calendario')"><i class="ri-calendar-2-line"></i> Ver calendário</button>
-              <button class="btn-action" onclick="switchAdminSection('sec-guioes')"><i class="ri-file-list-3-line"></i> Ver alinhamento</button>
-              <button class="btn-submit-main" onclick="openNewRundownModal()"><i class="ri-quill-pen-line"></i> Novo guião de emissão</button>
+              <button class="btn-action" onclick="goToCurrentMonth(); switchAdminSection('sec-calendario')"><i
+                  class="ri-calendar-2-line"></i> Ver calendário</button>
+              <button class="btn-action" onclick="switchAdminSection('sec-guioes')"><i class="ri-file-list-3-line"></i>
+                Ver alinhamento</button>
+              <button class="btn-submit-main" onclick="openNewRundownModal()"><i class="ri-quill-pen-line"></i> Novo
+                guião de emissão</button>
             </div>
           </div>
 
           <div class="daily-brief-grid">
             <article class="brief-card brief-card-primary">
-              <div class="brief-card-heading"><div><span class="brief-card-kicker">Hoje na rádio</span><h3>Agenda do dia</h3></div><span class="brief-count" id="todayEventsCount">0</span></div>
+              <div class="brief-card-heading">
+                <div><span class="brief-card-kicker">Hoje na rádio</span>
+                  <h3>Agenda do dia</h3>
+                </div><span class="brief-count" id="todayEventsCount">0</span>
+              </div>
               <div class="brief-timeline" id="todayEventsList"></div>
             </article>
             <article class="brief-card">
-              <div class="brief-card-heading"><div><span class="brief-card-kicker">A preparar</span><h3>Esta semana</h3></div><i class="ri-calendar-schedule-line"></i></div>
+              <div class="brief-card-heading">
+                <div><span class="brief-card-kicker">A preparar</span>
+                  <h3>Esta semana</h3>
+                </div><i class="ri-calendar-schedule-line"></i>
+              </div>
               <div class="brief-week-list" id="weekEventsList"></div>
             </article>
             <article class="brief-card brief-card-onair">
-              <div class="brief-card-heading"><div><span class="brief-card-kicker">Em antena</span><h3>Avisos para ler</h3></div><i class="ri-mic-2-line"></i></div>
+              <div class="brief-card-heading">
+                <div><span class="brief-card-kicker">Em antena</span>
+                  <h3>Avisos para ler</h3>
+                </div><i class="ri-mic-2-line"></i>
+              </div>
               <div class="brief-onair-list" id="onAirNotesList"></div>
-              <button class="brief-link-button" onclick="openQuickNoticeModal()"><i class="ri-add-line"></i> Preparar novo aviso rápido</button>
+              <button class="brief-link-button" onclick="openQuickNoticeModal()"><i class="ri-add-line"></i> Preparar
+                novo aviso rápido</button>
             </article>
           </div>
 
           <div class="overview-bottom-grid">
             <article class="brief-card inbox-brief-card">
-              <div class="brief-card-heading"><div><span class="brief-card-kicker">Comunidade</span><h3>Mensagens recentes</h3></div><button class="btn-action" onclick="switchAdminSection('sec-mensagens')">Abrir</button></div>
+              <div class="brief-card-heading">
+                <div><span class="brief-card-kicker">Comunidade</span>
+                  <h3>Mensagens recentes</h3>
+                </div><button class="btn-action" onclick="switchAdminSection('sec-mensagens')">Abrir</button>
+              </div>
               <div id="briefMessagesList" class="brief-messages-list"></div>
             </article>
             <article class="brief-card editorial-brief-card">
-              <div class="brief-card-heading"><div><span class="brief-card-kicker">Calendário editorial</span><h3>Efemérides em destaque</h3></div><button class="btn-action" onclick="switchAdminSection('sec-calendario')">Explorar</button></div>
+              <div class="brief-card-heading">
+                <div><span class="brief-card-kicker">Calendário editorial</span>
+                  <h3>Efemérides em destaque</h3>
+                </div><button class="btn-action" onclick="switchAdminSection('sec-calendario')">Explorar</button>
+              </div>
               <div id="editorialHighlightsList" class="editorial-highlights-list"></div>
             </article>
           </div>
@@ -225,9 +294,11 @@
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
               <div style="display: flex; align-items: center; gap: 0.6rem;">
                 <i class="ri-sticky-note-line" style="color: #f59e0b; font-size: 1.2rem;"></i>
-                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; margin: 0;">Mural de Recados da Equipa</h3>
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; margin: 0;">Mural de Recados da Equipa
+                </h3>
               </div>
-              <button class="btn-action" onclick="openNewTeamMemoModal()"><i class="ri-add-line"></i> Novo Recado</button>
+              <button class="btn-action" onclick="openNewTeamMemoModal()"><i class="ri-add-line"></i> Novo
+                Recado</button>
             </div>
             <div class="team-memos-grid" id="teamMemosGrid">
               <!-- Renderizado via js/admin.js -->
@@ -243,29 +314,42 @@
               <p>Caderno diário estilo Word/Notion com os keypoints, avisos e notas para ler na rádio.</p>
             </div>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-              <button class="btn-action" onclick="resetEditorialToTemplate()" title="Recarregar template padrão baseado nos eventos deste dia"><i class="ri-restart-line"></i> Repor Template</button>
-              <button class="btn-action" style="background: rgba(14, 165, 233, 0.15); border-color: rgba(14, 165, 233, 0.4); color: #38bdf8;" onclick="saveEditorialScriptExplicit()"><i class="ri-save-3-line"></i> Guardar Guião</button>
-              <button class="btn-submit-main" onclick="switchAdminMode('aovivo')"><i class="ri-broadcast-line"></i> Abrir no Painel Ao Vivo</button>
+              <button class="btn-action" onclick="resetEditorialToTemplate()"
+                title="Recarregar template padrão baseado nos eventos deste dia"><i class="ri-restart-line"></i> Repor
+                Template</button>
+              <button class="btn-action"
+                style="background: rgba(14, 165, 233, 0.15); border-color: rgba(14, 165, 233, 0.4); color: #38bdf8;"
+                onclick="saveEditorialScriptExplicit()"><i class="ri-save-3-line"></i> Guardar Guião</button>
+              <button class="btn-submit-main" onclick="switchAdminMode('aovivo')"><i class="ri-broadcast-line"></i>
+                Abrir no Painel Ao Vivo</button>
             </div>
           </div>
-          
-          <div class="card-panel docs-editor-container" style="padding: 1.5rem; background: rgba(8, 12, 22, 0.85); border: 1px solid rgba(148, 163, 184, 0.15); border-radius: 14px;">
+
+          <div class="card-panel docs-editor-container"
+            style="padding: 1.5rem; background: rgba(8, 12, 22, 0.85); border: 1px solid rgba(148, 163, 184, 0.15); border-radius: 14px;">
             <!-- SELETOR DE DATA & AÇÕES DE DOCUMENTO -->
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; background: rgba(15, 23, 42, 0.7); padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.12);">
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; background: rgba(15, 23, 42, 0.7); padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.12);">
               <div style="display: flex; align-items: center; gap: 0.6rem;">
-                <button class="btn-action" onclick="changeEditorialDate(-1)"><i class="ri-arrow-left-s-line"></i> Dia Anterior</button>
-                <input type="date" id="editorialDatePicker" class="guiao-date-input" onchange="onEditorialDatePickerChange(this.value)">
+                <button class="btn-action" onclick="changeEditorialDate(-1)"><i class="ri-arrow-left-s-line"></i> Dia
+                  Anterior</button>
+                <input type="date" id="editorialDatePicker" class="guiao-date-input"
+                  onchange="onEditorialDatePickerChange(this.value)">
                 <button class="btn-action" onclick="setEditorialDateToday()">Hoje</button>
-                <button class="btn-action" onclick="changeEditorialDate(1)">Dia Seguinte <i class="ri-arrow-right-s-line"></i></button>
+                <button class="btn-action" onclick="changeEditorialDate(1)">Dia Seguinte <i
+                    class="ri-arrow-right-s-line"></i></button>
               </div>
               <div style="display: flex; align-items: center; gap: 0.6rem;">
-                <span id="editorialSaveStatus" class="guiao-save-status"><i class="ri-check-line"></i> Guardado automaticamente</span>
+                <span id="editorialSaveStatus" class="guiao-save-status"><i class="ri-check-line"></i> Guardado
+                  automaticamente</span>
               </div>
             </div>
 
             <!-- TÍTULO DO DOCUMENTO DO GUIÃO -->
             <div class="guiao-editor-header">
-              <input type="text" id="editorialScriptTitle" class="form-input-lg guiao-title-editor" placeholder="Título do Guião / Alinhamento (Ex: Guião da Emissão do Intervalo Grande)" oninput="autoSaveEditorialScript()">
+              <input type="text" id="editorialScriptTitle" class="form-input-lg guiao-title-editor"
+                placeholder="Título do Guião / Alinhamento (Ex: Guião da Emissão do Intervalo Grande)"
+                oninput="autoSaveEditorialScript()">
             </div>
 
             <div class="guiao-workspace-meta" aria-label="Resumo prático do guião">
@@ -290,7 +374,8 @@
                   <i class="ri-sparkling-fill" style="color: #f59e0b;"></i>
                   <span>Avisos &amp; Eventos do Calendário para esta data:</span>
                 </div>
-                <button type="button" class="guiao-sync-btn" onclick="syncEditorialTopicsFromCalendar()" title="Inserir todos os avisos do calendário no guião">
+                <button type="button" class="guiao-sync-btn" onclick="syncEditorialTopicsFromCalendar()"
+                  title="Inserir todos os avisos do calendário no guião">
                   <i class="ri-magic-line"></i> Inserir todos no guião
                 </button>
               </div>
@@ -302,21 +387,29 @@
             <!-- BARRA DE FERRAMENTAS ESTILO WORD / GOOGLE DOCS -->
             <div class="docs-editor-toolbar">
               <div class="docs-toolbar-group">
-                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('heading')" title="Título de Secção ([Secção])"><i class="ri-heading"></i> Título</button>
-                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('bold')" title="Negrito (**texto**)"><i class="ri-bold"></i> Negrito</button>
-                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('italic')" title="Itálico (*texto*)"><i class="ri-italic"></i> Itálico</button>
+                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('heading')"
+                  title="Título de Secção ([Secção])"><i class="ri-heading"></i> Título</button>
+                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('bold')"
+                  title="Negrito (**texto**)"><i class="ri-bold"></i> Negrito</button>
+                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('italic')"
+                  title="Itálico (*texto*)"><i class="ri-italic"></i> Itálico</button>
               </div>
               <div class="docs-toolbar-divider"></div>
               <div class="docs-toolbar-group">
-                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('bullet')" title="Lista (-)"><i class="ri-list-unordered"></i> Lista (-)</button>
-                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('number')" title="Lista Numerada (1.)"><i class="ri-list-ordered"></i> Numeração</button>
-                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('quote')" title="Nota / Destaque"><i class="ri-double-quotes-l"></i> Destaque</button>
+                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('bullet')" title="Lista (-)"><i
+                    class="ri-list-unordered"></i> Lista (-)</button>
+                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('number')"
+                  title="Lista Numerada (1.)"><i class="ri-list-ordered"></i> Numeração</button>
+                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('quote')"
+                  title="Nota / Destaque"><i class="ri-double-quotes-l"></i> Destaque</button>
               </div>
             </div>
 
             <!-- TEXTAREA DO GUIÃO SUITE GOOGLE DOCS / WORD -->
             <div class="docs-paper-wrapper">
-              <textarea id="editorialScriptContent" class="guiao-word-textarea docs-paper-textarea" style="min-height: 480px; width: 100%; padding: 1.5rem; background: rgba(5, 8, 18, 0.85); border: 1px solid rgba(148, 163, 184, 0.18); border-radius: 10px; font-size: 1.1rem; line-height: 1.8;" placeholder="Escreve aqui o guião completo da emissão...
+              <textarea id="editorialScriptContent" class="guiao-word-textarea docs-paper-textarea"
+                style="min-height: 480px; width: 100%; padding: 1.5rem; background: rgba(5, 8, 18, 0.85); border: 1px solid rgba(148, 163, 184, 0.18); border-radius: 10px; font-size: 1.1rem; line-height: 1.8;"
+                placeholder="Escreve aqui o guião completo da emissão...
 
 [Inicio da Emissão]
 - Bom dia Cidadela! São [hora], Segunda-feira, 15 de Setembro
@@ -343,7 +436,8 @@ Sem avisos hoje
               <button class="btn-action" onclick="filterSongsByStatus('all')">Todas</button>
               <button class="btn-action" onclick="filterSongsByStatus('pending')">Pendentes</button>
               <button class="btn-action" onclick="filterSongsByStatus('played')">Tocadas</button>
-              <button class="btn-action danger-action" onclick="clearAllSuggestions()"><i class="ri-delete-bin-line"></i> Limpar lista</button>
+              <button class="btn-action danger-action" onclick="clearAllSuggestions()"><i
+                  class="ri-delete-bin-line"></i> Limpar lista</button>
             </div>
           </div>
           <div class="card-panel data-table-wrapper">
@@ -397,19 +491,21 @@ Sem avisos hoje
         <section id="sec-podcasts" class="admin-section" style="display: none;">
           <div class="admin-section-heading">
             <div>
-              <h2>Gestão de Podcasts</h2>
-              <p>Publicação de programas e emissões gravadas.</p>
+              <h2>Gestão de Podcasts (Spotify &amp; Emissões)</h2>
+              <p>Publica episódios via Spotify ou ficheiros de áudio com integração no leitor oficial do site.</p>
             </div>
-            <button class="btn-submit-main admin-add-button" onclick="openModal('addPodcastModal')">
-              <i class="ri-add-line"></i> Adicionar Podcast
+            <button class="btn-submit-main admin-add-button" onclick="openPodcastModal()">
+              <i class="ri-add-line"></i> Novo Episódio
             </button>
           </div>
           <div class="card-panel data-table-wrapper">
             <table class="data-table-inst">
               <thead>
                 <tr>
-                  <th>Título do Episódio</th>
+                  <th>Episódio &amp; Categoria</th>
+                  <th>Origem / Player</th>
                   <th>Data &amp; Duração</th>
+                  <th>Destaque</th>
                   <th>Ações</th>
                 </tr>
               </thead>
@@ -472,9 +568,11 @@ Sem avisos hoje
               </button>
             </div>
             <div class="gcal-toolbar-center">
-              <button class="gcal-nav-btn" onclick="GCal.navigate(-1)" aria-label="Anterior"><i class="ri-arrow-left-s-line"></i></button>
+              <button class="gcal-nav-btn" onclick="GCal.navigate(-1)" aria-label="Anterior"><i
+                  class="ri-arrow-left-s-line"></i></button>
               <button class="gcal-today-btn" onclick="GCal.goToday()">Hoje</button>
-              <button class="gcal-nav-btn" onclick="GCal.navigate(1)" aria-label="Seguinte"><i class="ri-arrow-right-s-line"></i></button>
+              <button class="gcal-nav-btn" onclick="GCal.navigate(1)" aria-label="Seguinte"><i
+                  class="ri-arrow-right-s-line"></i></button>
               <h2 class="gcal-range-label" id="gcalRangeLabel" aria-live="polite"></h2>
             </div>
             <div class="gcal-toolbar-right">
@@ -493,9 +591,11 @@ Sem avisos hoje
             <aside class="gcal-sidebar">
               <div class="gcal-mini-cal">
                 <div class="gcal-mini-nav">
-                  <button onclick="GCal.miniNavigate(-1)" aria-label="Mês anterior"><i class="ri-arrow-left-s-line"></i></button>
+                  <button onclick="GCal.miniNavigate(-1)" aria-label="Mês anterior"><i
+                      class="ri-arrow-left-s-line"></i></button>
                   <span id="gcalMiniTitle"></span>
-                  <button onclick="GCal.miniNavigate(1)" aria-label="Mês seguinte"><i class="ri-arrow-right-s-line"></i></button>
+                  <button onclick="GCal.miniNavigate(1)" aria-label="Mês seguinte"><i
+                      class="ri-arrow-right-s-line"></i></button>
                 </div>
                 <div class="gcal-mini-weekdays">
                   <span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span><span>D</span>
@@ -515,20 +615,157 @@ Sem avisos hoje
           </div>
         </section>
 
-        <!-- UTILIZADORES -->
+        <!-- UTILIZADORES & PERFIS DE ACESSO (GOOGLE WORKSPACE RBAC) -->
         <section id="sec-utilizadores" class="admin-section" style="display: none;">
           <div class="admin-section-heading">
             <div>
-              <h2>Utilizadores</h2>
-              <p>Cria contas de acesso da equipa. Cada conta é automaticamente administradora.</p>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <h2>Utilizadores &amp; Permissões</h2>
+                <span class="badge"
+                  style="font-size: 0.72rem; background: rgba(139, 92, 246, 0.18); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.3);"><i
+                    class="ri-shield-check-fill"></i> RBAC Avançado</span>
+              </div>
+              <p>Gestão centralizada de contas da equipa da rádio, perfis de acesso e permissões modulares estilo Google
+                Workspace.</p>
             </div>
-            <button class="btn-submit-main admin-add-button" onclick="openUserModal()"><i class="ri-user-add-line"></i> Adicionar utilizador</button>
+            <button class="btn-submit-main admin-add-button" onclick="openUserModal()">
+              <i class="ri-user-add-line"></i> Novo Utilizador
+            </button>
           </div>
-          <div class="card-panel data-table-wrapper">
-            <table class="data-table-inst">
-              <thead><tr><th>Nome no calendário</th><th>Email</th><th>Função</th><th>Ações</th></tr></thead>
+
+          <!-- CARDS DE ESTATÍSTICAS RBAC -->
+          <div class="rbac-stats-grid">
+            <div class="rbac-stat-card">
+              <div class="rbac-stat-icon" style="background: rgba(139, 92, 246, 0.15); color: #a78bfa;"><i
+                  class="ri-team-line"></i></div>
+              <div class="rbac-stat-content">
+                <span class="rbac-stat-num" id="statTotalUsers">0</span>
+                <span class="rbac-stat-label">Total de Membros</span>
+              </div>
+            </div>
+            <div class="rbac-stat-card">
+              <div class="rbac-stat-icon" style="background: rgba(244, 63, 94, 0.15); color: #fb7185;"><i
+                  class="ri-shield-star-line"></i></div>
+              <div class="rbac-stat-content">
+                <span class="rbac-stat-num" id="statSuperAdmins">0</span>
+                <span class="rbac-stat-label">Super Admins</span>
+              </div>
+            </div>
+            <div class="rbac-stat-card">
+              <div class="rbac-stat-icon" style="background: rgba(16, 185, 129, 0.15); color: #34d399;"><i
+                  class="ri-mic-line"></i></div>
+              <div class="rbac-stat-content">
+                <span class="rbac-stat-num" id="statBroadcasters">0</span>
+                <span class="rbac-stat-label">Locutores / Emissão</span>
+              </div>
+            </div>
+            <div class="rbac-stat-card">
+              <div class="rbac-stat-icon" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;"><i
+                  class="ri-user-settings-line"></i></div>
+              <div class="rbac-stat-content">
+                <span class="rbac-stat-num" id="statCustomRoles">0</span>
+                <span class="rbac-stat-label">Editores / Custom</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- BARRA DE FILTROS E PESQUISA -->
+          <div class="rbac-filters-bar">
+            <div class="rbac-search-box">
+              <i class="ri-search-line"></i>
+              <input type="text" id="userSearchInput" placeholder="Pesquisar por nome, email ou cargo..."
+                oninput="filterAdminUsersTable()">
+            </div>
+            <div class="rbac-role-filters">
+              <button class="rbac-filter-chip active" data-role="all" onclick="filterUsersByRole('all')">Todos</button>
+              <button class="rbac-filter-chip" data-role="super_admin" onclick="filterUsersByRole('super_admin')">👑
+                Super Admins</button>
+              <button class="rbac-filter-chip" data-role="editor" onclick="filterUsersByRole('editor')">🖋️
+                Editores</button>
+              <button class="rbac-filter-chip" data-role="broadcaster" onclick="filterUsersByRole('broadcaster')">🎙️
+                Locutores</button>
+              <button class="rbac-filter-chip" data-role="technician" onclick="filterUsersByRole('technician')">🎚️
+                Técnicos</button>
+              <button class="rbac-filter-chip" data-role="social" onclick="filterUsersByRole('social')">📱
+                Redes</button>
+              <button class="rbac-filter-chip" data-role="custom" onclick="filterUsersByRole('custom')">⚙️
+                Personalizado</button>
+            </div>
+          </div>
+
+          <!-- TABELA DE UTILIZADORES WORKSPACE STYLE -->
+          <div class="card-panel data-table-wrapper" style="overflow-x: auto;">
+            <table class="data-table-inst rbac-table">
+              <thead>
+                <tr>
+                  <th>Membro da Equipa</th>
+                  <th>Email &amp; Acesso</th>
+                  <th>Perfil de Acesso (Role)</th>
+                  <th>Permissões Ativas</th>
+                  <th>Estado</th>
+                  <th style="text-align: right;">Ações</th>
+                </tr>
+              </thead>
               <tbody id="adminUsersTbody"></tbody>
             </table>
+          </div>
+        </section>
+
+        <!-- TAREFAS DA EQUIPA -->
+        <section id="sec-tarefas" class="admin-section" style="display: none;">
+          <div class="admin-section-heading">
+            <div>
+              <h2>Tarefas da Equipa</h2>
+              <p>Organiza o trabalho por semana e por atividade. Acompanha o progresso de toda a equipa.</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+              <div class="tasks-view-switcher">
+                <button class="tasks-view-btn active" id="taskViewWeek" onclick="switchTaskView('week')"><i
+                    class="ri-calendar-week-line"></i> Por Semana</button>
+                <button class="tasks-view-btn" id="taskViewActivity" onclick="switchTaskView('activity')"><i
+                    class="ri-layout-grid-line"></i> Por Atividade</button>
+              </div>
+              <button class="btn-submit-main" onclick="openTaskModal()">
+                <i class="ri-add-line"></i> Nova Tarefa
+              </button>
+            </div>
+          </div>
+
+          <div class="tasks-activity-filters" id="tasksActivityFilters" style="display:none;">
+            <button class="tasks-filter-chip active" data-activity="all"
+              onclick="filterTasksByActivity('all')">Todas</button>
+            <button class="tasks-filter-chip" data-activity="Emissão" onclick="filterTasksByActivity('Emissão')">📻
+              Emissão</button>
+            <button class="tasks-filter-chip" data-activity="Produção" onclick="filterTasksByActivity('Produção')">🎙️
+              Produção</button>
+            <button class="tasks-filter-chip" data-activity="Redes Sociais"
+              onclick="filterTasksByActivity('Redes Sociais')">📱 Redes Sociais</button>
+            <button class="tasks-filter-chip" data-activity="Reuniões" onclick="filterTasksByActivity('Reuniões')">🗓️
+              Reuniões</button>
+            <button class="tasks-filter-chip" data-activity="Técnica" onclick="filterTasksByActivity('Técnica')">🔧
+              Técnica</button>
+            <button class="tasks-filter-chip" data-activity="Outros" onclick="filterTasksByActivity('Outros')">📋
+              Outros</button>
+          </div>
+
+          <div id="tasksBoard" class="tasks-board">
+            <!-- Renderizado via JS -->
+          </div>
+        </section>
+
+        <!-- VOTAÇÕES -->
+        <section id="sec-votacoes" class="admin-section" style="display: none;">
+          <div class="admin-section-heading">
+            <div>
+              <h2>Votações &amp; Sondagens</h2>
+              <p>Cria votações para a comunidade escolar. Partilha o link com os alunos para recolher respostas.</p>
+            </div>
+            <button class="btn-submit-main admin-add-button" onclick="openPollModal()">
+              <i class="ri-add-line"></i> Nova Votação
+            </button>
+          </div>
+          <div id="pollsGrid" class="polls-admin-grid">
+            <!-- Renderizado via JS -->
           </div>
         </section>
 
@@ -575,17 +812,19 @@ Sem avisos hoje
         <!-- COLUNA 1 (60%): O GUIÃO NÃO EDITÁVEL PARA LOCUÇÃO (TELEPROMPTER / LEITOR DE ESTÚDIO) -->
         <div class="aovivo-col-guiao">
           <div class="aovivo-card-main">
-            
+
             <!-- BARRA DE SELEÇÃO DE DATA (PASSADO, HOJE, FUTURO) -->
             <div class="guiao-date-bar">
               <button class="guiao-date-nav-btn" onclick="changeAoVivoDate(-1)" title="Dia anterior">
                 <i class="ri-arrow-left-s-line"></i> Ontem
               </button>
-              
+
               <div class="guiao-date-center">
                 <i class="ri-calendar-event-line" style="color: #38bdf8;"></i>
-                <input type="date" id="aoVivoDatePicker" class="guiao-date-input" onchange="onAoVivoDatePickerChange(this.value)" title="Escolher data">
-                <button class="guiao-today-chip" onclick="setAoVivoDateToday()" title="Ir para o dia de hoje">Hoje</button>
+                <input type="date" id="aoVivoDatePicker" class="guiao-date-input"
+                  onchange="onAoVivoDatePickerChange(this.value)" title="Escolher data">
+                <button class="guiao-today-chip" onclick="setAoVivoDateToday()"
+                  title="Ir para o dia de hoje">Hoje</button>
               </div>
 
               <button class="guiao-date-nav-btn" onclick="changeAoVivoDate(1)" title="Dia seguinte">
@@ -596,11 +835,13 @@ Sem avisos hoje
             <!-- BARRA DE TÍTULO E CONTROLOS DO GUIÃO AO VIVO (NÃO EDITÁVEL) -->
             <div class="guiao-live-title-bar">
               <h2 id="aoVivoScriptTitleDisplay" class="guiao-live-title">Guião da Emissão</h2>
-              
+
               <div class="guiao-tools-right">
                 <div class="guiao-font-controls">
-                  <button class="guiao-tool-btn" onclick="adjustAoVivoFontSize(-2)" title="Diminuir tamanho da letra">A-</button>
-                  <button class="guiao-tool-btn" onclick="adjustAoVivoFontSize(2)" title="Aumentar tamanho da letra">A+</button>
+                  <button class="guiao-tool-btn" onclick="adjustAoVivoFontSize(-2)"
+                    title="Diminuir tamanho da letra">A-</button>
+                  <button class="guiao-tool-btn" onclick="adjustAoVivoFontSize(2)"
+                    title="Aumentar tamanho da letra">A+</button>
                 </div>
               </div>
             </div>
@@ -616,7 +857,7 @@ Sem avisos hoje
         <!-- COLUNA 2 (40%): AS MÚSICAS PEDIDAS -->
         <div class="aovivo-col-musicas">
           <div class="aovivo-card-main">
-            
+
             <div class="musicas-header">
               <div class="musicas-title-simple">
                 <i class="ri-music-2-line" style="color: #f59e0b;"></i>
@@ -626,9 +867,12 @@ Sem avisos hoje
 
               <!-- Filtro de Músicas -->
               <div class="musicas-filters">
-                <button class="musicas-filter-chip active" id="filterAoVivoPending" onclick="filterAoVivoSongs('pending')">Pendentes</button>
-                <button class="musicas-filter-chip" id="filterAoVivoAll" onclick="filterAoVivoSongs('all')">Todas</button>
-                <button class="musicas-filter-chip" id="filterAoVivoPlayed" onclick="filterAoVivoSongs('played')">Tocadas</button>
+                <button class="musicas-filter-chip active" id="filterAoVivoPending"
+                  onclick="filterAoVivoSongs('pending')">Pendentes</button>
+                <button class="musicas-filter-chip" id="filterAoVivoAll"
+                  onclick="filterAoVivoSongs('all')">Todas</button>
+                <button class="musicas-filter-chip" id="filterAoVivoPlayed"
+                  onclick="filterAoVivoSongs('played')">Tocadas</button>
               </div>
             </div>
 
@@ -654,10 +898,24 @@ Sem avisos hoje
   <!-- MODAL: ADICIONAR LINK -->
   <div class="modal-overlay" id="addLinkModal">
     <div class="card-panel modal-window">
-      <h3>Adicionar Link ao Linktree</h3>
+      <div class="modal-header-bar">
+        <div class="modal-header-left">
+          <div class="modal-header-icon"
+            style="background: rgba(56, 189, 248, 0.14); color: #38bdf8; border-color: rgba(56, 189, 248, 0.25);">
+            <i class="ri-link"></i>
+          </div>
+          <div class="modal-header-text">
+            <h3>Adicionar Link ao Linktree</h3>
+            <p>Disponibiliza um atalho rápido na página inicial e árvore de recursos.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="closeModal('addLinkModal')" title="Fechar"><i
+            class="ri-close-line"></i></button>
+      </div>
+
       <form id="addLinkForm" onsubmit="saveNewLink(event)">
         <div class="form-field">
-          <label>Título do Botão</label>
+          <label>Título do Botão <span style="color: #ef4444;">*</span></label>
           <input type="text" id="linkTitleInput" class="form-input-lg" placeholder="Ex: Inscrições na Rádio" required>
         </div>
         <div class="form-field">
@@ -665,49 +923,159 @@ Sem avisos hoje
           <input type="text" id="linkSubInput" class="form-input-lg" placeholder="Ex: Formulário oficial de adesão">
         </div>
         <div class="form-field">
-          <label>URL de Destino</label>
+          <label>URL de Destino <span style="color: #ef4444;">*</span></label>
           <input type="url" id="linkUrlInput" class="form-input-lg" placeholder="https://forms.gle/..." required>
         </div>
-        <div class="form-field">
-          <label>Ícone (Ex: ri-mic-line, ri-instagram-line)</label>
-          <input type="text" id="linkIconInput" class="form-input-lg" placeholder="ri-link">
-        </div>
-        <div class="form-field">
-          <label>Badge / Etiqueta</label>
-          <input type="text" id="linkBadgeInput" class="form-input-lg" placeholder="Ex: Aberto">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-field">
+            <label>Ícone <small>(RemixIcon)</small></label>
+            <input type="text" id="linkIconInput" class="form-input-lg" placeholder="ri-link">
+          </div>
+          <div class="form-field">
+            <label>Badge / Etiqueta</label>
+            <input type="text" id="linkBadgeInput" class="form-input-lg" placeholder="Ex: Aberto">
+          </div>
         </div>
         <div class="modal-actions">
           <button type="button" class="btn-action" onclick="closeModal('addLinkModal')">Cancelar</button>
-          <button type="submit" class="btn-submit-main">Guardar Link</button>
+          <button type="submit" class="btn-submit-main"><i class="ri-check-line"></i> Guardar Link</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- MODAL: ADICIONAR PODCAST -->
+  <!-- MODAL: GESTÃO DE PODCAST / SPOTIFY -->
   <div class="modal-overlay" id="addPodcastModal">
-    <div class="card-panel modal-window">
-      <h3>Adicionar Novo Podcast</h3>
+    <div class="card-panel modal-window" style="max-width: 720px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header-bar">
+        <div class="modal-header-left">
+          <div class="modal-header-icon"
+            style="background: rgba(29, 185, 84, 0.14); color: #1db954; border-color: rgba(29, 185, 84, 0.25);">
+            <i class="ri-spotify-fill"></i>
+          </div>
+          <div class="modal-header-text">
+            <h3 id="podcastModalTitle">Configurar Episódio de Podcast</h3>
+            <p>Integra episódios 100% gratuitos através do Spotify ou ficheiros de áudio da escola.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="closeModal('addPodcastModal')" title="Fechar"><i
+            class="ri-close-line"></i></button>
+      </div>
+
       <form id="addPodcastForm" onsubmit="saveNewPodcast(event)">
+        <input type="hidden" id="podIdInput">
+
+        <!-- LINK DO SPOTIFY / ÁUDIO -->
         <div class="form-field">
-          <label>Título do Episódio</label>
-          <input type="text" id="podTitleInput" class="form-input-lg" placeholder="Ex: Entrevista com a AE" required>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+            <label style="margin-bottom: 0;">Link do Spotify ou Áudio <span style="color: #ef4444;">*</span></label>
+            <span style="font-size: 0.75rem; color: #1db954; font-weight: 600;"><i class="ri-spotify-line"></i> Suporte
+              Spotify / Spotify for Podcasters</span>
+          </div>
+          <input type="text" id="podUrlInput" class="form-input-lg"
+            placeholder="Ex: https://open.spotify.com/episode/7vQ2Yf... ou link direto" required
+            oninput="handlePodcastUrlInput(this.value)">
+          <div
+            style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.35rem; display: flex; align-items: center; gap: 0.35rem;">
+            <i class="ri-information-line"></i> Cola a ligação do episódio copiada do Spotify (App ou Web) ou Spotify
+            for Podcasters.
+          </div>
         </div>
+
+        <!-- PRÉ-VISUALIZAÇÃO SPOTIFY EM TEMPO REAL -->
+        <div id="podPreviewWrapper"
+          style="display: none; margin-bottom: 1.25rem; padding: 1rem; border-radius: 12px; background: rgba(29, 185, 84, 0.06); border: 1px solid rgba(29, 185, 84, 0.2);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem;">
+            <span
+              style="font-size: 0.8rem; font-weight: 700; color: #1db954; text-transform: uppercase; letter-spacing: 0.05em;">
+              <i class="ri-play-circle-line"></i> Pré-visualização do Leitor
+            </span>
+            <span id="podPreviewBadge"
+              style="font-size: 0.72rem; color: #cbd5e1; background: rgba(0,0,0,0.3); padding: 0.15rem 0.5rem; border-radius: 4px;">Spotify
+              Embed</span>
+          </div>
+          <div id="podPreviewFrameContainer"></div>
+        </div>
+
+        <!-- TÍTULO & SUBTÍTULO -->
         <div class="form-field">
-          <label>Data de Publicação</label>
-          <input type="text" id="podDateInput" class="form-input-lg" placeholder="Ex: 09 Setembro, 2026" required>
+          <label>Título do Episódio <span style="color: #ef4444;">*</span></label>
+          <input type="text" id="podTitleInput" class="form-input-lg"
+            placeholder="Ex: Ep. 12 — Entrevista com a Associação de Estudantes" required>
         </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-field">
+            <label>Categoria / Tema <span style="color: #ef4444;">*</span></label>
+            <select id="podCategoryInput" class="form-input-lg" required>
+              <option value="Entrevistas">🎙️ Entrevistas</option>
+              <option value="Debates">💬 Debates &amp; Sociedade</option>
+              <option value="Música">🎵 Música &amp; Cultura</option>
+              <option value="Ciência &amp; Escola">🔬 Ciência &amp; Tecnologia</option>
+              <option value="Emissão Especial">⭐ Emissão Especial</option>
+              <option value="Desporto">⚽ Desporto Escolar</option>
+              <option value="Geral" selected>📻 Geral</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Locutores / Participantes</label>
+            <input type="text" id="podHostsInput" class="form-input-lg" placeholder="Ex: Matilde e Rodrigo (10.º A)">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-field">
+            <label>Data de Publicação <span style="color: #ef4444;">*</span></label>
+            <input type="text" id="podDateInput" class="form-input-lg" placeholder="Ex: 17 Setembro, 2026" required>
+          </div>
+          <div class="form-field">
+            <label>Duração Estimada</label>
+            <input type="text" id="podDurationInput" class="form-input-lg" placeholder="Ex: 24 min ou 18:30">
+          </div>
+        </div>
+
+        <!-- DESCRIÇÃO / SHOW NOTES -->
         <div class="form-field">
-          <label>Duração</label>
-          <input type="text" id="podDurationInput" class="form-input-lg" placeholder="18:45">
+          <label>Descrição do Episódio / Show Notes</label>
+          <textarea id="podDescInput" class="form-input-lg" rows="3"
+            placeholder="Descreve os temas abordados, os momentos-chave ou links de referência do episódio..."></textarea>
         </div>
+
+        <!-- IMAGEM / THUMBNAIL DO EPISÓDIO -->
         <div class="form-field">
-          <label>URL do Áudio MP3</label>
-          <input type="url" id="podUrlInput" class="form-input-lg" placeholder="https://..." required>
+          <label>Imagem da Capa do Episódio</label>
+          <input type="url" id="podThumbnailInput" class="form-input-lg"
+            placeholder="Ex: https://i.scdn.co/image/... ou URL direto da imagem">
+          <div
+            style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.35rem; display: flex; align-items: center; gap: 0.35rem;">
+            <i class="ri-image-line"></i> URL da imagem que aparece no CD do leitor de podcasts. Deixa vazio para usar o
+            logótipo da rádio.
+          </div>
         </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-action" onclick="closeModal('addPodcastModal')">Cancelar</button>
-          <button type="submit" class="btn-submit-main">Guardar Podcast</button>
+
+        <!-- DESTAQUE NA HOMEPAGE -->
+        <div class="form-field" style="margin-bottom: 1.25rem;">
+          <label class="perm-switch-item"
+            style="cursor: pointer; display: flex; align-items: center; gap: 0.75rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 0.75rem 1rem; border-radius: 8px;">
+            <input type="checkbox" id="podFeaturedInput">
+            <span class="perm-switch-slider"></span>
+            <div class="perm-switch-label">
+              <strong style="color: #ffffff; font-size: 0.9rem;">Destacar na Página Inicial</strong>
+              <small style="color: var(--text-muted); display: block;">Coloca este episódio em evidência na secção de
+                podcasts do portal.</small>
+            </div>
+          </label>
+        </div>
+
+        <div class="modal-actions" style="justify-content: space-between;">
+          <button type="button" id="podDeleteBtn" class="btn-action danger-action" style="display: none;"
+            onclick="deleteCurrentOpenPodcast()">
+            <i class="ri-delete-bin-line"></i> Eliminar
+          </button>
+          <div style="display: flex; gap: 0.5rem; margin-left: auto;">
+            <button type="button" class="btn-action" onclick="closeModal('addPodcastModal')">Cancelar</button>
+            <button type="submit" class="btn-submit-main"><i class="ri-check-line"></i> Guardar Episódio</button>
+          </div>
         </div>
       </form>
     </div>
@@ -716,23 +1084,38 @@ Sem avisos hoje
   <!-- MODAL: ADICIONAR ANÚNCIO (mantido para uso interno) -->
   <div class="modal-overlay" id="addAnnouncementModal">
     <div class="card-panel modal-window">
-      <h3>Publicar Notícia / Anúncio</h3>
+      <div class="modal-header-bar">
+        <div class="modal-header-left">
+          <div class="modal-header-icon"
+            style="background: rgba(245, 158, 11, 0.14); color: #fbbf24; border-color: rgba(245, 158, 11, 0.25);">
+            <i class="ri-megaphone-line"></i>
+          </div>
+          <div class="modal-header-text">
+            <h3>Publicar Notícia / Anúncio</h3>
+            <p>Adiciona um artigo ou comunicado oficial no portal da rádio.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="closeModal('addAnnouncementModal')"
+          title="Fechar"><i class="ri-close-line"></i></button>
+      </div>
+
       <form id="addAnnouncementForm" onsubmit="saveNewAnnouncement(event)">
         <div class="form-field">
-          <label>Categoria</label>
+          <label>Categoria / Tag</label>
           <input type="text" id="annTagInput" class="form-input-lg" placeholder="Ex: Recrutamento, Evento">
         </div>
         <div class="form-field">
-          <label>Título da Notícia</label>
+          <label>Título da Notícia <span style="color: #ef4444;">*</span></label>
           <input type="text" id="annTitleInput" class="form-input-lg" placeholder="Ex: Inscrições Abertas" required>
         </div>
         <div class="form-field">
-          <label>Conteúdo</label>
-          <textarea id="annContentInput" class="form-input-lg" rows="4" placeholder="Escreve o texto..." required></textarea>
+          <label>Conteúdo <span style="color: #ef4444;">*</span></label>
+          <textarea id="annContentInput" class="form-input-lg" rows="4" placeholder="Escreve o texto..."
+            required></textarea>
         </div>
         <div class="modal-actions">
           <button type="button" class="btn-action" onclick="closeModal('addAnnouncementModal')">Cancelar</button>
-          <button type="submit" class="btn-submit-main">Publicar Notícia</button>
+          <button type="submit" class="btn-submit-main"><i class="ri-send-plane-line"></i> Publicar Notícia</button>
         </div>
       </form>
     </div>
@@ -743,7 +1126,8 @@ Sem avisos hoje
     <div class="card-panel modal-window gcal-dialog-window">
       <!-- GCal Dialog Header -->
       <div class="gcal-dialog-header">
-        <span class="gcal-dialog-badge" id="gcalDialogBadge"><i class="ri-calendar-event-fill"></i> Evento de Calendário</span>
+        <span class="gcal-dialog-badge" id="gcalDialogBadge"><i class="ri-calendar-event-fill"></i> Evento de
+          Calendário</span>
         <button type="button" class="gcal-dialog-close" onclick="closeModal('calendarEventModal')" title="Fechar (Esc)">
           <i class="ri-close-line"></i>
         </button>
@@ -752,7 +1136,8 @@ Sem avisos hoje
       <form id="calendarEventForm" onsubmit="saveCalendarEvent(event)">
         <input type="hidden" id="calendarEventIdInput">
 
-        <div id="calendarEventReadOnlyNotice" style="display:none; margin-bottom: 1rem; padding: 0.75rem 1rem; border-radius: 8px; background: rgba(96, 165, 250, 0.08); border: 1px solid rgba(96, 165, 250, 0.25); color: #93c5fd; font-size: 0.82rem;">
+        <div id="calendarEventReadOnlyNotice"
+          style="display:none; margin-bottom: 1rem; padding: 0.75rem 1rem; border-radius: 8px; background: rgba(96, 165, 250, 0.08); border: 1px solid rgba(96, 165, 250, 0.25); color: #93c5fd; font-size: 0.82rem;">
           <i class="ri-information-line"></i> Dia temático gerado automaticamente. Apenas para consulta.
         </div>
 
@@ -760,7 +1145,8 @@ Sem avisos hoje
 
         <!-- Title Input (Google Calendar Style - Big Borderless Input) -->
         <div class="gcal-input-title-wrapper">
-          <input type="text" id="calendarEventTitleInput" class="gcal-title-input" placeholder="Adicionar título e aviso..." required autocomplete="off">
+          <input type="text" id="calendarEventTitleInput" class="gcal-title-input"
+            placeholder="Adicionar título e aviso..." required autocomplete="off">
         </div>
 
         <!-- Date & Time Row (Google Calendar Style) -->
@@ -778,7 +1164,8 @@ Sem avisos hoje
         <div class="gcal-row">
           <div class="gcal-row-icon"><i class="ri-price-tag-3-line"></i></div>
           <div class="gcal-row-content gcal-two-col">
-            <select id="calendarEventTypeInput" class="gcal-field-input" onchange="onCalendarCategoryChange(this.value)">
+            <select id="calendarEventTypeInput" class="gcal-field-input"
+              onchange="onCalendarCategoryChange(this.value)">
               <option value="Direção &amp; Escola">Direção &amp; Escola</option>
               <option value="Associação de Estudantes">Associação de Estudantes</option>
               <option value="Clubes &amp; Desporto">Clubes &amp; Desporto</option>
@@ -837,35 +1224,419 @@ Sem avisos hoje
         <div class="gcal-row" style="align-items: flex-start;">
           <div class="gcal-row-icon" style="margin-top: 0.4rem;"><i class="ri-align-left"></i></div>
           <div class="gcal-row-content">
-            <textarea id="calendarEventNotesInput" class="gcal-notes-textarea" rows="3" placeholder="Adicionar descrição ou notas de leitura para a emissão..."></textarea>
+            <textarea id="calendarEventNotesInput" class="gcal-notes-textarea" rows="3"
+              placeholder="Adicionar descrição ou notas de leitura para a emissão..."></textarea>
           </div>
         </div>
 
         <!-- GCal Dialog Footer Actions -->
         <div class="gcal-dialog-footer">
-          <button type="button" id="calendarEventDeleteButton" class="gcal-btn-delete" style="display:none;" onclick="deleteOpenCalendarEvent()">
+          <button type="button" id="calendarEventDeleteButton" class="gcal-btn-delete" style="display:none;"
+            onclick="deleteOpenCalendarEvent()">
             <i class="ri-delete-bin-line"></i> Eliminar
           </button>
           <div style="display: flex; gap: 0.5rem; margin-left: auto;">
             <button type="button" class="btn-action" onclick="closeModal('calendarEventModal')">Cancelar</button>
-            <button type="submit" id="calendarEventSubmitButton" class="btn-submit-main" style="padding: 0.45rem 1.4rem; border-radius: 999px;">Guardar</button>
+            <button type="submit" id="calendarEventSubmitButton" class="btn-submit-main"
+              style="padding: 0.45rem 1.4rem; border-radius: 999px;">Guardar</button>
           </div>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- MODAL: UTILIZADOR -->
+  <!-- MODAL: SESSION TIMEOUT WARNING -->
+  <div class="modal-overlay" id="sessionTimeoutModal">
+    <div class="card-panel modal-window" style="max-width: 440px; text-align: center;">
+      <div style="margin-bottom: 1.25rem;">
+        <div
+          style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 50%; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); margin-bottom: 1rem;">
+          <i class="ri-time-line" style="font-size: 1.8rem; color: #fbbf24;"></i>
+        </div>
+        <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;">Sessão Prestes a Expirar</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5;">
+          A tua sessão de administração vai ser encerrada em <strong id="sessionTimeoutCountdown"
+            style="color: #fbbf24;">5 minutos</strong> por inatividade. Guarda o teu trabalho antes de continuar.
+        </p>
+      </div>
+      <div id="sessionTimeoutProgressBar"
+        style="height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; margin-bottom: 1.25rem; overflow: hidden;">
+        <div id="sessionTimeoutProgress"
+          style="height: 100%; background: linear-gradient(90deg, #38bdf8, #fbbf24); border-radius: 2px; transition: width 1s linear;">
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.75rem; justify-content: center;">
+        <button type="button" class="btn-action" onclick="dismissSessionTimeout()">Continuar a Trabalhar</button>
+        <button type="button" class="btn-submit-main" onclick="forceLogout()">Terminar Sessão</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ATALHOS DE TECLADO -->
+  <div class="modal-overlay" id="shortcutsModal">
+    <div class="card-panel modal-window" style="max-width: 520px;">
+      <div class="modal-header-bar">
+        <div class="modal-header-left">
+          <div class="modal-header-icon"
+            style="background: rgba(56, 189, 248, 0.14); color: #38bdf8; border-color: rgba(56, 189, 248, 0.25);">
+            <i class="ri-keyboard-line"></i>
+          </div>
+          <div class="modal-header-text">
+            <h3>Atalhos de Teclado</h3>
+            <p>Accelera o teu fluxo de trabalho no painel.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="closeModal('shortcutsModal')" title="Fechar"><i
+            class="ri-close-line"></i></button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+        <div
+          style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <span style="font-size: 0.9rem;">Guardar guião</span>
+          <kbd
+            style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); padding: 0.2rem 0.6rem; border-radius: 5px; font-family: monospace; font-size: 0.8rem;">Ctrl+S</kbd>
+        </div>
+        <div
+          style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <span style="font-size: 0.9rem;">Nova tarefa</span>
+          <kbd
+            style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); padding: 0.2rem 0.6rem; border-radius: 5px; font-family: monospace; font-size: 0.8rem;">Ctrl+N</kbd>
+        </div>
+        <div
+          style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <span style="font-size: 0.9rem;">Calendário</span>
+          <kbd
+            style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); padding: 0.2rem 0.6rem; border-radius: 5px; font-family: monospace; font-size: 0.8rem;">Alt+C</kbd>
+        </div>
+        <div
+          style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <span style="font-size: 0.9rem;">Guiões</span>
+          <kbd
+            style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); padding: 0.2rem 0.6rem; border-radius: 5px; font-family: monospace; font-size: 0.8rem;">Alt+G</kbd>
+        </div>
+        <div
+          style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <span style="font-size: 0.9rem;">Ao Vivo</span>
+          <kbd
+            style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); padding: 0.2rem 0.6rem; border-radius: 5px; font-family: monospace; font-size: 0.8rem;">Alt+V</kbd>
+        </div>
+        <div
+          style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <span style="font-size: 0.9rem;">Utilizadores</span>
+          <kbd
+            style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); padding: 0.2rem 0.6rem; border-radius: 5px; font-family: monospace; font-size: 0.8rem;">Alt+U</kbd>
+        </div>
+        <div
+          style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <span style="font-size: 0.9rem;">Fechar modal</span>
+          <kbd
+            style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); padding: 0.2rem 0.6rem; border-radius: 5px; font-family: monospace; font-size: 0.8rem;">Esc</kbd>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BANDERA DE CONECTIVIDADE -->
+  <div id="offlineBanner"
+    style="display:none; position: fixed; top: 0; left: 0; right: 0; z-index: 10001; background: linear-gradient(90deg, #b91c1c, #dc2626); color: #fff; padding: 0.6rem 1.5rem; font-size: 0.88rem; font-weight: 600; text-align: center; box-shadow: 0 4px 15px rgba(220,38,38,0.35);">
+    <i class="ri-wifi-off-line" style="margin-right: 0.4rem;"></i> Sem ligação à internet — as alterações serão
+    guardadas localmente e sincronizadas quando a ligação for restabelecida.
+  </div>
+
+  <!-- MODAL: UTILIZADOR & MATRIZ DE PERMISSÕES (GOOGLE WORKSPACE RBAC) -->
   <div class="modal-overlay" id="adminUserModal">
-    <div class="card-panel modal-window">
-      <h3 id="adminUserModalTitle">Adicionar utilizador</h3>
+    <div class="card-panel modal-window rbac-modal-window"
+      style="max-width: 760px; max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem;">
+        <div>
+          <span class="badge" id="adminUserModalBadge"
+            style="background: rgba(139, 92, 246, 0.18); color: #c4b5fd; margin-bottom: 0.35rem; display: inline-block;">
+            <i class="ri-shield-keyhole-line"></i> Gestão de Contas &amp; Acessos
+          </span>
+          <h3 id="adminUserModalTitle" style="font-family: 'Outfit', sans-serif; font-size: 1.3rem; margin: 0;">Novo
+            Utilizador</h3>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem;">Configura as credenciais, o
+            perfil de acesso e as permissões modulares do membro.</p>
+        </div>
+        <button type="button" class="btn-action" onclick="closeModal('adminUserModal')"
+          style="padding: 0.35rem 0.5rem;"><i class="ri-close-line"></i></button>
+      </div>
+
       <form id="adminUserForm" onsubmit="saveAdminUser(event)">
         <input type="hidden" id="adminUserIdInput">
-        <div class="form-field"><label for="adminUserNameInput">Nome para o calendário</label><input type="text" id="adminUserNameInput" class="form-input-lg" placeholder="Ex: Ana Silva" required></div>
-        <div class="form-field"><label for="adminUserEmailInput">Email de acesso</label><input type="email" id="adminUserEmailInput" class="form-input-lg" placeholder="ana@escola.pt" required></div>
-        <div class="form-field"><label for="adminUserPasswordInput">Palavra-passe <span id="adminUserPasswordHint">(mínimo 8 caracteres)</span></label><input type="password" id="adminUserPasswordInput" class="form-input-lg" placeholder="Definir palavra-passe" minlength="8" autocomplete="new-password"></div>
-        <p class="admin-user-note"><i class="ri-shield-check-line"></i> A conta terá acesso de administrador ao painel e ficará disponível no calendário pelo nome indicado.</p>
-        <div class="modal-actions"><button type="button" class="btn-action" onclick="closeModal('adminUserModal')">Cancelar</button><button type="submit" class="btn-submit-main">Guardar utilizador</button></div>
+
+        <!-- BLOCO 1: DADOS BÁSICOS DO UTILIZADOR -->
+        <div class="rbac-form-section">
+          <div class="rbac-section-title"><i class="ri-user-3-line"></i> 1. Dados do Membro</div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div class="form-field">
+              <label for="adminUserNameInput">Nome Completo <span style="color:#ef4444;">*</span></label>
+              <input type="text" id="adminUserNameInput" class="form-input-lg" placeholder="Ex: Rodrigo Santos"
+                required>
+            </div>
+            <div class="form-field">
+              <label for="adminUserPositionInput">Função / Ano Escolar</label>
+              <input type="text" id="adminUserPositionInput" class="form-input-lg"
+                placeholder="Ex: Locutor - 10º CT2 ou Professor">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div class="form-field">
+              <label for="adminUserEmailInput">Email de Acesso <span style="color:#ef4444;">*</span></label>
+              <input type="email" id="adminUserEmailInput" class="form-input-lg" placeholder="rodrigo@escola.pt"
+                required>
+            </div>
+            <div class="form-field">
+              <label for="adminUserPasswordInput">Palavra-passe <span id="adminUserPasswordHint"
+                  style="font-size: 0.75rem; color: var(--text-muted);">(mínimo 8 caracteres)</span></label>
+              <input type="password" id="adminUserPasswordInput" class="form-input-lg"
+                placeholder="Definir palavra-passe" minlength="8" autocomplete="new-password">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div class="form-field">
+              <label for="adminUserAvatarColorInput">Cor do Avatar</label>
+              <select id="adminUserAvatarColorInput" class="form-input-lg">
+                <option value="indigo">Índigo / Azul Profundo</option>
+                <option value="emerald">Esmeralda / Verde</option>
+                <option value="purple">Roxo / Violeta</option>
+                <option value="amber">Âmbar / Dourado</option>
+                <option value="rose">Rosa / Coral</option>
+                <option value="cyan">Ciano / Turquesa</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="adminUserStatusInput">Estado da Conta</label>
+              <select id="adminUserStatusInput" class="form-input-lg">
+                <option value="active">🟢 Ativa (Pode aceder ao painel)</option>
+                <option value="suspended">⏸️ Suspensa (Acesso temporariamente bloqueado)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- BLOCO 2: PERFIL DE ACESSO (ROLE PRESETS) -->
+        <div class="rbac-form-section" style="margin-top: 1.25rem;">
+          <div class="rbac-section-title"><i class="ri-shield-user-line"></i> 2. Perfil de Acesso (Role Preset)</div>
+
+          <div class="form-field">
+            <label for="adminUserRoleSelect">Função / Perfil Predefinido</label>
+            <select id="adminUserRoleSelect" class="form-input-lg" onchange="onAdminUserRolePresetChange(this.value)">
+              <option value="super_admin">👑 Super Administrador (Acesso Total irrestrito)</option>
+              <option value="editor">🖋️ Coordenador Editorial (Emissões, Conteúdos, Agenda e Tarefas)</option>
+              <option value="broadcaster">🎙️ Locutor / Apresentador (Cockpit Ao Vivo, Guião, Músicas e Recados)
+              </option>
+              <option value="technician">🎚️ Técnico de Som / Produtor (Ao Vivo, Podcasts, Alinhamentos e Técnica)
+              </option>
+              <option value="social">📱 Comunicação &amp; Redes (Mensagens, Sondagens, Avisos e Links)</option>
+              <option value="custom">⚙️ Personalizado (Configurar Permissões Granulares Abaixo)</option>
+            </select>
+          </div>
+
+          <div id="adminUserRoleDesc" class="rbac-role-info-box">
+            <i class="ri-information-line"></i>
+            <span id="adminUserRoleDescText">O Super Administrador tem acesso ilimitado a todas as ferramentas, dados e
+              gestão de utilizadores.</span>
+          </div>
+        </div>
+
+        <!-- BLOCO 3: MATRIZ DE PERMISSÕES GRANULARES -->
+        <div class="rbac-form-section" style="margin-top: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <div class="rbac-section-title" style="margin-bottom: 0;"><i class="ri-list-check-2"></i> 3. Matriz de
+              Permissões Modulares</div>
+            <div style="display: flex; gap: 0.4rem;">
+              <button type="button" class="btn-action" style="font-size: 0.72rem; padding: 0.2rem 0.5rem;"
+                onclick="toggleAllPermissions(true)">Marcar Todas</button>
+              <button type="button" class="btn-action" style="font-size: 0.72rem; padding: 0.2rem 0.5rem;"
+                onclick="toggleAllPermissions(false)">Desmarcar Todas</button>
+            </div>
+          </div>
+
+          <div class="permissions-matrix-grid" id="permissionsMatrixGrid">
+            <!-- GRUPO: ESTÚDIO & EMISSÃO -->
+            <div class="perm-group-card">
+              <div class="perm-group-header">
+                <i class="ri-broadcast-line" style="color: #38bdf8;"></i>
+                <h4>Estúdio &amp; Emissão</h4>
+              </div>
+              <div class="perm-items-list">
+                <label class="perm-switch-item">
+                  <input type="checkbox" id="perm_access_aovivo" data-perm="access_aovivo"
+                    onchange="onPermissionCheckboxChange()">
+                  <span class="perm-switch-slider"></span>
+                  <div class="perm-switch-label">
+                    <strong>Cockpit Ao Vivo</strong>
+                    <small>Aceder ao ecrã de estúdio e teleprompter</small>
+                  </div>
+                </label>
+                <label class="perm-switch-item">
+                  <input type="checkbox" id="perm_manage_rundowns" data-perm="manage_rundowns"
+                    onchange="onPermissionCheckboxChange()">
+                  <span class="perm-switch-slider"></span>
+                  <div class="perm-switch-label">
+                    <strong>Alinhamentos &amp; Guiões</strong>
+                    <small>Criar e editar guiões diários de emissão</small>
+                  </div>
+                </label>
+                <label class="perm-switch-item">
+                  <input type="checkbox" id="perm_manage_songs" data-perm="manage_songs"
+                    onchange="onPermissionCheckboxChange()">
+                  <span class="perm-switch-slider"></span>
+                  <div class="perm-switch-label">
+                    <strong>Músicas Pedidas</strong>
+                    <small>Gerir pedidos e classificar temas</small>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- GRUPO: CONTEÚDO EDITORIAL -->
+            <div class="perm-group-card">
+              <div class="perm-group-header">
+                <i class="ri-article-line" style="color: #a78bfa;"></i>
+                <h4>Conteúdos &amp; Multimédia</h4>
+              </div>
+              <div class="perm-items-list">
+                <label class="perm-switch-item">
+                  <input type="checkbox" id="perm_manage_podcasts" data-perm="manage_podcasts"
+                    onchange="onPermissionCheckboxChange()">
+                  <span class="perm-switch-slider"></span>
+                  <div class="perm-switch-label">
+                    <strong>Podcasts &amp; Áudio</strong>
+                    <small>Publicar e gerir episódios gravados</small>
+                  </div>
+                </label>
+                <label class="perm-switch-item">
+                  <input type="checkbox" id="perm_manage_announcements" data-perm="manage_announcements"
+                    onchange="onPermissionCheckboxChange()">
+                  <span class="perm-switch-slider"></span>
+                  <div class="perm-switch-label">
+                    <strong>Notícias &amp; Comunicados</strong>
+                    <small>Publicar notícias e avisos escolares</small>
+                  </div>
+                </label>
+                <label class="perm-switch-item">
+                  <input type="checkbox" id="perm_manage_links" data-perm="manage_links"
+                    onchange="onPermissionCheckboxChange()">
+                  <span class="perm-switch-slider"></span>
+                  <div class="perm-switch-label">
+                    <strong>Links Rápidos</strong>
+                    <small>Gerir links da árvore de recursos</small>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- GRUPO: COMUNIDADE & INTERATIVIDADE -->
+            <div class="perm-group-card">
+              <div class="perm-group-header">
+                <i class="ri-chat-heart-line" style="color: #f43f5e;"></i>
+                <h4>Comunidade &amp; Ouvintes</h4>
+              </div>
+              <div class="perm-items-list">
+                <label class="perm-switch-item">
+                  <input type="checkbox" id="perm_manage_messages" data-perm="manage_messages"
+                    onchange="onPermissionCheckboxChange()">
+                  <span class="perm-switch-slider"></span>
+                  <div class="perm-switch-label">
+                    <strong>Mensagens Recebidas</strong>
+                    <small>Ler, responder e gerir inbox de alunos</small>
+                  </div>
+                </label>
+                <label class="perm-switch-item">
+                  <input type="checkbox" id="perm_manage_polls" data-perm="manage_polls"
+                    onchange="onPermissionCheckboxChange()">
+                  <span class="perm-switch-slider"></span>
+                  <div class="perm-switch-label">
+                    <strong>Votações &amp; Sondagens</strong>
+                    <small>Criar votações e consultar contagem</small>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- GRUPO: ORGANIZAÇÃO DA EQUIPA -->
+            <div class="perm-group-card">
+              <div class="perm-group-header">
+                <i class="ri-calendar-check-line" style="color: #10b981;"></i>
+                <h4>Organização &amp; Equipa</h4>
+              </div>
+              <div class="perm-items-list">
+                <label class="perm-switch-item">
+                  <input type="checkbox" id="perm_manage_calendar" data-perm="manage_calendar"
+                    onchange="onPermissionCheckboxChange()">
+                  <span class="perm-switch-slider"></span>
+                  <div class="perm-switch-label">
+                    <strong>Calendário &amp; Agenda</strong>
+                    <small>Criar e editar eventos da escola</small>
+                  </div>
+                </label>
+                <label class="perm-switch-item">
+                  <input type="checkbox" id="perm_manage_tasks" data-perm="manage_tasks"
+                    onchange="onPermissionCheckboxChange()">
+                  <span class="perm-switch-slider"></span>
+                  <div class="perm-switch-label">
+                    <strong>Tarefas Kanban</strong>
+                    <small>Gerir quadro semanal e atividades</small>
+                  </div>
+                </label>
+                <label class="perm-switch-item">
+                  <input type="checkbox" id="perm_manage_memos" data-perm="manage_memos"
+                    onchange="onPermissionCheckboxChange()">
+                  <span class="perm-switch-slider"></span>
+                  <div class="perm-switch-label">
+                    <strong>Mural de Recados</strong>
+                    <small>Deixar notas e lembretes aos colegas</small>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- GRUPO: ADMINISTRAÇÃO & CONTROLO -->
+            <div class="perm-group-card">
+              <div class="perm-group-header">
+                <i class="ri-shield-star-line" style="color: #f59e0b;"></i>
+                <h4>Administração &amp; Segurança</h4>
+              </div>
+              <div class="perm-items-list">
+                <label class="perm-switch-item">
+                  <input type="checkbox" id="perm_manage_users" data-perm="manage_users"
+                    onchange="onPermissionCheckboxChange()">
+                  <span class="perm-switch-slider"></span>
+                  <div class="perm-switch-label">
+                    <strong>Gerir Utilizadores &amp; Perfis</strong>
+                    <small>Criar contas e definir permissões RBAC</small>
+                  </div>
+                </label>
+                <label class="perm-switch-item">
+                  <input type="checkbox" id="perm_system_config" data-perm="system_config"
+                    onchange="onPermissionCheckboxChange()">
+                  <span class="perm-switch-slider"></span>
+                  <div class="perm-switch-label">
+                    <strong>Definições Globais do Sistema</strong>
+                    <small>Configurações avançadas da rádio</small>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 1.5rem; justify-content: space-between;">
+          <button type="button" id="adminUserDeleteBtn" class="btn-action danger-action" style="display: none;"
+            onclick="deleteOpenAdminUser()">
+            <i class="ri-delete-bin-line"></i> Eliminar Conta
+          </button>
+          <div style="display: flex; gap: 0.5rem; margin-left: auto;">
+            <button type="button" class="btn-action" onclick="closeModal('adminUserModal')">Cancelar</button>
+            <button type="submit" class="btn-submit-main"><i class="ri-save-line"></i> Guardar Membro &amp;
+              Permissões</button>
+          </div>
+        </div>
       </form>
     </div>
   </div>
@@ -879,16 +1650,17 @@ Sem avisos hoje
           <span class="prompter-badge"><i class="ri-mic-fill"></i> MODO LEITURA AO VIVO</span>
           <h3 id="prompterTitle" class="prompter-title">Título do Aviso / Bloco</h3>
         </div>
-        
+
         <!-- Controls: Font size, speech timer, effects -->
         <div class="prompter-controls">
           <div class="prompter-font-controls" title="Ajustar tamanho da letra">
             <button type="button" class="prompter-ctrl-btn" onclick="adjustPrompterFontSize(-2)">A-</button>
             <button type="button" class="prompter-ctrl-btn" onclick="adjustPrompterFontSize(2)">A+</button>
           </div>
-          
+
           <div class="prompter-timer-widget" title="Cronómetro de Leitura">
-            <button type="button" class="prompter-timer-btn" id="prompterTimerToggleBtn" onclick="togglePrompterTimer()">
+            <button type="button" class="prompter-timer-btn" id="prompterTimerToggleBtn"
+              onclick="togglePrompterTimer()">
               <i class="ri-play-fill" id="prompterTimerIcon"></i>
             </button>
             <span class="prompter-timer-display" id="prompterTimerDisplay">00:00</span>
@@ -904,11 +1676,15 @@ Sem avisos hoje
       <!-- Prompter Meta Bar -->
       <div class="prompter-meta-bar">
         <div class="prompter-meta-item" id="prompterSpeaker"><i class="ri-user-voice-line"></i> Locutor: Todos</div>
-        <div class="prompter-meta-item" id="prompterCueTag"><i class="ri-sound-module-line"></i> Cama Sonora: Opcional</div>
+        <div class="prompter-meta-item" id="prompterCueTag"><i class="ri-sound-module-line"></i> Cama Sonora: Opcional
+        </div>
         <div class="prompter-sound-shortcuts">
-          <button class="prompter-sound-btn" onclick="playSoundFX('alert')" title="Tocar som de alerta"><i class="ri-alarm-warning-fill"></i> Alerta</button>
-          <button class="prompter-sound-btn" onclick="playSoundFX('jingle')" title="Tocar jingle da rádio"><i class="ri-broadcast-fill"></i> Jingle</button>
-          <button class="prompter-sound-btn" onclick="toggleSoundboardBGM()" title="Ligar/Desligar Cama Musical"><i class="ri-music-fill"></i> Cama Sonora</button>
+          <button class="prompter-sound-btn" onclick="playSoundFX('alert')" title="Tocar som de alerta"><i
+              class="ri-alarm-warning-fill"></i> Alerta</button>
+          <button class="prompter-sound-btn" onclick="playSoundFX('jingle')" title="Tocar jingle da rádio"><i
+              class="ri-broadcast-fill"></i> Jingle</button>
+          <button class="prompter-sound-btn" onclick="toggleSoundboardBGM()" title="Ligar/Desligar Cama Musical"><i
+              class="ri-music-fill"></i> Cama Sonora</button>
         </div>
       </div>
 
@@ -926,7 +1702,8 @@ Sem avisos hoje
         </div>
         <div class="prompter-footer-actions">
           <button type="button" class="btn-action" onclick="closePrompterModal()">Fechar</button>
-          <button type="button" class="btn-submit-main prompter-done-btn" id="prompterMarkReadBtn" onclick="markCurrentPrompterAsRead()">
+          <button type="button" class="btn-submit-main prompter-done-btn" id="prompterMarkReadBtn"
+            onclick="markCurrentPrompterAsRead()">
             <i class="ri-checkbox-circle-fill"></i> Concluir Leitura &amp; Marcar como Lido
           </button>
         </div>
@@ -937,26 +1714,37 @@ Sem avisos hoje
   <!-- MODAL: CONSTRUTOR DE GUIÃO & ALINHAMENTO DE EMISSÃO -->
   <div class="modal-overlay" id="rundownModal">
     <div class="card-panel modal-window" style="max-width: 860px;">
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
-        <div>
-          <h3 id="rundownModalTitle" style="margin: 0; font-family: 'Outfit', sans-serif;">Alinhamento da Emissão</h3>
-          <p style="margin: 0.2rem 0 0; font-size: 0.82rem; color: var(--text-muted);">Organiza a sequência minuto a minuto dos blocos de fala, músicas e passatempos.</p>
+      <div class="modal-header-bar">
+        <div class="modal-header-left">
+          <div class="modal-header-icon"
+            style="background: rgba(56, 189, 248, 0.14); color: #38bdf8; border-color: rgba(56, 189, 248, 0.25);">
+            <i class="ri-play-list-2-line"></i>
+          </div>
+          <div class="modal-header-text">
+            <h3 id="rundownModalTitle">Alinhamento da Emissão</h3>
+            <p>Organiza a sequência minuto a minuto dos blocos de fala, músicas e passatempos.</p>
+          </div>
         </div>
-        <div class="rundown-total-duration-badge" id="rundownTotalDurationBadge">
-          <i class="ri-time-line"></i> Total: <strong id="rundownModalTotalTime">00:00</strong>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div class="rundown-total-duration-badge" id="rundownTotalDurationBadge">
+            <i class="ri-time-line"></i> Total: <strong id="rundownModalTotalTime">00:00</strong>
+          </div>
+          <button type="button" class="modal-close-icon-btn" onclick="closeModal('rundownModal')" title="Fechar"><i
+              class="ri-close-line"></i></button>
         </div>
       </div>
 
       <form id="rundownForm" onsubmit="saveRundownForm(event)">
         <input type="hidden" id="rundownIdInput">
-        
+
         <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
           <div class="form-field" style="margin-bottom: 0;">
-            <label>Título do Guião / Emissão</label>
-            <input type="text" id="rundownTitleInput" class="form-input-lg" placeholder="Ex: Emissão Intervalo Grande - Terça-Feira" required>
+            <label>Título do Guião / Emissão <span style="color: #ef4444;">*</span></label>
+            <input type="text" id="rundownTitleInput" class="form-input-lg"
+              placeholder="Ex: Emissão Intervalo Grande - Terça-Feira" required>
           </div>
           <div class="form-field" style="margin-bottom: 0;">
-            <label>Data</label>
+            <label>Data <span style="color: #ef4444;">*</span></label>
             <input type="date" id="rundownDateInput" class="form-input-lg" required>
           </div>
           <div class="form-field" style="margin-bottom: 0;">
@@ -967,14 +1755,20 @@ Sem avisos hoje
 
         <!-- Blocos do Alinhamento -->
         <div class="rundown-builder-section">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+          <div
+            style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
             <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-main);">Blocos do Alinhamento</label>
             <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-              <button type="button" class="rundown-add-chip" onclick="addRundownBlock('talk')"><i class="ri-mic-line"></i> + Bloco de Fala</button>
-              <button type="button" class="rundown-add-chip" onclick="addRundownBlock('music')"><i class="ri-music-2-line"></i> + Música</button>
-              <button type="button" class="rundown-add-chip" onclick="addRundownBlock('jingle')"><i class="ri-broadcast-line"></i> + Jingle</button>
-              <button type="button" class="rundown-add-chip" onclick="addRundownBlock('interview')"><i class="ri-user-voice-line"></i> + Entrevista</button>
-              <button type="button" class="rundown-add-chip" onclick="addRundownBlock('contest')"><i class="ri-trophy-line"></i> + Passatempo</button>
+              <button type="button" class="rundown-add-chip" onclick="addRundownBlock('talk')"><i
+                  class="ri-mic-line"></i> + Bloco de Fala</button>
+              <button type="button" class="rundown-add-chip" onclick="addRundownBlock('music')"><i
+                  class="ri-music-2-line"></i> + Música</button>
+              <button type="button" class="rundown-add-chip" onclick="addRundownBlock('jingle')"><i
+                  class="ri-broadcast-line"></i> + Jingle</button>
+              <button type="button" class="rundown-add-chip" onclick="addRundownBlock('interview')"><i
+                  class="ri-user-voice-line"></i> + Entrevista</button>
+              <button type="button" class="rundown-add-chip" onclick="addRundownBlock('contest')"><i
+                  class="ri-trophy-line"></i> + Passatempo</button>
             </div>
           </div>
 
@@ -984,10 +1778,12 @@ Sem avisos hoje
         </div>
 
         <div class="modal-actions" style="margin-top: 1.25rem;">
-          <button type="button" id="rundownDeleteBtn" class="btn-action danger-action" style="display: none;" onclick="deleteOpenRundown()"><i class="ri-delete-bin-line"></i> Eliminar</button>
-          <button type="button" class="btn-action" onclick="printOpenRundown()"><i class="ri-printer-line"></i> Imprimir Folha A4</button>
+          <button type="button" id="rundownDeleteBtn" class="btn-action danger-action" style="display: none;"
+            onclick="deleteOpenRundown()"><i class="ri-delete-bin-line"></i> Eliminar</button>
+          <button type="button" class="btn-action" onclick="printOpenRundown()"><i class="ri-printer-line"></i> Imprimir
+            Folha A4</button>
           <button type="button" class="btn-action" onclick="closeModal('rundownModal')">Cancelar</button>
-          <button type="submit" class="btn-submit-main">Guardar Alinhamento</button>
+          <button type="submit" class="btn-submit-main"><i class="ri-check-line"></i> Guardar Alinhamento</button>
         </div>
       </form>
     </div>
@@ -996,19 +1792,32 @@ Sem avisos hoje
   <!-- MODAL: PREPARAÇÃO RÁPIDA DE AVISO PARA LER -->
   <div class="modal-overlay" id="quickNoticeModal">
     <div class="card-panel modal-window" style="max-width: 680px;">
-      <h3 style="margin-bottom: 0.2rem; font-family: 'Outfit', sans-serif;">Preparar Aviso para Ler em Antena</h3>
-      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.25rem;">Escreve o texto com instruções sonoras claras para o locutor ler no ar sem hesitações.</p>
-      
+      <div class="modal-header-bar">
+        <div class="modal-header-left">
+          <div class="modal-header-icon"
+            style="background: rgba(245, 158, 11, 0.14); color: #fbbf24; border-color: rgba(245, 158, 11, 0.25);">
+            <i class="ri-mic-line"></i>
+          </div>
+          <div class="modal-header-text">
+            <h3>Preparar Aviso para Ler em Antena</h3>
+            <p>Escreve o texto com instruções sonoras claras para o locutor ler no ar sem hesitações.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="closeModal('quickNoticeModal')" title="Fechar"><i
+            class="ri-close-line"></i></button>
+      </div>
+
       <form id="quickNoticeForm" onsubmit="saveQuickNoticeForm(event)">
         <input type="hidden" id="quickNoticeIdInput">
-        
+
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.75rem;">
           <div class="form-field">
-            <label>Título do Aviso</label>
-            <input type="text" id="quickNoticeTitle" class="form-input-lg" placeholder="Ex: Torneio de Futsal Escolar - Inscrições" required>
+            <label>Título do Aviso <span style="color: #ef4444;">*</span></label>
+            <input type="text" id="quickNoticeTitle" class="form-input-lg"
+              placeholder="Ex: Torneio de Futsal Escolar - Inscrições" required>
           </div>
           <div class="form-field">
-            <label>Data de Emissão</label>
+            <label>Data de Emissão <span style="color: #ef4444;">*</span></label>
             <input type="date" id="quickNoticeDate" class="form-input-lg" required>
           </div>
         </div>
@@ -1030,24 +1839,32 @@ Sem avisos hoje
         </div>
 
         <div class="form-field">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
-            <label style="margin-bottom: 0;">Texto do Aviso (Podes usar tags: [CAMA SONORA], [EFEITO], [PAUSA])</label>
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.4rem;">
+            <label style="margin-bottom: 0;">Texto do Aviso <span style="color: #ef4444;">*</span></label>
             <div style="display: flex; gap: 0.3rem;">
-              <button type="button" class="tag-insert-btn" onclick="insertNoticeTag('[CAMA SONORA]')">+ [CAMA SONORA]</button>
-              <button type="button" class="tag-insert-btn" onclick="insertNoticeTag('[EFEITO JINGLE]')">+ [JINGLE]</button>
+              <button type="button" class="tag-insert-btn" onclick="insertNoticeTag('[CAMA SONORA]')">+ [CAMA
+                SONORA]</button>
+              <button type="button" class="tag-insert-btn" onclick="insertNoticeTag('[EFEITO JINGLE]')">+
+                [JINGLE]</button>
               <button type="button" class="tag-insert-btn" onclick="insertNoticeTag('[PAUSA 2s]')">+ [PAUSA]</button>
             </div>
           </div>
-          <textarea id="quickNoticeBody" class="form-input-lg" rows="6" placeholder="Atenção comunidade escolar! Estão abertas as inscrições para o grande torneio de futsal..." required oninput="updateQuickNoticeStats()"></textarea>
-          <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); margin-top: 0.3rem;">
+          <textarea id="quickNoticeBody" class="form-input-lg" rows="6"
+            placeholder="Atenção comunidade escolar! Estão abertas as inscrições para o grande torneio de futsal..."
+            required oninput="updateQuickNoticeStats()"></textarea>
+          <div
+            style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); margin-top: 0.3rem;">
             <span id="quickNoticeStats">0 palavras • ~0 segundos de leitura</span>
-            <span style="color: #60a5fa;"><i class="ri-information-line"></i> Ritmo recomendado: ~130 palavras/minuto</span>
+            <span style="color: #60a5fa;"><i class="ri-information-line"></i> Ritmo recomendado: ~130
+              palavras/minuto</span>
           </div>
         </div>
 
         <div class="modal-actions">
           <button type="button" class="btn-action" onclick="closeModal('quickNoticeModal')">Cancelar</button>
-          <button type="submit" class="btn-submit-main">Guardar Aviso para Emissão</button>
+          <button type="submit" class="btn-submit-main"><i class="ri-check-line"></i> Guardar Aviso para
+            Emissão</button>
         </div>
       </form>
     </div>
@@ -1056,25 +1873,39 @@ Sem avisos hoje
   <!-- MODAL: RECADO DO MURAL DA EQUIPA -->
   <div class="modal-overlay" id="teamMemoModal">
     <div class="card-panel modal-window" style="max-width: 520px;">
-      <h3 id="teamMemoModalTitle" style="margin-bottom: 0.2rem; font-family: 'Outfit', sans-serif;">Recado da Equipa</h3>
-      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.25rem;">Deixa uma nota rápida ou lembrete para os colegas da rádio.</p>
-      
+      <div class="modal-header-bar">
+        <div class="modal-header-left">
+          <div class="modal-header-icon"
+            style="background: rgba(245, 158, 11, 0.14); color: #fbbf24; border-color: rgba(245, 158, 11, 0.25);">
+            <i class="ri-sticky-note-line"></i>
+          </div>
+          <div class="modal-header-text">
+            <h3 id="teamMemoModalTitle">Recado da Equipa</h3>
+            <p>Deixa uma nota rápida ou lembrete para os colegas da rádio.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="closeModal('teamMemoModal')" title="Fechar"><i
+            class="ri-close-line"></i></button>
+      </div>
+
       <form id="teamMemoForm" onsubmit="saveTeamMemoForm(event)">
         <input type="hidden" id="teamMemoIdInput">
-        
+
         <div class="form-field">
-          <label>Título do Recado</label>
-          <input type="text" id="teamMemoTitleInput" class="form-input-lg" placeholder="Ex: Lembrar de calibrar o microfone 2" required>
+          <label>Título do Recado <span style="color: #ef4444;">*</span></label>
+          <input type="text" id="teamMemoTitleInput" class="form-input-lg"
+            placeholder="Ex: Lembrar de calibrar o microfone 2" required>
         </div>
 
         <div class="form-field">
-          <label>Mensagem / Detalhes</label>
-          <textarea id="teamMemoContentInput" class="form-input-lg" rows="4" placeholder="Escreve o recado para a equipa..." required></textarea>
+          <label>Mensagem / Detalhes <span style="color: #ef4444;">*</span></label>
+          <textarea id="teamMemoContentInput" class="form-input-lg" rows="4"
+            placeholder="Escreve o recado para a equipa..." required></textarea>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
           <div class="form-field">
-            <label>Autor</label>
+            <label>Autor <span style="color: #ef4444;">*</span></label>
             <input type="text" id="teamMemoAuthorInput" class="form-input-lg" placeholder="Ex: Rafael" required>
           </div>
           <div class="form-field">
@@ -1090,13 +1921,266 @@ Sem avisos hoje
         </div>
 
         <div class="modal-actions">
-          <button type="button" id="teamMemoDeleteBtn" class="btn-action danger-action" style="display: none;" onclick="deleteOpenTeamMemo()"><i class="ri-delete-bin-line"></i> Eliminar</button>
+          <button type="button" id="teamMemoDeleteBtn" class="btn-action danger-action" style="display: none;"
+            onclick="deleteOpenTeamMemo()"><i class="ri-delete-bin-line"></i> Eliminar</button>
           <button type="button" class="btn-action" onclick="closeModal('teamMemoModal')">Cancelar</button>
-          <button type="submit" class="btn-submit-main">Guardar Recado</button>
+          <button type="submit" class="btn-submit-main"><i class="ri-check-line"></i> Guardar Recado</button>
         </div>
       </form>
     </div>
   </div>
+
+  <!-- MODAL: CRIAR / EDITAR VOTAÇÃO -->
+  <div class="modal-overlay" id="pollModal">
+    <div class="card-panel modal-window" style="max-width: 680px;">
+      <div class="modal-header-bar">
+        <div class="modal-header-left">
+          <div class="modal-header-icon"
+            style="background: rgba(168, 85, 247, 0.14); color: #c084fc; border-color: rgba(168, 85, 247, 0.25);">
+            <i class="ri-pie-chart-line"></i>
+          </div>
+          <div class="modal-header-text">
+            <h3 id="pollModalTitle">Nova Votação / Sondagem</h3>
+            <p>Cria uma sondagem com várias opções para a escola ou público.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="closeModal('pollModal')" title="Fechar"><i
+            class="ri-close-line"></i></button>
+      </div>
+
+      <form id="pollForm" onsubmit="savePollForm(event)">
+        <input type="hidden" id="pollIdInput">
+
+        <div class="form-field">
+          <label>Pergunta da Sondagem <span style="color: #ef4444;">*</span></label>
+          <input type="text" id="pollQuestionInput" class="form-input-lg"
+            placeholder="Ex: Qual deve ser o tema da emissão de sexta-feira?" required>
+        </div>
+
+        <div class="form-field">
+          <label>Descrição ou Contexto (opcional)</label>
+          <textarea id="pollDescriptionInput" class="form-input-lg" rows="2"
+            placeholder="Adiciona notas ou instruções para os participantes..."></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-field">
+            <label>Público-Alvo / Identificação</label>
+            <select id="pollAudienceInput" class="form-input-lg" onchange="onPollAudienceChange(this.value)">
+              <option value="all">Público Geral (Sem restrição)</option>
+              <option value="school_process">Alunos Cidadela (N.º de Processo)</option>
+              <option value="school_class">Alunos Cidadela (Ano/Turma + N.º)</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Limite de Votos</label>
+            <select id="pollVoteLimitInput" class="form-input-lg">
+              <option value="single">Apenas 1 voto por pessoa</option>
+              <option value="multiple">Votos livres / múltiplos</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-field">
+            <label>Data de Encerramento (opcional)</label>
+            <input type="date" id="pollClosingDateInput" class="form-input-lg">
+          </div>
+          <div class="form-field">
+            <label>Estado da Sondagem</label>
+            <select id="pollStatusInput" class="form-input-lg">
+              <option value="active">Aberta (A decorrer)</option>
+              <option value="closed">Encerrada</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-field" style="margin-top: 0.5rem;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; flex-wrap: wrap; gap: 0.4rem;">
+            <label style="margin-bottom: 0;">Opções de Resposta <span style="color: #ef4444;">*</span></label>
+            <button type="button" class="btn-action" style="padding: 0.25rem 0.6rem; font-size: 0.8rem;"
+              onclick="addPollOptionInput()"><i class="ri-add-line"></i> Adicionar Opção</button>
+          </div>
+          <div id="pollOptionsContainer" style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <!-- Linhas de opções injetadas dinamicamente -->
+          </div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 1.5rem;">
+          <button type="button" id="pollDeleteBtn" class="btn-action danger-action" style="display: none;"
+            onclick="deleteOpenPoll()"><i class="ri-delete-bin-line"></i> Eliminar</button>
+          <button type="button" class="btn-action" onclick="closeModal('pollModal')">Cancelar</button>
+          <button type="submit" class="btn-submit-main"><i class="ri-check-line"></i> Guardar Votação</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: RESULTADOS DETALHADOS DA VOTAÇÃO -->
+  <div class="modal-overlay" id="pollResultsModal">
+    <div class="card-panel modal-window" style="max-width: 650px;">
+      <div class="modal-header-bar" style="margin-bottom: 1rem;">
+        <div class="modal-header-left">
+          <div class="modal-header-icon"
+            style="background: rgba(168, 85, 247, 0.14); color: #c084fc; border-color: rgba(168, 85, 247, 0.25);">
+            <i class="ri-bar-chart-box-line"></i>
+          </div>
+          <div class="modal-header-text">
+            <span class="badge" id="pollResultBadge"
+              style="background: rgba(167, 139, 250, 0.15); color: #c4b5fd; margin-bottom: 0.25rem; display: inline-block;">Sondagem</span>
+            <h3 id="pollResultTitle" style="font-size: 1.25rem;">Resultados</h3>
+            <p id="pollResultDesc" style="font-size: 0.82rem; color: var(--text-muted);"></p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="closeModal('pollResultsModal')" title="Fechar"><i
+            class="ri-close-line"></i></button>
+      </div>
+
+      <div id="pollResultsContent" style="display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 1.5rem;">
+        <!-- Barras de resultados dinâmicas -->
+      </div>
+
+      <div class="modal-actions" style="justify-content: space-between;">
+        <button type="button" id="pollResultShareBtn" class="btn-action" onclick="copyCurrentPollShareLink()"><i
+            class="ri-share-forward-line"></i> Copiar Link de Voto</button>
+        <button type="button" class="btn-submit-main" onclick="closeModal('pollResultsModal')">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CRIAR / EDITAR TAREFA -->
+  <div class="modal-overlay" id="taskModal">
+    <div class="card-panel modal-window" style="max-width: 620px;">
+      <div class="modal-header-bar">
+        <div class="modal-header-left">
+          <div class="modal-header-icon"
+            style="background: rgba(56, 189, 248, 0.14); color: #38bdf8; border-color: rgba(56, 189, 248, 0.25);">
+            <i class="ri-checkbox-circle-line"></i>
+          </div>
+          <div class="modal-header-text">
+            <h3 id="taskModalTitle">Nova Tarefa da Equipa</h3>
+            <p>Distribui e organiza os afazeres da equipa da rádio.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="closeModal('taskModal')" title="Fechar"><i
+            class="ri-close-line"></i></button>
+      </div>
+
+      <form id="taskForm" onsubmit="saveTaskForm(event)">
+        <input type="hidden" id="taskIdInput">
+
+        <div class="form-field">
+          <label>Título da Tarefa <span style="color: #ef4444;">*</span></label>
+          <input type="text" id="taskTitleInput" class="form-input-lg"
+            placeholder="Ex: Gravar jingle da primavera ou atualizar playlist" required>
+        </div>
+
+        <div class="form-field">
+          <label>Descrição / Detalhes</label>
+          <textarea id="taskDescriptionInput" class="form-input-lg" rows="3"
+            placeholder="Instruções, links de referência ou notas importantes..."></textarea>
+        </div>
+
+        <!-- Atividade & Prioridade -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-field">
+            <label>Atividade / Categoria <span style="color: #ef4444;">*</span></label>
+            <select id="taskActivityInput" class="form-input-lg" required>
+              <option value="Emissão">📻 Emissão</option>
+              <option value="Produção">🎙️ Produção</option>
+              <option value="Redes Sociais">📱 Redes Sociais</option>
+              <option value="Reuniões">🗓️ Reuniões</option>
+              <option value="Técnica">🔧 Técnica / Equipamento</option>
+              <option value="Outros">📋 Outros</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Prioridade</label>
+            <div class="chip-selector-group" id="taskPriorityChips">
+              <button type="button" class="chip-selector-btn chip-priority-low" data-val="low"
+                onclick="selectTaskPriority('low')"><i class="ri-circle-fill"
+                  style="font-size: 0.5rem; color: #10b981;"></i> Baixa</button>
+              <button type="button" class="chip-selector-btn chip-priority-normal active" data-val="normal"
+                onclick="selectTaskPriority('normal')"><i class="ri-circle-fill"
+                  style="font-size: 0.5rem; color: #38bdf8;"></i> Normal</button>
+              <button type="button" class="chip-selector-btn chip-priority-high" data-val="high"
+                onclick="selectTaskPriority('high')"><i class="ri-circle-fill"
+                  style="font-size: 0.5rem; color: #f59e0b;"></i> Alta</button>
+              <button type="button" class="chip-selector-btn chip-priority-urgent" data-val="urgent"
+                onclick="selectTaskPriority('urgent')">🔥 Urgente</button>
+            </div>
+            <select id="taskPriorityInput" class="form-input-lg" style="display:none;"
+              onchange="selectTaskPriority(this.value)">
+              <option value="low">Baixa</option>
+              <option value="normal" selected>Normal</option>
+              <option value="high">Alta</option>
+              <option value="urgent">Urgente 🔥</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Semana & Estado -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-field">
+            <label>Organização Semanal</label>
+            <div class="chip-selector-group" id="taskWeekChips">
+              <button type="button" class="chip-selector-btn active" data-val="this_week"
+                onclick="selectTaskWeek('this_week')">📅 Esta Semana</button>
+              <button type="button" class="chip-selector-btn" data-val="next_week"
+                onclick="selectTaskWeek('next_week')">🔜 Seg.</button>
+              <button type="button" class="chip-selector-btn" data-val="backlog" onclick="selectTaskWeek('backlog')">📦
+                Backlog</button>
+            </div>
+            <select id="taskWeekInput" class="form-input-lg" style="display:none;"
+              onchange="selectTaskWeek(this.value)">
+              <option value="this_week" selected>Esta Semana</option>
+              <option value="next_week">Semana Seguinte</option>
+              <option value="backlog">Futuro / Backlog</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Estado</label>
+            <div class="chip-selector-group" id="taskStatusChips">
+              <button type="button" class="chip-selector-btn chip-status-todo active" data-val="todo"
+                onclick="selectTaskStatus('todo')">⚪ A Fazer</button>
+              <button type="button" class="chip-selector-btn chip-status-in_progress" data-val="in_progress"
+                onclick="selectTaskStatus('in_progress')">🟡 Em Curso</button>
+              <button type="button" class="chip-selector-btn chip-status-done" data-val="done"
+                onclick="selectTaskStatus('done')">🟢 Concluída</button>
+            </div>
+            <select id="taskStatusInput" class="form-input-lg" style="display:none;"
+              onchange="selectTaskStatus(this.value)">
+              <option value="todo" selected>A Fazer</option>
+              <option value="in_progress">Em Curso</option>
+              <option value="done">Concluída</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-field">
+            <label>Data Limite (Prazo)</label>
+            <input type="date" id="taskDueDateInput" class="form-input-lg">
+          </div>
+          <div class="form-field">
+            <label>Responsável / Membro</label>
+            <input type="text" id="taskAssigneeInput" class="form-input-lg" placeholder="Ex: Rita ou Toda a equipa">
+          </div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 1.5rem;">
+          <button type="button" id="taskDeleteBtn" class="btn-action danger-action" style="display: none;"
+            onclick="deleteOpenTask()"><i class="ri-delete-bin-line"></i> Eliminar</button>
+          <button type="button" class="btn-action" onclick="closeModal('taskModal')">Cancelar</button>
+          <button type="submit" class="btn-submit-main"><i class="ri-check-line"></i> Guardar Tarefa</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CONTAINER FLUTUANTE DE TOAST NOTIFICATIONS -->
+  <div id="toastContainer" class="toast-container"></div>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -1105,6 +2189,23 @@ Sem avisos hoje
   <script src="js/firebase-config.js"></script>
   <script src="js/calendar.js"></script>
   <script src="js/admin.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const shell = document.getElementById('adminShell');
+      if (shell) {
+        shell.classList.add('page-enter');
+      }
+      document.querySelectorAll('.btn-submit-main, .btn-action, .btn-cta-highlight').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+          const rect = this.getBoundingClientRect();
+          const x = ((e.clientX - rect.left) / rect.width) * 100;
+          const y = ((e.clientY - rect.top) / rect.height) * 100;
+          this.style.setProperty('--ripple-x', x + '%');
+          this.style.setProperty('--ripple-y', y + '%');
+        });
+      });
+    });
+  </script>
 </body>
-</html>
 
+</html>

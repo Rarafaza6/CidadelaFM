@@ -1,123 +1,370 @@
 <!DOCTYPE html>
 <html lang="pt">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Podcasts | Rádio Escolar • EBS Cidadela</title>
-  <meta name="description" content="Ouve os programas de rádio, entrevistas e episódios gravados pelos alunos da Escola Básica e Secundária da Cidadela.">
-  
-  <meta name="theme-color" content="#070913">
+  <title>Podcasts &amp; Emissões | Rádio Escolar • EBS da Cidadela</title>
+  <meta name="description"
+    content="Ouve os programas de rádio, entrevistas e episódios gravados pelos alunos da Escola Básica e Secundária da Cidadela em parceria com a Câmara Municipal de Cascais.">
+  <meta name="theme-color" content="#06080f">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Podcasts | Rádio Escolar EBS Cidadela">
+  <meta property="og:description"
+    content="Explora as emissões gravadas, debates e entrevistas produzidas pelos alunos da Cidadela.">
+  <meta property="og:image" content="assets/logo-radio.jpg">
   <link rel="icon" type="image/jpeg" href="assets/logo-radio.jpg">
   <link rel="apple-touch-icon" href="assets/logo-radio.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
   <link rel="stylesheet" href="css/styles.css">
+  <script src="js/maintenance-guard.js"></script>
 </head>
+
 <body>
 
   <!-- Topo Institucional -->
-  <div class="top-sub-bar">
-    <div class="container top-sub-bar-content">
-      <div>
-        <i class="ri-government-line" style="color: var(--primary-blue);"></i>
-        <span>Agrupamento de Escolas da Cidadela • Parceria com a Câmara Municipal de Cascais</span>
-      </div>
+  <div class="hv2-topbar">
+    <div class="hv2-topbar-inner">
+      <i class="ri-government-line" aria-hidden="true"></i>
+      <span>
+        <a href="https://aecidadela.pt" target="_blank" rel="noopener noreferrer" class="hv2-topbar-link">Agrupamento de
+          Escolas da Cidadela</a>
+        <span class="hv2-topbar-sep">•</span>
+        <span class="hv2-topbar-muted">Parceria com a</span>
+        <a href="https://www.cascais.pt" target="_blank" rel="noopener noreferrer" class="hv2-topbar-link">Câmara
+          Municipal de Cascais</a>
+      </span>
     </div>
   </div>
 
   <!-- Navegação Principal -->
-  <nav class="navbar">
-    <div class="container nav-content">
-      
-      <div class="brand-group">
-        <a href="index.html" style="display: flex; align-items: center; gap: 0.85rem;">
-          <img src="assets/logo-radio.jpg" alt="Logótipo da Rádio Escolar" class="logo-radio-header">
-          <div class="brand-text">
-            <h1>RÁDIO ESCOLAR</h1>
-            <span>EBS CIDADELA</span>
-          </div>
-        </a>
-      </div>
+  <nav class="hv2-nav" id="mainNav" aria-label="Navegação principal">
+    <div class="hv2-nav-inner">
+      <a href="index.html" class="hv2-brand" aria-label="Rádio Escolar — Página Principal">
+        <div class="hv2-logo-wrap">
+          <img src="assets/logo-radio.jpg" alt="Logótipo Rádio Escolar">
+        </div>
+        <div class="hv2-brand-text">
+          <strong>RÁDIO ESCOLAR</strong>
+          <span>EBS CIDADELA</span>
+        </div>
+      </a>
 
-      <ul class="nav-links">
+      <ul class="hv2-nav-links" role="list">
         <li><a href="index.html">Início</a></li>
-        <li><a href="podcasts.html" class="active">Podcasts</a></li>
+        <li><a href="podcasts.html" class="active" aria-current="page">Podcasts</a></li>
         <li><a href="noticias.html">Notícias</a></li>
-        <li><a href="mensagem.html" class="message-nav-button"><i class="ri-chat-heart-line"></i> Enviar mensagem</a></li>
-        <li><a href="pedir-musica.html" class="btn-cta-highlight"><i class="ri-music-2-fill"></i> Pedir Música</a></li>
+        <li><a href="mensagem.html" class="message-nav-button"><i class="ri-chat-heart-line" aria-hidden="true"></i>
+            Fala Connosco</a></li>
       </ul>
+
+      <a href="pedir-musica.html" class="hv2-nav-cta" id="navCtaBtn">
+        <i class="ri-music-2-fill" aria-hidden="true"></i>
+        <span>Pedir Música</span>
+      </a>
+
+      <button class="hv2-hamburger" id="navBurger" aria-label="Abrir menu de navegação" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </nav>
 
-  <!-- Conteúdo Principal -->
-  <main class="container" style="padding-top: 3rem; padding-bottom: 4rem;">
-    
-    <div style="margin-bottom: 2.5rem;">
-      <h1 style="font-size: 2.2rem; margin-bottom: 0.4rem;">Podcasts & Programas Gravados</h1>
-      <p style="color: var(--text-secondary); font-size: 1.05rem;">Explora as emissões gravadas, entrevistas a convidados e programas temáticos.</p>
+  <!-- Menu Mobile Drawer -->
+  <div class="hv2-nav-mobile" id="mobileMenu" aria-hidden="true">
+    <button class="hv2-mobile-close" id="mobileClose" aria-label="Fechar menu">
+      <i class="ri-close-line" aria-hidden="true"></i>
+    </button>
+    <a href="index.html">Início</a>
+    <a href="podcasts.html" class="active">Podcasts</a>
+    <a href="noticias.html">Notícias</a>
+    <a href="mensagem.html" class="message-nav-button" style="justify-content: center; width: 100%;"><i
+        class="ri-chat-heart-line" aria-hidden="true"></i> Fala Connosco</a>
+    <a href="pedir-musica.html" class="hv2-btn-primary">
+      <i class="ri-music-2-fill" aria-hidden="true"></i> Pedir Música
+    </a>
+  </div>
+
+  <!-- Cabeçalho da Página -->
+  <header class="hv2-page-header">
+    <div class="hv2-hero-bg" aria-hidden="true">
+      <div class="hv2-orb hv2-orb-2" style="width: 500px; height: 500px; top: -100px; left: -50px;"></div>
+      <div class="hv2-orb hv2-orb-1" style="width: 350px; height: 350px; top: 30%; right: 10%;"></div>
+      <div class="hv2-hero-grid"></div>
     </div>
 
-    <!-- Leitor Principal de Podcasts -->
-    <div class="podcast-main-player">
-      <img src="assets/logo-radio.jpg" alt="Capa do Podcast" class="podcast-player-thumb" id="podPlayerThumb">
+    <div class="hv2-page-header-inner hv2-animate">
+      <span class="hv2-kicker" style="color: #e879f9;">
+        <i class="ri-mic-line" aria-hidden="true"></i> Emissões &amp; Programas
+      </span>
+      <h1 class="hv2-page-title">
+        Podcasts <span class="accent-purple">&amp; Entrevistas</span>
+      </h1>
+      <p class="hv2-page-sub">
+        Explora os episódios gravados pelos alunos, entrevistas a convidados e debates temáticos da EBS da Cidadela.
+      </p>
+    </div>
+  </header>
 
-      <div style="flex: 1;">
-        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--primary-blue); font-weight: 700;">A Reproduzir</span>
-        <h3 id="podPlayerTitle" style="font-size: 1.3rem; margin-bottom: 0.2rem;">Seleciona um episódio abaixo</h3>
-        <p id="podPlayerSub" style="color: var(--text-secondary); font-size: 0.88rem;">Clica em qualquer podcast da lista para ouvir o áudio completo.</p>
-        
-        <div class="waveform-bars" id="podWaveform" style="margin-top: 0.75rem;">
-          <div class="waveform-bar"></div>
-          <div class="waveform-bar"></div>
-          <div class="waveform-bar"></div>
-          <div class="waveform-bar"></div>
-          <div class="waveform-bar"></div>
+  <!-- Conteúdo Principal -->
+  <main class="hv2-main-content">
+
+    <!-- LEITOR STUDIO PRO -->
+    <section class="podcast-studio-player hv2-animate hv2-animate-d1" id="podcastMainPlayerSection"
+      aria-label="Leitor de Podcasts">
+
+      <!-- Linha superior: estado e ações -->
+      <div class="studio-player-topbar">
+        <div class="studio-status-tags"></div>
+        <div class="studio-player-actions-top">
+          <button type="button" class="studio-icon-btn" id="btnShareEpisode"
+            onclick="shareCurrentPodcast()" title="Partilhar episódio">
+            <i class="ri-share-forward-line"></i> Partilhar
+          </button>
+          <a id="podSpotifyExternalLink" href="#" target="_blank" rel="noopener noreferrer"
+            class="studio-spotify-link" style="display: none;" title="Ver episódio completo">
+            <i class="ri-external-link-line"></i> Ver Episódio
+          </a>
         </div>
       </div>
 
-      <div>
-        <button class="btn-hero-play" id="btnPodPlay" title="Reproduzir / Pausar">
-          <i class="ri-play-fill"></i>
-        </button>
-      </div>
-    </div>
+      <!-- Corpo do player -->
+      <div class="studio-player-body">
 
-    <!-- Grid de Podcasts -->
-    <div class="home-grid-3" id="fullPodcastsGrid">
-      <!-- Renderizado via js/app.js -->
-    </div>
+        <!-- Capa do Episódio (Imagem Quadrada) -->
+        <div class="studio-artwork-wrapper">
+          <img src="assets/logo-radio.jpg" alt="Capa do Episódio" id="podPlayerThumb" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+        </div>
+
+        <!-- Meta & Controlos -->
+        <div class="studio-meta-controls">
+
+          <div class="studio-episode-info">
+            <h2 id="podPlayerTitle" class="studio-episode-title">
+              Seleciona um episódio abaixo
+            </h2>
+            <div class="studio-episode-subbar">
+              <span id="podPlayerHosts" class="studio-hosts-label" style="display: none;">
+                <i class="ri-user-voice-line"></i>
+                <span id="podPlayerHostsText"></span>
+              </span>
+              <span id="podPlayerSub" class="studio-date-label">
+                Explora as emissões gravadas e os podcasts exclusivos dos alunos.
+              </span>
+            </div>
+            <p id="podPlayerDesc" class="studio-desc-text"></p>
+          </div>
+
+          <!-- Embed Spotify (só aparece em episódios Spotify) -->
+          <div id="podSpotifyEmbedContainer" style="display:none; margin-bottom: 1rem;">
+            <div id="podSpotifyEmbedFrame" style="border-radius: 12px; overflow: hidden; background: #000;"></div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem; text-align: center;">
+              <i class="ri-spotify-line" style="color: #1db954;"></i>
+              Podes ouvir o preview aqui. Para o episódio completo, usa o botão <strong>"Ver Episódio"</strong> acima.
+            </p>
+          </div>
+
+          <!-- Seek Bar (apenas áudio direto) -->
+          <div class="podcast-seek-wrapper studio-seek-wrapper" id="podSeekWrapper">
+            <span class="podcast-time-indicator" id="podTimeCur">0:00</span>
+            <div class="podcast-seek-track studio-seek-track" id="podSeekTrack" role="progressbar"
+              aria-label="Progresso do episódio" tabindex="0">
+              <div class="podcast-seek-fill studio-seek-fill" id="podSeekFill"></div>
+              <div class="studio-seek-thumb" id="podSeekThumb"></div>
+            </div>
+            <span class="podcast-time-indicator" id="podTimeDur" style="text-align: right;">0:00</span>
+          </div>
+
+          <!-- Barra de controlos -->
+          <div class="studio-controls-bar" id="podNativeControls">
+
+            <div class="studio-ctrl-left">
+              <button type="button" class="studio-speed-btn" id="btnPlaybackSpeed" onclick="cyclePlaybackSpeed()"
+                title="Velocidade de reprodução">
+                <span id="playbackSpeedText">1.0×</span>
+              </button>
+              <div class="waveform-bars studio-waveform" id="podWaveform" aria-hidden="true">
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+                <div class="waveform-bar"></div>
+              </div>
+            </div>
+
+            <div class="studio-ctrl-center">
+              <button type="button" class="studio-skip-btn" id="btnSkipBack" onclick="skipAudio(-15)"
+                title="Recuar 15 segundos" aria-label="Recuar 15 segundos">
+                <i class="ri-replay-15-line"></i>
+              </button>
+              <button class="studio-master-play" id="btnPodPlay" title="Reproduzir / Pausar"
+                aria-label="Reproduzir ou Pausar">
+                <i class="ri-play-fill" id="podMasterPlayIcon"></i>
+              </button>
+              <button type="button" class="studio-skip-btn" id="btnSkipFwd" onclick="skipAudio(15)"
+                title="Avançar 15 segundos" aria-label="Avançar 15 segundos">
+                <i class="ri-forward-15-line"></i>
+              </button>
+            </div>
+
+            <div class="studio-ctrl-right">
+              <button type="button" class="studio-vol-btn" id="btnMuteToggle" onclick="toggleMute()"
+                title="Silenciar / Ativar som" aria-label="Controlo de volume">
+                <i class="ri-volume-up-line" id="volIcon"></i>
+              </button>
+              <input type="range" class="studio-vol-slider" id="podVolumeSlider" min="0" max="1" step="0.05" value="1"
+                oninput="changeVolume(this.value)" aria-label="Volume">
+            </div>
+
+          </div>
+
+          <!-- Dica idle -->
+          <div class="studio-idle-hint" id="studioIdleHint">
+            <i class="ri-arrow-down-line"></i>
+            Escolhe um episódio da lista abaixo para começar
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- BARRA DE FILTROS & PESQUISA -->
+    <section class="podcast-filters-bar hv2-animate hv2-animate-d1" aria-label="Filtros e Pesquisa de Podcasts">
+      <div class="podcast-toolbar-inner">
+
+        <div class="podcast-category-pills" id="podcastCategoryPills" role="tablist"
+          aria-label="Categorias de Podcasts">
+          <button type="button" class="pod-filter-btn active" data-category="all"
+            onclick="filterPodcasts('all')">Todos</button>
+          <button type="button" class="pod-filter-btn" data-category="Entrevistas"
+            onclick="filterPodcasts('Entrevistas')">Entrevistas</button>
+          <button type="button" class="pod-filter-btn" data-category="Debates"
+            onclick="filterPodcasts('Debates')">Debates</button>
+          <button type="button" class="pod-filter-btn" data-category="Música"
+            onclick="filterPodcasts('Música')">Música</button>
+          <button type="button" class="pod-filter-btn" data-category="Ciência &amp; Escola"
+            onclick="filterPodcasts('Ciência &amp; Escola')">Ciência &amp; Escola</button>
+          <button type="button" class="pod-filter-btn" data-category="Emissão Especial"
+            onclick="filterPodcasts('Emissão Especial')">Especiais</button>
+        </div>
+
+        <div class="podcast-search-box">
+          <i class="ri-search-line" aria-hidden="true"></i>
+          <input type="text" id="podcastSearchInput" placeholder="Pesquisar episódios, temas ou alunos..."
+            aria-label="Pesquisar episódios de podcasts" oninput="handlePodcastSearch(this.value)">
+        </div>
+
+      </div>
+    </section>
+
+    <!-- GRID DE EPISÓDIOS -->
+    <section aria-labelledby="allPodcastsHeading">
+      <h2 id="allPodcastsHeading"
+        style="position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);">
+        Todos os Podcasts
+      </h2>
+      <div class="home-grid-3 hv2-animate hv2-animate-d2" id="fullPodcastsGrid" aria-live="polite">
+        <!-- Renderizado via js/app.js -->
+      </div>
+    </section>
 
   </main>
 
-  <!-- Rodapé Institucional Sem Caixa Externa -->
-  <footer class="footer-pro">
-    <div class="container footer-pro-content">
-      
-      <div class="footer-credits-top">
-        &copy; Rádio Escolar 2026
-        <span>Site desenvolvido por Rafael Diogo</span>
+  <!-- Rodapé Institucional -->
+  <footer class="hv2-footer" role="contentinfo">
+    <div class="hv2-footer-inner">
+      <div class="hv2-footer-main">
+        <div class="hv2-footer-col hv2-footer-col-brand">
+          <a href="index.html" class="hv2-footer-brand-link" aria-label="Rádio Escolar - Início">
+            <img src="assets/logo-radio.jpg" alt="Logótipo Rádio Escolar" class="hv2-footer-radio-logo">
+            <div>
+              <strong class="hv2-footer-title">RÁDIO ESCOLAR</strong>
+              <span class="hv2-footer-subtitle">EBS CIDADELA</span>
+            </div>
+          </a>
+        </div>
+        <div class="hv2-footer-col hv2-footer-col-nav">
+          <h4 class="hv2-footer-heading">Navegação</h4>
+          <ul class="hv2-footer-list" role="list">
+            <li><a href="index.html"><i class="ri-home-4-line" aria-hidden="true"></i> Início</a></li>
+            <li><a href="pedir-musica.html"><i class="ri-music-2-line" aria-hidden="true"></i> Pedir Música</a></li>
+            <li><a href="podcasts.html"><i class="ri-mic-line" aria-hidden="true"></i> Podcasts</a></li>
+            <li><a href="noticias.html"><i class="ri-newspaper-line" aria-hidden="true"></i> Notícias</a></li>
+            <li><a href="mensagem.html"><i class="ri-chat-heart-line" aria-hidden="true"></i> Fala Connosco</a></li>
+            <li><a href="links.html"><i class="ri-links-line" aria-hidden="true"></i> Links Rápidos</a></li>
+          </ul>
+        </div>
+        <div class="hv2-footer-col hv2-footer-col-partners">
+          <h4 class="hv2-footer-heading">Entidades &amp; Parcerias</h4>
+          <div class="hv2-partner-cards">
+            <div class="hv2-partner-item">
+              <span class="hv2-partner-tag">Parceria</span>
+              <a href="https://www.cascais.pt" target="_blank" rel="noopener noreferrer" class="hv2-partner-link">
+                <img src="assets/logo-cmc.jpg" alt="Câmara Municipal de Cascais" class="hv2-partner-img hv2-img-cmc">
+              </a>
+            </div>
+            <div class="hv2-partner-item">
+              <span class="hv2-partner-tag">Produção</span>
+              <a href="https://criativa.org" target="_blank" rel="noopener noreferrer" class="hv2-partner-link">
+                <img src="assets/logo-criativa.jpg" alt="Criativa.org" class="hv2-partner-img hv2-img-criativa">
+              </a>
+            </div>
+            <div class="hv2-partner-item">
+              <span class="hv2-partner-tag">Escola</span>
+              <a href="https://aecidadela.pt" target="_blank" rel="noopener noreferrer" class="hv2-partner-link">
+                <img src="assets/logo-cidadela.png" alt="Agrupamento de Escolas da Cidadela"
+                  class="hv2-partner-img hv2-img-cidadela">
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
-
-      <div class="footer-emblem-wrap">
-        <img src="assets/logo-radio.jpg" alt="Rádio Escolar Logo" class="footer-logo-item">
+      <div class="hv2-footer-bottom">
+        <div class="hv2-footer-copy">
+          &copy; 2026 <strong>Rádio Escolar EBS Cidadela</strong> <span>• Desenvolvido por Rafael Diogo</span>
+        </div>
+        <div>
+          <a href="admin.html" class="hv2-footer-admin-link">
+            <i class="ri-lock-2-line" aria-hidden="true"></i> Área Reservada
+          </a>
+        </div>
       </div>
-
-      <div class="footer-institution-text">
-        A Rádio Escolar faz parte do <strong>Agrupamento de Escolas da Cidadela</strong>,<br>
-        desenvolvida em parceria oficial com a <strong>Câmara Municipal de Cascais</strong>.
-      </div>
-
-      <nav class="footer-nav-links">
-        <a href="index.html">Início</a> •
-        <a href="pedir-musica.html">Pedir Música</a> •
-        <a href="podcasts.html">Podcasts</a> •
-        <a href="noticias.html">Notícias</a> •
-        <a href="links.html">Links Rápidos</a> •
-        <a href="admin.html" style="color: var(--text-muted);">Área Reservada</a>
-      </nav>
     </div>
   </footer>
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="js/firebase-config.js"></script>
+  <!-- Firebase & Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
   <script src="js/app.js"></script>
+
+  <script>
+    (function () {
+      var burger = document.getElementById('navBurger');
+      var menu = document.getElementById('mobileMenu');
+      var close = document.getElementById('mobileClose');
+      function openMenu() {
+        menu.classList.add('open');
+        burger.setAttribute('aria-expanded', 'true');
+        menu.removeAttribute('aria-hidden');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeMenu() {
+        menu.classList.remove('open');
+        burger.setAttribute('aria-expanded', 'false');
+        menu.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      }
+      if (burger) burger.addEventListener('click', openMenu);
+      if (close) close.addEventListener('click', closeMenu);
+      if (menu) menu.addEventListener('click', function (e) { if (e.target === menu) closeMenu(); });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && menu && menu.classList.contains('open')) closeMenu();
+      });
+    })();
+  </script>
+
 </body>
+
 </html>

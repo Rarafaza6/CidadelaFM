@@ -23,7 +23,11 @@ function renderLinktree() {
   });
 
   if (links.length === 0) {
-    container.innerHTML = '<div class="linktree-empty"><i class="ri-search-eye-line"></i><strong>Nada por aqui</strong><span>Tenta outra palavra ou envia uma dedicatória à rádio.</span></div>';
+    if (query) {
+      container.innerHTML = '<div class="linktree-empty"><i class="ri-search-eye-line"></i><strong>Nenhum link encontrado</strong><span>Tenta pesquisar por outro termo.</span></div>';
+    } else {
+      container.innerHTML = '<div class="linktree-empty"><i class="ri-links-line"></i><strong>Ainda não foram adicionados links oficiais</strong><span>Os links rápidos e formulários da rádio escolar serão disponibilizados aqui brevemente.</span></div>';
+    }
     return;
   }
 

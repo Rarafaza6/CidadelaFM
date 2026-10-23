@@ -9,6 +9,7 @@
   <link rel="apple-touch-icon" href="assets/logo-radio.jpg">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
   <link rel="stylesheet" href="css/styles.css">
+  <script src="js/maintenance-guard.js"></script>
 </head>
 <body class="word-app-container">
   <header class="word-top-bar"><div class="word-doc-info"><a class="btn-back-link" href="admin.html"><i class="ri-arrow-left-line"></i> Painel</a><span class="word-doc-badge">Editor</span><span class="word-save-status" id="saveStatus"><i class="ri-checkbox-circle-line"></i> Rascunho local</span></div><div class="word-actions-group"><button class="btn-action" type="button" id="previewButton"><i class="ri-eye-line"></i> Pré-visualizar</button><button class="btn-submit-main" type="button" id="publishButton"><i class="ri-send-plane-line"></i> Publicar Artigo</button></div></header>
@@ -23,5 +24,24 @@
 <label class="word-air-checkbox"><input id="onAirInput" type="checkbox"> <span><strong>Aviso para ler em antena</strong><small>Fica destacado no briefing diário.</small></span></label><label class="form-label" for="excerptInput">Resumo / Excerto</label><textarea class="form-input-lg" id="excerptInput" rows="4" maxlength="240" placeholder="Uma frase para os cartões de notícias"></textarea></section><section class="word-side-card"><h4><i class="ri-image-line"></i> Capa do artigo</h4><input class="form-input-lg" id="imageInput" type="url" placeholder="https://..."><div class="word-cover-preview-box" id="coverPreview"><span style="color:var(--text-muted)">Pré-visualização da capa</span></div><div class="word-preset-images"><img class="word-preset-thumb" data-image="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=1200&q=80" src="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=300&q=80" alt="Evento escolar"><img class="word-preset-thumb" data-image="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?auto=format&fit=crop&w=1200&q=80" src="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?auto=format&fit=crop&w=300&q=80" alt="Estúdio"><img class="word-preset-thumb" data-image="https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=1200&q=80" src="https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=300&q=80" alt="Microfone"></div></section></aside></main>
   <div class="word-bottom-statusbar"><span id="wordCount">0 palavras</span><span>As alterações ficam guardadas ao publicar.</span></div>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="js/firebase-config.js"></script><script src="js/editor.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const topBar = document.querySelector('.word-top-bar');
+      if (topBar) { topBar.style.opacity = '0'; topBar.style.animation = 'fadeInDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.05s forwards'; }
+      const ribbon = document.querySelector('.word-ribbon');
+      if (ribbon) { ribbon.style.opacity = '0'; ribbon.style.animation = 'fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards'; }
+      const workspace = document.querySelector('.word-workspace-grid');
+      if (workspace) { workspace.style.opacity = '0'; workspace.style.animation = 'fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards'; }
+      const statusbar = document.querySelector('.word-bottom-statusbar');
+      if (statusbar) { statusbar.style.opacity = '0'; statusbar.style.animation = 'fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards'; }
+      document.querySelectorAll('.btn-submit-main, .btn-action').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          const rect = this.getBoundingClientRect();
+          this.style.setProperty('--ripple-x', ((e.clientX - rect.left) / rect.width * 100) + '%');
+          this.style.setProperty('--ripple-y', ((e.clientY - rect.top) / rect.height * 100) + '%');
+        });
+      });
+    });
+  </script>
 </body>
 </html>

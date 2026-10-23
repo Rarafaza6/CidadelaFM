@@ -3,7 +3,15 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function isAdmin() {
+      return request.auth != null && request.auth.token.admin === true;
+    }
+
+    function isAuthenticated() {
       return request.auth != null;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
     }
 
     match /podcasts/{podcastId} {
@@ -22,7 +30,8 @@ service cloud.firestore {
     }
 
     match /suggestions/{suggestionId} {
-      allow create: if request.resource.data.keys().hasOnly(['id', 'songTitle', 'artist', 'artwork', 'previewUrl', 'status', 'timestamp'])
+      allow create: if isAuthenticated()
+        && request.resource.data.keys().hasOnly(['id', 'songTitle', 'artist', 'artwork', 'previewUrl', 'status', 'timestamp'])
         && request.resource.data.songTitle is string
         && request.resource.data.songTitle.size() > 0
         && request.resource.data.songTitle.size() <= 160
@@ -33,7 +42,8 @@ service cloud.firestore {
     }
 
     match /messages/{messageId} {
-      allow create: if request.resource.data.keys().hasOnly(['id', 'message', 'name', 'email', 'studentClass', 'createdAt', 'status'])
+      allow create: if isAuthenticated()
+        && request.resource.data.keys().hasOnly(['id', 'message', 'name', 'email', 'studentClass', 'createdAt', 'status'])
         && request.resource.data.message is string
         && request.resource.data.message.size() >= 3
         && request.resource.data.message.size() <= 280
@@ -61,13 +71,49 @@ service cloud.firestore {
     }
 
     // Agenda interna e perfis dos membros da equipa: nunca são públicos.
-    // Nesta instalação, todas as contas autenticadas são administradoras.
     match /calendarEvents/{eventId} {
       allow read, write: if isAdmin();
     }
 
     match /adminUsers/{userId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly(['id', 'authUid', 'name', 'email', 'role', 'roleKey', 'roleTitle', 'status', 'avatarColor', 'position', 'permissions', 'createdAt', 'updatedAt'])
+        && request.resource.data.name is string && request.resource.data.name.size() > 0
+        && isValidEmail(request.resource.data.email)
+        && request.resource.data.status in ['active', 'suspended'];
+      allow update: if isAdmin() && request.resource.data.size() <= 50;
+      allow delete: if isAdmin();
+    }
+
+    // Sondagens (Polls) — leitura pública, escrita só admin
+    match /polls/{pollId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Votos das sondagens — criação pública com validação, leitura/eliminação só admin
+    match /pollVotes/{voteId} {
+      allow create: if isAuthenticated()
+        && request.resource.data.keys().hasOnly(['id', 'pollId', 'optionIndex', 'voterHash', 'createdAt'])
+        && request.resource.data.pollId is string
+        && request.resource.data.pollId.size() > 0
+        && request.resource.data.optionIndex is int
+        && request.resource.data.optionIndex >= 0
+        && request.resource.data.voterHash is string
+        && request.resource.data.voterHash.size() > 0;
+      allow read, delete: if isAdmin();
+    }
+
+    // Tarefas da equipa — acesso exclusivo aos admins autenticados
+    match /tasks/{taskId} {
       allow read, write: if isAdmin();
+    }
+
+    // Registos de auditoria — apenas leitura pelos admins, escrita apenas via Cloud Functions
+    match /auditLog/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
     }
   }
 }
