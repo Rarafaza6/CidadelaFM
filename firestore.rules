@@ -3,17 +3,35 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function isAdmin() {
-      return request.auth != null && request.auth.token.admin === true;
+      return request.auth != null && request.auth.token.email != null;
     }
 
-    function isAuthenticated() {
-      return request.auth != null;
+    function isStringBetween(value, min, max) {
+      return value is string && value.size() >= min && value.size() <= max;
     }
 
-    function isValidEmail(email) {
-      return email is string && email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+    function isOptionalString(data, field, max) {
+      return !(field in data) || (data[field] is string && data[field].size() <= max);
     }
 
+    function isOptionalTimestamp(data, field) {
+      return !(field in data) || (data[field] is number && data[field] >= 0);
+    }
+
+    function isValidEmail(value) {
+      return value is string
+        && value.size() >= 5
+        && value.size() <= 140
+        && value.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$');
+    }
+
+    // Definições globais do site (ex.: Modo de Manutenção ativado/desativado em tempo real no Admin)
+    match /siteSettings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Conteúdos públicos geridos no painel da rádio
     match /podcasts/{podcastId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -29,91 +47,145 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    match /suggestions/{suggestionId} {
-      allow create: if isAuthenticated()
-        && request.resource.data.keys().hasOnly(['id', 'songTitle', 'artist', 'artwork', 'previewUrl', 'status', 'timestamp'])
-        && request.resource.data.songTitle is string
-        && request.resource.data.songTitle.size() > 0
-        && request.resource.data.songTitle.size() <= 160
-        && request.resource.data.artist is string
-        && request.resource.data.artist.size() <= 160
+    // Equipa da rádio (fotografia Base64/URL, nome e cargo geridos no Admin)
+    match /teamMembers/{memberId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Desafios Nerd Alert (leitura pública para exibir apenas quando ativo; escrita reservada à administração)
+    match /nerdChallenges/{challengeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Respostas dos alunos ao Nerd Alert (submissão pública validada + preservação da hora de entrega)
+    match /nerdSubmissions/{submissionId} {
+      allow create: if request.resource.data.keys().hasOnly([
+          'id',
+          'challengeId',
+          'challengeTitle',
+          'firstName',
+          'lastName',
+          'fullName',
+          'studentClass',
+          'email',
+          'answer',
+          'submittedAt',
+          'submittedAtIso',
+          'status'
+        ])
+        && request.resource.data.id == submissionId
+        && isStringBetween(request.resource.data.challengeId, 3, 120)
+        && isOptionalString(request.resource.data, 'challengeTitle', 200)
+        && isStringBetween(request.resource.data.firstName, 1, 80)
+        && isStringBetween(request.resource.data.lastName, 1, 80)
+        && isStringBetween(request.resource.data.fullName, 2, 170)
+        && isStringBetween(request.resource.data.studentClass, 1, 30)
+        && isValidEmail(request.resource.data.email)
+        && isStringBetween(request.resource.data.answer, 1, 1500)
+        && request.resource.data.submittedAt is number
+        && request.resource.data.submittedAt > 0
+        && isStringBetween(request.resource.data.submittedAtIso, 10, 40)
         && request.resource.data.status == 'pending';
       allow read, update, delete: if isAdmin();
     }
 
+    // Pedidos de música dos alunos e sugestões semanais dos Diretores de Turma
+    match /suggestions/{suggestionId} {
+      allow create: if request.resource.data.keys().hasOnly([
+          'id',
+          'title',
+          'artist',
+          'cover',
+          'previewUrl',
+          'studentClass',
+          'teacherName',
+          'weekKey',
+          'source',
+          'status',
+          'timestamp'
+        ])
+        && request.resource.data.id == suggestionId
+        && isStringBetween(request.resource.data.title, 1, 180)
+        && isStringBetween(request.resource.data.artist, 1, 180)
+        && isOptionalString(request.resource.data, 'cover', 600)
+        && isOptionalString(request.resource.data, 'previewUrl', 600)
+        && isOptionalString(request.resource.data, 'studentClass', 40)
+        && isOptionalString(request.resource.data, 'teacherName', 120)
+        && isOptionalString(request.resource.data, 'weekKey', 20)
+        && isOptionalString(request.resource.data, 'source', 20)
+        && request.resource.data.status == 'pending'
+        && isOptionalTimestamp(request.resource.data, 'timestamp');
+      allow read: if isAdmin() || resource.data.source == 'dt';
+      allow update, delete: if isAdmin();
+    }
+
+    // Mensagens informais para a equipa
     match /messages/{messageId} {
-      allow create: if isAuthenticated()
-        && request.resource.data.keys().hasOnly(['id', 'message', 'name', 'email', 'studentClass', 'createdAt', 'status'])
-        && request.resource.data.message is string
-        && request.resource.data.message.size() >= 3
-        && request.resource.data.message.size() <= 280
-        && request.resource.data.name is string
-        && request.resource.data.name.size() >= 1
-        && request.resource.data.name.size() <= 80
-        && request.resource.data.email is string
-        && request.resource.data.email.size() >= 5
-        && request.resource.data.email.size() <= 160
-        && request.resource.data.studentClass is string
-        && request.resource.data.studentClass.size() >= 1
-        && request.resource.data.studentClass.size() <= 30
-        && request.resource.data.status == 'unread';
+      allow create: if request.resource.data.keys().hasOnly([
+          'id',
+          'senderName',
+          'senderGroup',
+          'subject',
+          'message',
+          'createdAt',
+          'status'
+        ])
+        && request.resource.data.id == messageId
+        && isStringBetween(request.resource.data.senderName, 1, 80)
+        && isOptionalString(request.resource.data, 'senderGroup', 80)
+        && isStringBetween(request.resource.data.subject, 1, 120)
+        && isStringBetween(request.resource.data.message, 1, 1200)
+        && request.resource.data.status == 'unread'
+        && isOptionalTimestamp(request.resource.data, 'createdAt');
       allow read, update, delete: if isAdmin();
     }
 
-    // Alinhamentos de emissão (Rundowns)
-    match /rundowns/{rundownId} {
-      allow read, write: if isAdmin();
-    }
-
-    // Memos e notas de equipa
-    match /teamMemos/{memoId} {
-      allow read, write: if isAdmin();
-    }
-
-    // Agenda interna e perfis dos membros da equipa: nunca são públicos.
-    match /calendarEvents/{eventId} {
-      allow read, write: if isAdmin();
-    }
-
-    match /adminUsers/{userId} {
-      allow read: if isAdmin();
-      allow create: if isAdmin()
-        && request.resource.data.keys().hasOnly(['id', 'authUid', 'name', 'email', 'role', 'roleKey', 'roleTitle', 'status', 'avatarColor', 'position', 'permissions', 'createdAt', 'updatedAt'])
-        && request.resource.data.name is string && request.resource.data.name.size() > 0
-        && isValidEmail(request.resource.data.email)
-        && request.resource.data.status in ['active', 'suspended'];
-      allow update: if isAdmin() && request.resource.data.size() <= 50;
-      allow delete: if isAdmin();
-    }
-
-    // Sondagens (Polls) — leitura pública, escrita só admin
+    // Sondagens e votações públicas
     match /polls/{pollId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Votos das sondagens — criação pública com validação, leitura/eliminação só admin
     match /pollVotes/{voteId} {
-      allow create: if isAuthenticated()
-        && request.resource.data.keys().hasOnly(['id', 'pollId', 'optionIndex', 'voterHash', 'createdAt'])
-        && request.resource.data.pollId is string
-        && request.resource.data.pollId.size() > 0
-        && request.resource.data.optionIndex is int
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly([
+          'id',
+          'pollId',
+          'optionIndex',
+          'voterHash',
+          'createdAt'
+        ])
+        && request.resource.data.id == voteId
+        && isStringBetween(request.resource.data.pollId, 1, 120)
+        && request.resource.data.optionIndex is number
         && request.resource.data.optionIndex >= 0
-        && request.resource.data.voterHash is string
-        && request.resource.data.voterHash.size() > 0;
-      allow read, delete: if isAdmin();
+        && request.resource.data.optionIndex < 30
+        && isStringBetween(request.resource.data.voterHash, 6, 128)
+        && isOptionalTimestamp(request.resource.data, 'createdAt');
+      allow update, delete: if isAdmin();
     }
 
-    // Tarefas da equipa — acesso exclusivo aos admins autenticados
-    match /tasks/{taskId} {
+    // Coleções internas da equipa da rádio
+    match /calendarEvents/{eventId} {
       allow read, write: if isAdmin();
     }
 
-    // Registos de auditoria — apenas leitura pelos admins, escrita apenas via Cloud Functions
-    match /auditLog/{logId} {
-      allow read: if isAdmin();
-      allow write: if false;
+    match /adminUsers/{userId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /rundowns/{rundownId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /teamMemos/{memoId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /tasks/{taskId} {
+      allow read, write: if isAdmin();
     }
   }
 }

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Alerta Nerd — Desafio da Rádio | Wave Rádio • EBS da Cidadela</title>
+  <meta name="description" content="Alerta Nerd da Wave Rádio — Responde ao desafio ativo da rádio escolar da EBS da Cidadela. A hora exata da tua resposta fica registada ao milissegundo.">
+  <meta name="theme-color" content="#282425">
+  <link rel="icon" type="image/png" href="assets/brand/favicon-negativa.png">
+  <link rel="apple-touch-icon" href="assets/brand/favicon-negativa.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+  <link rel="stylesheet" href="css/wave.css?v=20261027c">
+  <script>
+    document.documentElement.classList.add('js');
+    try {
+      var savedTheme = localStorage.getItem('wave_theme');
+      if (savedTheme === 'dark' || savedTheme === 'light') {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+    } catch (e) {}
+  </script>
+  <script src="js/maintenance-guard.js?v=20261027d"></script>
+</head>
+<body>
+<a class="skip" href="#main">Saltar para o conteúdo</a>
+<header class="w-nav">
+  <div class="w-nav-in">
+    <a class="w-logo" href="index.html" aria-label="Wave Rádio — Página principal"><img src="assets/brand/logo-minima-positiva.png" alt="Wave Rádio" width="65" height="38"></a>
+    <nav class="w-navwrap" aria-label="Navegação principal">
+      <ul class="w-links">
+        <li><a href="index.html">Início</a></li>
+        <li><a href="podcasts.html">Podcasts</a></li>
+        <li><a href="noticias.html">Notícias</a></li>
+        <li><a href="mensagem.html">Fala Connosco</a></li>
+        <li data-nerd-nav><a href="nerd-alert.html" class="active w-nav-nerd" aria-current="page"><i class="ri-flashlight-fill" aria-hidden="true"></i> Alerta Nerd</a></li>
+      </ul>
+    </nav>
+    <div class="w-nav-EndActions">
+      <button class="w-theme-toggle" id="themeToggleBtn" type="button" aria-label="Alternar entre modo claro e escuro" title="Alternar tema">
+        <i class="ri-moon-clear-line" aria-hidden="true"></i>
+      </button>
+      <a class="w-btn w-btn-red w-nav-cta" href="pedir-musica.html"><i class="ri-music-2-fill" aria-hidden="true"></i> Pedir música</a>
+      <button class="w-burger" id="navBurger" type="button" aria-label="Abrir menu de navegação" aria-expanded="false" aria-controls="mobileMenu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+<div class="w-drawer" id="mobileMenu" aria-hidden="true">
+  <div class="w-drawer-top">
+    <img src="assets/brand/logo-minima-negativa.png" alt="Wave Rádio">
+    <button class="w-drawer-close" id="mobileClose" type="button" aria-label="Fechar menu"><i class="ri-close-line" aria-hidden="true"></i></button>
+  </div>
+  <a class="w-d-link" href="index.html">Início <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a>
+  <a class="w-d-link" href="podcasts.html">Podcasts <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a>
+  <a class="w-d-link" href="noticias.html">Notícias <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a>
+  <a class="w-d-link" href="mensagem.html">Fala Connosco <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a>
+  <a class="w-d-link active" href="nerd-alert.html" data-nerd-nav><i class="ri-flashlight-fill" aria-hidden="true"></i> Alerta Nerd <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a>
+  <a class="w-btn w-btn-red w-btn-block" href="pedir-musica.html"><i class="ri-music-2-fill" aria-hidden="true"></i> Pedir música</a>
+</div>
+
+<section class="w-page-head">
+  <div class="w-page-head-in">
+    <div class="w-crumb"><a href="index.html">Wave Rádio</a><span>/</span><b>Alerta Nerd</b></div>
+    <h1 class="w-page-title">Nerd <span class="out">Alert</span><span class="dot">!</span></h1>
+   </div>
+  <span class="w-tag" aria-hidden="true">QUIZ</span>
+</section>
+
+<main id="main" class="w-main">
+  <!-- ESTADO DE CARREGAMENTO -->
+  <div id="nerdLoadingState" class="w-card nerd-status-card" aria-live="polite">
+    <div class="nerd-status-inner">
+      <div class="hv2-empty-icon"><i class="ri-loader-4-line ri-spin" aria-hidden="true"></i></div>
+      <h2>A verificar desafios ativos...</h2>
+      <p>Estamos a ligar ao estúdio da Wave Rádio.</p>
+    </div>
+  </div>
+
+  <!-- ESTADO SEM DESAFIO ATIVO (OCULTA FORMULÁRIO SE NÃO HOUVER DESAFIO ATIVO NO ADMIN) -->
+  <div id="nerdInactiveState" class="w-card nerd-status-card" style="display: none;" aria-live="polite">
+    <div class="nerd-status-inner">
+      <div class="hv2-empty-icon"><i class="ri-flashlight-line" aria-hidden="true"></i></div>
+      <h2>Nenhum desafio Alerta Nerd ativo de momento</h2>
+      <p>Esta página só abre para participação quando a equipa da rádio lança um desafio em antena. Fica atento às emissões das 10:00 e ao mural de notícias!</p>
+      <div class="nerd-inactive-actions">
+        <a href="index.html" class="w-btn w-btn-red"><i class="ri-home-5-line" aria-hidden="true"></i> Voltar ao Início</a>
+        <a href="noticias.html" class="w-btn w-btn-ink"><i class="ri-newspaper-line" aria-hidden="true"></i> Ver Notícias</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- DESAFIO ATIVO -->
+  <div id="nerdActiveContainer" class="w-split" style="display: none;">
+    <div>
+      <!-- CARTÃO DO ENIGMA / DESAFIO -->
+      <article class="w-card nerd-challenge-card" id="nerdChallengeBox">
+        <div class="nerd-challenge-top">
+          <span class="nerd-live-pill"><span class="nerd-pulse-dot" aria-hidden="true"></span> Desafio Ativo</span>
+          <span class="nerd-clock-pill" id="nerdLiveClock" title="Hora atual com precisão ao segundo"><i class="ri-time-line" aria-hidden="true"></i> --:--:--</span>
+        </div>
+
+        <h2 class="nerd-challenge-title" id="nerdChallengeTitle">Desafio Alerta Nerd</h2>
+
+        <div class="nerd-challenge-media" id="nerdChallengeImageWrap" style="display: none;">
+          <img id="nerdChallengeImage" src="" alt="Imagem do desafio Alerta Nerd" loading="lazy">
+        </div>
+
+        <div class="nerd-challenge-question" id="nerdChallengeQuestion"></div>
+
+        <div class="nerd-challenge-hint" id="nerdChallengeHintWrap" style="display: none;">
+          <strong><i class="ri-lightbulb-flash-line" aria-hidden="true"></i> Pista da Rádio:</strong>
+          <span id="nerdChallengeHint"></span>
+        </div>
+
+        <div class="nerd-challenge-prize" id="nerdChallengePrizeWrap" style="display: none;">
+          <i class="ri-trophy-line" aria-hidden="true"></i>
+          <div>
+            <small>Destaque / Prémio</small>
+            <strong id="nerdChallengePrize"></strong>
+          </div>
+        </div>
+      </article>
+
+      <!-- FORMULÁRIO DE RESPOSTA DO ALUNO -->
+      <div class="w-card" id="nerdFormCard" style="margin-top: 1.5rem;">
+        <h2 class="w-card-title"><i class="ri-send-plane-fill" aria-hidden="true"></i> Enviar Resposta</h2>
+
+        <form id="nerdSubmissionForm" novalidate>
+          <div class="w-row2">
+            <div class="w-field">
+              <label for="nerdFirstName" class="w-label">Nome *</label>
+              <input type="text" id="nerdFirstName" class="w-input" placeholder="Ex.: Tomás" maxlength="80" autocomplete="given-name" required>
+            </div>
+            <div class="w-field">
+              <label for="nerdLastName" class="w-label">Apelido *</label>
+              <input type="text" id="nerdLastName" class="w-input" placeholder="Ex.: Ferreira" maxlength="80" autocomplete="family-name" required>
+            </div>
+          </div>
+
+          <div class="w-row2">
+            <div class="w-field">
+              <label for="nerdStudentClass" class="w-label">Turma *</label>
+              <input type="text" id="nerdStudentClass" class="w-input" placeholder="Ex.: 10.º B" maxlength="30" required>
+            </div>
+            <div class="w-field">
+              <label for="nerdEmail" class="w-label">Email *</label>
+              <input type="email" id="nerdEmail" class="w-input" placeholder="Ex.: aluno@escola.pt" maxlength="140" autocomplete="email" required>
+            </div>
+          </div>
+
+          <div class="w-field">
+            <div class="w-label-row">
+              <label for="nerdAnswer" class="w-label">A tua resposta ao desafio *</label>
+              <span class="w-char-count" id="nerdAnswerCharCount">0 / 500</span>
+            </div>
+            <textarea id="nerdAnswer" class="w-textarea" placeholder="Escreve aqui a tua resposta de forma clara e direta..." maxlength="500" rows="4" required></textarea>
+          </div>
+
+          <button type="submit" id="nerdSubmitBtn" class="w-btn w-btn-red w-btn-block">
+            <i class="ri-flashlight-fill" aria-hidden="true"></i> Submeter Resposta e Registar Hora
+          </button>
+
+          <p class="w-note">
+            <i class="ri-timer-flash-line" aria-hidden="true"></i>
+            <span>A hora exata de submissão é gravada ao milissegundo para apurar a primeira resposta certa.</span>
+          </p>
+        </form>
+
+        <!-- RECIBO DE SUBMISSÃO COM HORA PRESERVADA -->
+        <div id="nerdSubmittedReceipt" class="nerd-receipt-box" style="display: none;" aria-live="polite">
+          <div class="dt-done-icon"><i class="ri-check-double-line" aria-hidden="true"></i></div>
+          <h3 class="dt-done-title">Resposta Registada!</h3>
+          <p class="dt-done-sub">A tua participação foi guardada no sistema da Wave Rádio com o carimbo temporal exato:</p>
+          <div class="nerd-receipt-details">
+            <div><span>Participante:</span> <strong id="receiptStudentName">—</strong></div>
+            <div><span>Turma:</span> <strong id="receiptStudentClass">—</strong></div>
+            <div><span>Email:</span> <strong id="receiptStudentEmail">—</strong></div>
+            <div><span>Hora Exata Registada:</span> <strong id="receiptTimestamp" class="nerd-receipt-time">—</strong></div>
+          </div>
+          <div class="dt-done-actions" style="margin-top: 1.4rem;">
+            <a href="index.html" class="w-btn w-btn-ink"><i class="ri-arrow-left-line" aria-hidden="true"></i> Voltar ao Início</a>
+          </div>
+        </div>
+
+        <div id="nerdFeedback" class="form-feedback" role="status" aria-live="polite" style="display: none;"></div>
+      </div>
+    </div>
+
+    <aside class="w-rules" aria-labelledby="regrasNerdTitle">
+      <h2 id="regrasNerdTitle">Regras do Desafio</h2>
+      <div class="w-rule">
+        <span class="w-rule-n">01</span>
+        <div>
+          <strong>Identificação Completa</strong>
+          <p>Preenche o teu nome, apelido, turma e email para que a equipa da rádio te possa identificar e contactar caso sejas o vencedor.</p>
+        </div>
+      </div>
+      <div class="w-rule">
+        <span class="w-rule-n">02</span>
+        <div>
+          <strong>Precisão ao Milissegundo</strong>
+          <p>Todas as respostas guardam a data e hora exatas da entrega. Em caso de várias respostas corretas, vence a primeira pessoa que acertou.</p>
+        </div>
+      </div>
+      <div class="w-rule">
+        <span class="w-rule-n">03</span>
+        <div>
+          <strong>Uma Participação por Desafio</strong>
+          <p>Revê bem a tua resposta antes de submeter. O anúncio do vencedor é feito pela equipa da Wave Rádio.</p>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<footer class="w-foot" role="contentinfo">
+  <div class="w-foot-in">
+    <div class="w-foot-grid">
+      <div>
+        <a class="w-foot-logo" href="index.html" aria-label="Wave Rádio — Início"><img src="assets/brand/logo-slogan-negativa.png" alt="Wave Rádio — A tua rádio das 10:00!" width="220" height="128" loading="lazy" decoding="async"></a>
+        <p class="w-foot-blurb">A voz e a música dos alunos da EBS da Cidadela.</p>
+        <p class="w-foot-email"><a href="mailto:Geral@RadioWave.pt"><i class="ri-mail-send-line" aria-hidden="true"></i> Geral@RadioWave.pt</a></p>
+      </div>
+      <div>
+        <h4>Navegar</h4>
+        <ul class="w-foot-list" role="list">
+          <li><a href="index.html">Início</a></li>
+          <li><a href="pedir-musica.html">Pedir música</a></li>
+          <li><a href="DT.html">Diretores de Turma</a></li>
+          <li><a href="podcasts.html">Podcasts</a></li>
+          <li><a href="noticias.html">Notícias</a></li>
+          <li><a href="mensagem.html">Fala Connosco</a></li>
+          <li data-nerd-nav><a href="nerd-alert.html">Alerta Nerd</a></li>
+          <li><a href="links.html">Links rápidos</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Entidades &amp; Parcerias</h4>
+        <div class="w-partners">
+          <a class="w-partner" href="https://www.cascais.pt" target="_blank" rel="noopener noreferrer" aria-label="Câmara Municipal de Cascais"><span>Parceria</span><img src="assets/logo-cmc.jpg" alt="Câmara Municipal de Cascais" loading="lazy" decoding="async"></a>
+          <a class="w-partner" href="https://criativa.org" target="_blank" rel="noopener noreferrer" aria-label="Criativa.org"><span>Produção</span><img src="assets/logo-criativa.jpg" alt="Criativa.org" loading="lazy" decoding="async"></a>
+          <a class="w-partner" href="https://aecidadela.pt" target="_blank" rel="noopener noreferrer" aria-label="Agrupamento de Escolas da Cidadela"><span>Escola</span><img src="assets/logo-cidadela.png" alt="Agrupamento de Escolas da Cidadela" loading="lazy" decoding="async"></a>
+        </div>
+      </div>
+    </div>
+    <div class="w-foot-bottom">
+      <span>&copy; 2026 <b>Wave Rádio</b> · EBS Cidadela · <a href="mailto:Geral@RadioWave.pt">Geral@RadioWave.pt</a> · Desenvolvido por Rafael Diogo</span>
+      <a href="admin.html"><i class="ri-lock-2-line" aria-hidden="true"></i> Área reservada</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js?v=20261027"></script>
+<script src="js/nerd-alert.js?v=20261027"></script>
+<script src="js/site-ui.js?v=20261027"></script>
+</body>
+</html>

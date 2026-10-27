@@ -1,0 +1,893 @@
+/* ==========================================================================
+   WAVE RÁDIO — PAINEL DE GESTÃO (ADMIN V2 — STUDIO COCKPIT 2026)
+   Sistema Visual Re-arquitetado: Mais útil, mais funcional e moderno.
+   ========================================================================== */
+
+:root {
+  --adm-bg: #1c191a;
+  --adm-bg-subtle: #161415;
+  --adm-surface: #242021;
+  --adm-surface-2: #2d2829;
+  --adm-surface-hover: #363032;
+  --adm-surface-elevated: #3a3335;
+
+  --adm-border: rgba(255, 255, 255, 0.08);
+  --adm-border-hover: rgba(255, 255, 255, 0.16);
+  --adm-border-active: rgba(228, 35, 42, 0.5);
+
+  --adm-red: #e4232a;
+  --adm-red-hover: #c7181f;
+  --adm-red-glow: rgba(228, 35, 42, 0.35);
+  --adm-red-subtle: rgba(228, 35, 42, 0.12);
+
+  --adm-text: #f5f1f1;
+  --adm-text-bright: #ffffff;
+  --adm-text-muted: #a39b9c;
+  --adm-text-faint: #756c6e;
+
+  --adm-emerald: #10b981;
+  --adm-amber: #f59e0b;
+  --adm-sky: #38bdf8;
+  --adm-purple: #a855f7;
+  --adm-rose: #f43f5e;
+
+  --adm-font-title: 'Bebas Neue', sans-serif;
+  --adm-font-main: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --adm-font-mono: 'DM Mono', monospace;
+
+  --adm-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --adm-shadow-md: 0 6px 20px rgba(0, 0, 0, 0.35);
+  --adm-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+  --adm-radius-sm: 6px;
+  --adm-radius-md: 10px;
+  --adm-radius-lg: 14px;
+}
+
+/* ==========================================================================
+   RESET & LAYOUT BASE DO PAINEL
+   ========================================================================== */
+body.admin-page {
+  background-color: var(--adm-bg) !important;
+  color: var(--adm-text) !important;
+  font-family: var(--adm-font-main) !important;
+  overflow: hidden;
+  height: 100vh;
+  margin: 0;
+}
+
+.admin-shell {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100vh !important;
+  background-color: var(--adm-bg) !important;
+}
+
+/* ==========================================================================
+   TOPBAR V2 — STUDIO HEADER COMPACTO E FUNCIONAL
+   ========================================================================== */
+.admin-topbar {
+  flex: 0 0 62px !important;
+  height: 62px !important;
+  padding: 0 1.25rem !important;
+  background: rgba(28, 25, 26, 0.94) !important;
+  border-bottom: 1px solid var(--adm-border) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 1rem !important;
+  z-index: 100 !important;
+}
+
+.admin-topbar-brand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  min-width: 220px !important;
+  flex-shrink: 0 !important;
+}
+
+.admin-topbar-logo {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: var(--adm-radius-sm) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 0 12px var(--adm-red-glow) !important;
+}
+
+.admin-topbar-title {
+  font-family: var(--adm-font-title) !important;
+  font-size: 1.15rem !important;
+  letter-spacing: 0.04em !important;
+  color: #fff !important;
+  line-height: 1 !important;
+}
+
+.admin-topbar-sub {
+  font-size: 0.68rem !important;
+  color: var(--adm-text-muted) !important;
+  font-family: var(--adm-font-mono) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+}
+
+/* Botão Hamburger Móvel */
+.adm-sidebar-toggle-btn {
+  display: none;
+  background: var(--adm-surface-2);
+  border: 1px solid var(--adm-border);
+  color: var(--adm-text);
+  width: 36px;
+  height: 36px;
+  border-radius: var(--adm-radius-sm);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  transition: all 0.15s ease;
+}
+
+.adm-sidebar-toggle-btn:hover {
+  background: var(--adm-surface-hover);
+  color: #fff;
+  border-color: var(--adm-border-hover);
+}
+
+/* Quick Search / Command Trigger no Centro */
+.adm-command-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  padding: 0.45rem 0.95rem;
+  border-radius: var(--adm-radius-md);
+  color: var(--adm-text-muted);
+  cursor: pointer;
+  font-size: 0.82rem;
+  width: 100%;
+  max-width: 360px;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.adm-command-trigger:hover {
+  border-color: var(--adm-border-hover);
+  background: var(--adm-surface-2);
+  color: var(--adm-text);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.adm-command-trigger kbd {
+  margin-left: auto;
+  font-family: var(--adm-font-mono);
+  font-size: 0.68rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  padding: 0.15rem 0.45rem;
+  color: var(--adm-text-bright);
+}
+
+/* Topbar Actions */
+.admin-topbar-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  justify-content: flex-end !important;
+  flex-shrink: 0 !important;
+}
+
+/* Relógio de Estúdio na Topbar */
+.adm-topbar-clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--adm-font-mono);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #fff;
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border);
+  padding: 0.38rem 0.75rem;
+  border-radius: var(--adm-radius-sm);
+  letter-spacing: 0.06em;
+}
+
+.adm-clock-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--adm-red);
+  box-shadow: 0 0 8px var(--adm-red);
+  animation: livePulse 1.2s infinite;
+}
+
+/* Switcher de Modo: Editorial / Ao Vivo */
+.admin-mode-switcher {
+  display: inline-flex !important;
+  align-items: center !important;
+  background: var(--adm-surface) !important;
+  border: 1px solid var(--adm-border) !important;
+  border-radius: var(--adm-radius-md) !important;
+  padding: 3px !important;
+  gap: 2px !important;
+}
+
+.admin-mode-btn {
+  border: none !important;
+  background: transparent !important;
+  color: var(--adm-text-muted) !important;
+  padding: 0.38rem 0.8rem !important;
+  border-radius: var(--adm-radius-sm) !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.admin-mode-btn:hover {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.admin-mode-btn.active {
+  background: var(--adm-surface-2) !important;
+  color: #fff !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+.admin-mode-btn.active#btnModeAoVivo {
+  background: var(--adm-red) !important;
+  color: #fff !important;
+}
+
+/* Botões da Topbar */
+.admin-topbar-actions .btn-action {
+  background: var(--adm-surface) !important;
+  border: 1px solid var(--adm-border) !important;
+  color: var(--adm-text) !important;
+  padding: 0.42rem 0.75rem !important;
+  border-radius: var(--adm-radius-sm) !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  transition: all 0.15s ease !important;
+}
+
+.admin-topbar-actions .btn-action:hover {
+  background: var(--adm-surface-2) !important;
+  border-color: var(--adm-border-hover) !important;
+  color: #fff !important;
+}
+
+#btnTopbarMaintenance {
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  color: #34d399 !important;
+}
+
+#btnTopbarMaintenance:hover {
+  border-color: #10b981 !important;
+  background: rgba(16, 185, 129, 0.1) !important;
+}
+
+/* ==========================================================================
+   SIDEBAR V2 — ARQUITETURA MODULAR
+   ========================================================================== */
+.admin-editorial-zone {
+  display: flex !important;
+  flex: 1 !important;
+  overflow: hidden !important;
+  height: calc(100vh - 62px) !important;
+  position: relative !important;
+}
+
+.admin-sidebar {
+  flex: 0 0 256px !important;
+  width: 256px !important;
+  background: var(--adm-bg-subtle) !important;
+  border-right: 1px solid var(--adm-border) !important;
+  padding: 0.85rem 0.65rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.3rem !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  transition: transform 0.25s ease, width 0.25s ease !important;
+  z-index: 90 !important;
+}
+
+/* Perfil do Utilizador no topo da Sidebar */
+.sidebar-user-card {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.65rem !important;
+  padding: 0.65rem 0.75rem !important;
+  background: var(--adm-surface) !important;
+  border: 1px solid var(--adm-border) !important;
+  border-radius: var(--adm-radius-md) !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.sidebar-user-avatar {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: var(--adm-radius-sm) !important;
+  background: linear-gradient(135deg, var(--adm-red), #991b1b) !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+  font-size: 0.85rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+}
+
+.sidebar-user-name {
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.sidebar-user-role {
+  font-size: 0.68rem !important;
+  color: var(--adm-text-muted) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  font-family: var(--adm-font-mono) !important;
+}
+
+/* KPIs compactos da Sidebar */
+.sidebar-kpis {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 0.3rem !important;
+  padding: 0.55rem 0.4rem !important;
+  background: var(--adm-surface) !important;
+  border: 1px solid var(--adm-border) !important;
+  border-radius: var(--adm-radius-md) !important;
+  margin-bottom: 0.65rem !important;
+  min-height: auto !important;
+}
+
+.sidebar-kpis::after {
+  display: none !important;
+}
+
+.sidebar-kpi {
+  padding: 0.35rem 0.2rem !important;
+  border-radius: var(--adm-radius-sm) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.sidebar-kpi i {
+  font-size: 0.95rem !important;
+  color: var(--adm-red) !important;
+}
+
+.sidebar-kpi span {
+  font-family: var(--adm-font-mono) !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+}
+
+.sidebar-kpi small {
+  font-size: 0.58rem !important;
+  color: var(--adm-text-muted) !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Categorias / Separadores da Sidebar */
+.sidebar-section-label {
+  font-family: var(--adm-font-mono) !important;
+  font-size: 0.65rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  color: var(--adm-text-faint) !important;
+  padding: 0.45rem 0.55rem 0.25rem !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+}
+
+.sidebar-divider {
+  height: 1px !important;
+  background: var(--adm-border) !important;
+  margin: 0.45rem 0.35rem !important;
+}
+
+/* Lista de Navegação */
+.sidebar-nav {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.sidebar-nav-item {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.65rem !important;
+  padding: 0.52rem 0.75rem !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-left: 3px solid transparent !important;
+  border-radius: var(--adm-radius-sm) !important;
+  color: var(--adm-text-muted) !important;
+  font-size: 0.84rem !important;
+  font-weight: 600 !important;
+  text-align: left !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  position: relative !important;
+}
+
+.sidebar-nav-item:hover {
+  background: var(--adm-surface) !important;
+  color: var(--adm-text-bright) !important;
+  border-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+.sidebar-nav-item.active {
+  background: linear-gradient(90deg, rgba(228, 35, 42, 0.16), rgba(228, 35, 42, 0.03)) !important;
+  border-color: rgba(228, 35, 42, 0.22) !important;
+  border-left-color: var(--adm-red) !important;
+  color: #fff !important;
+}
+
+.sidebar-nav-item i {
+  font-size: 1.05rem !important;
+  flex-shrink: 0 !important;
+  transition: transform 0.15s ease !important;
+}
+
+.sidebar-nav-item:hover i {
+  transform: scale(1.1) !important;
+}
+
+.sidebar-badge {
+  margin-left: auto !important;
+  font-family: var(--adm-font-mono) !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  padding: 0.1rem 0.45rem !important;
+  border-radius: 999px !important;
+  background: rgba(228, 35, 42, 0.2) !important;
+  color: #ff545b !important;
+  border: 1px solid rgba(228, 35, 42, 0.4) !important;
+}
+
+.sidebar-badge:empty {
+  display: none !important;
+}
+
+/* ==========================================================================
+   CONTEÚDO PRINCIPAL (MAIN CONTENT AREA)
+   ========================================================================== */
+.admin-content {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  padding: clamp(1rem, 2.5vw, 2rem) !important;
+  background: var(--adm-bg) !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: var(--adm-surface-2) transparent !important;
+}
+
+/* Cabeçalhos de Secção */
+.admin-section-heading,
+.admin-command-header {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 1.25rem !important;
+  padding-bottom: 1.25rem !important;
+  margin-bottom: 1.5rem !important;
+  border-bottom: 1px solid var(--adm-border) !important;
+}
+
+.admin-section-heading h2,
+.admin-command-header h2 {
+  font-family: var(--adm-font-title) !important;
+  font-size: clamp(1.8rem, 3.5vw, 2.4rem) !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.02em !important;
+  line-height: 0.95 !important;
+  color: #fff !important;
+  margin: 0.2rem 0 0.35rem !important;
+}
+
+.admin-section-heading p,
+.admin-command-header p {
+  color: var(--adm-text-muted) !important;
+  font-size: 0.88rem !important;
+  margin: 0 !important;
+  max-width: 60ch !important;
+}
+
+/* Painéis de Cartão (Card Panels) */
+.card-panel {
+  background: var(--adm-surface) !important;
+  border: 1px solid var(--adm-border) !important;
+  border-radius: var(--adm-radius-lg) !important;
+  box-shadow: var(--adm-shadow-sm) !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.card-panel:hover {
+  border-color: var(--adm-border-hover) !important;
+}
+
+/* Overview Brief Cards */
+.daily-brief-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+  gap: 1rem !important;
+  margin-bottom: 1.25rem !important;
+}
+
+.brief-card {
+  background: var(--adm-surface) !important;
+  border: 1px solid var(--adm-border) !important;
+  border-radius: var(--adm-radius-lg) !important;
+  padding: 1.25rem !important;
+}
+
+.brief-card-kicker {
+  font-family: var(--adm-font-mono) !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: var(--adm-red) !important;
+}
+
+.brief-card h3 {
+  font-size: 1.15rem !important;
+  font-weight: 700 !important;
+  margin: 0.25rem 0 0 !important;
+  color: #fff !important;
+}
+
+/* ==========================================================================
+   BOTÕES & INPUTS MODERNIZADOS
+   ========================================================================== */
+.btn-submit-main,
+.btn-primary {
+  background: var(--adm-red) !important;
+  color: #ffffff !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--adm-radius-md) !important;
+  padding: 0.55rem 1.15rem !important;
+  font-weight: 700 !important;
+  font-size: 0.85rem !important;
+  letter-spacing: 0.02em !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  transition: all 0.15s ease !important;
+  box-shadow: 0 4px 14px var(--adm-red-glow) !important;
+}
+
+.btn-submit-main:hover,
+.btn-primary:hover {
+  background: var(--adm-red-hover) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 18px var(--adm-red-glow) !important;
+}
+
+.btn-action {
+  background: var(--adm-surface-2) !important;
+  color: var(--adm-text) !important;
+  border: 1px solid var(--adm-border) !important;
+  border-radius: var(--adm-radius-md) !important;
+  padding: 0.5rem 0.95rem !important;
+  font-weight: 600 !important;
+  font-size: 0.82rem !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.4rem !important;
+  transition: all 0.15s ease !important;
+}
+
+.btn-action:hover {
+  background: var(--adm-surface-hover) !important;
+  border-color: var(--adm-border-hover) !important;
+  color: #fff !important;
+}
+
+.btn-action.danger-action {
+  color: #fca5a5 !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+.btn-action.danger-action:hover {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: #ef4444 !important;
+  color: #fff !important;
+}
+
+/* Campos de Formulário */
+.form-input-lg,
+input[type="text"].form-input-lg,
+input[type="email"].form-input-lg,
+input[type="password"].form-input-lg,
+input[type="date"].form-input-lg,
+select.form-input-lg,
+textarea.form-input-lg {
+  background: var(--adm-bg-subtle) !important;
+  border: 1px solid var(--adm-border) !important;
+  color: #fff !important;
+  border-radius: var(--adm-radius-md) !important;
+  padding: 0.65rem 0.85rem !important;
+  font-size: 0.88rem !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.form-input-lg:focus {
+  outline: none !important;
+  border-color: var(--adm-red) !important;
+  box-shadow: 0 0 0 3px var(--adm-red-subtle) !important;
+}
+
+/* Tabelas do Painel */
+table {
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+th {
+  background: var(--adm-surface-2) !important;
+  color: var(--adm-text-muted) !important;
+  font-family: var(--adm-font-mono) !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  padding: 0.75rem 1rem !important;
+  border-bottom: 1px solid var(--adm-border) !important;
+  text-align: left !important;
+}
+
+td {
+  padding: 0.85rem 1rem !important;
+  border-bottom: 1px solid var(--adm-border) !important;
+  font-size: 0.86rem !important;
+  color: var(--adm-text) !important;
+}
+
+tr:hover td {
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+
+/* Modais do Painel */
+.modal-overlay {
+  background: rgba(10, 8, 9, 0.82) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.modal-window {
+  background: var(--adm-surface) !important;
+  border: 1px solid var(--adm-border-hover) !important;
+  border-radius: var(--adm-radius-lg) !important;
+  box-shadow: var(--adm-shadow-lg) !important;
+}
+
+/* ==========================================================================
+   COMMAND PALETTE V2 (MODAL INTELIGENTE DE COMANDOS — CTRL+K)
+   ========================================================================== */
+.adm-palette-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 8, 9, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 10000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: clamp(2rem, 8vh, 6rem) 1rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+
+.adm-palette-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.adm-palette-window {
+  background: var(--adm-surface);
+  border: 1px solid var(--adm-border-hover);
+  border-radius: var(--adm-radius-lg);
+  box-shadow: var(--adm-shadow-lg), 0 0 40px rgba(0, 0, 0, 0.6);
+  width: 100%;
+  max-width: 580px;
+  overflow: hidden;
+  transform: translateY(-10px) scale(0.98);
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.adm-palette-overlay.active .adm-palette-window {
+  transform: translateY(0) scale(1);
+}
+
+.adm-palette-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.95rem 1.25rem;
+  border-bottom: 1px solid var(--adm-border);
+  background: var(--adm-surface-2);
+}
+
+.adm-palette-head i {
+  font-size: 1.25rem;
+  color: var(--adm-red);
+}
+
+.adm-palette-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--adm-font-main);
+  font-size: 1rem;
+  color: #fff;
+}
+
+.adm-palette-input::placeholder {
+  color: var(--adm-text-muted);
+}
+
+.adm-palette-esc {
+  font-family: var(--adm-font-mono);
+  font-size: 0.7rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  color: var(--adm-text-muted);
+}
+
+.adm-palette-list {
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 0.5rem;
+  list-style: none;
+  margin: 0;
+}
+
+.adm-palette-group-label {
+  font-family: var(--adm-font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--adm-text-faint);
+  padding: 0.5rem 0.75rem 0.25rem;
+}
+
+.adm-palette-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--adm-radius-sm);
+  cursor: pointer;
+  color: var(--adm-text);
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: all 0.12s ease;
+}
+
+.adm-palette-item:hover,
+.adm-palette-item.selected {
+  background: var(--adm-surface-hover);
+  color: #fff;
+}
+
+.adm-palette-item i {
+  font-size: 1.15rem;
+  color: var(--adm-text-muted);
+}
+
+.adm-palette-item:hover i,
+.adm-palette-item.selected i {
+  color: var(--adm-red);
+}
+
+.adm-palette-item kbd {
+  margin-left: auto;
+  font-family: var(--adm-font-mono);
+  font-size: 0.68rem;
+  color: var(--adm-text-muted);
+}
+
+/* ==========================================================================
+   RESPONSIVIDADE (MOBILE & TABLET)
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .adm-sidebar-toggle-btn {
+    display: inline-flex;
+  }
+
+  .adm-command-trigger span:first-of-type {
+    display: none;
+  }
+
+  .adm-command-trigger {
+    width: auto;
+    padding: 0.45rem 0.65rem;
+  }
+
+  .admin-sidebar {
+    position: fixed !important;
+    top: 62px !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    transform: translateX(-100%) !important;
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.6) !important;
+  }
+
+  .admin-sidebar.open {
+    transform: translateX(0) !important;
+  }
+
+  .adm-sidebar-backdrop {
+    position: fixed;
+    inset: 62px 0 0 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 85;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+  }
+
+  .adm-sidebar-backdrop.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .admin-topbar-brand {
+    min-width: auto !important;
+  }
+}
+
+@media (max-width: 680px) {
+  .adm-topbar-clock,
+  .admin-topbar-sub {
+    display: none !important;
+  }
+
+  .admin-content {
+    padding: 1rem !important;
+  }
+
+  .admin-section-heading,
+  .admin-command-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+}

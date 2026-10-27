@@ -12,6 +12,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('linkSearchInput')?.addEventListener('input', renderLinktree);
 });
 
+document.addEventListener('radio-db-updated', (e) => {
+  if (!e.detail || e.detail.collection === 'links') {
+    renderLinktree();
+  }
+});
+
 function renderLinktree() {
   const container = document.getElementById('linktreeContainer');
   if (!container) return;
@@ -34,7 +40,7 @@ function renderLinktree() {
   container.innerHTML = '';
   links.forEach(link => {
     const a = document.createElement('a');
-    a.href = link.url;
+    a.href = /^(https?:|mailto:|tel:)/i.test(String(link.url || '').trim()) ? String(link.url).trim() : '#';
     a.target = '_blank';
     a.rel = 'noopener noreferrer';
     a.className = 'linktree-btn';

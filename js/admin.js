@@ -1,5 +1,5 @@
 /* ==========================================================================
-   RÁDIO EBS CIDADELA - PAINEL DE ADMINISTRAÇÃO (SENIOR DEV VERSION)
+   RÁDIO EBS CIDADELA - PAINEL DE ADMINISTRAÇÃO 
    Ranking de Músicas Mais Pedidas, Gestão do Linktree, Podcasts e KPIs
    ========================================================================== */
 
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /* ==========================================================================
-   SISTEMA DE FUNÇÕES & PERMISSÕES GRANULARES (GOOGLE WORKSPACE RBAC)
+   SISTEMA DE FUNÇÕES & PERMISSÕES GRANULARES
    ========================================================================== */
 const ALL_PERMISSIONS = [
   'access_aovivo',
@@ -245,18 +245,54 @@ async function initAdminAuth() {
     window.applyUserPermissionsToUI();
   });
 
+  const handleEnterKey = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      btnLogin?.click();
+    }
+  };
+  inputEmail?.addEventListener('keydown', handleEnterKey);
+  inputPassword?.addEventListener('keydown', handleEnterKey);
+
   if (btnLogin) {
     btnLogin.addEventListener('click', async () => {
+      const email = (inputEmail?.value || '').trim();
+      const password = inputPassword?.value || '';
+
+      if (!email || !password) {
+        if (authAlert) {
+          authAlert.innerHTML = '<span style="color: #ef4444; font-size: 0.85rem;"><i class="ri-error-warning-line"></i> Por favor preenche o email e a palavra-passe.</span>';
+        }
+        return;
+      }
+
       btnLogin.disabled = true;
       if (authAlert) authAlert.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;"><i class="ri-loader-4-line ri-spin"></i> A autenticar...</span>';
       try {
-        await auth.signInWithEmailAndPassword(inputEmail.value.trim(), inputPassword.value);
+        await auth.signInWithEmailAndPassword(email, password);
       } catch (error) {
+        console.error('Firebase Auth sign-in error:', error.code, error.message, error);
         let msg = 'Email ou palavra-passe inválidos.';
-        if (error.code === 'auth/user-not-found') msg = 'Utilizador não encontrado.';
-        else if (error.code === 'auth/wrong-password') msg = 'Palavra-passe incorreta.';
-        else if (error.code === 'auth/too-many-requests') msg = 'Demasiadas tentativas. Tenta novamente mais tarde.';
-        if (authAlert) authAlert.innerHTML = `<span style="color: #ef4444; font-size: 0.85rem;"><i class="ri-error-warning-line"></i> ${msg}</span>`;
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/invalid-login-credentials') {
+          msg = 'Credenciais incorretas (email ou palavra-passe incorretos).';
+        } else if (error.code === 'auth/user-not-found') {
+          msg = 'Utilizador não encontrado no Firebase Authentication.';
+        } else if (error.code === 'auth/wrong-password') {
+          msg = 'Palavra-passe incorreta.';
+        } else if (error.code === 'auth/too-many-requests') {
+          msg = 'Demasiadas tentativas falhadas. Aguarda alguns minutos.';
+        } else if (error.code === 'auth/operation-not-allowed') {
+          msg = 'O método Email/Password não está ativado no Firebase Console (Authentication > Sign-in method).';
+        } else if (error.code === 'auth/invalid-email') {
+          msg = 'Formato de email inválido.';
+        } else if (error.code === 'auth/user-disabled') {
+          msg = 'Esta conta foi desativada no Firebase Authentication.';
+        } else if (error.message) {
+          msg = error.message;
+        }
+        if (authAlert) {
+          authAlert.innerHTML = `<span style="color: #ef4444; font-size: 0.85rem; line-height: 1.35; display: inline-block;"><i class="ri-error-warning-line"></i> ${msg}</span>`;
+        }
       }
       btnLogin.disabled = false;
     });
@@ -297,6 +333,8 @@ function loadAdminDashboard() {
   renderTeamMemos();
   renderTasksView();
   renderAdminPollsTable();
+  if (typeof renderAdminNerdAlert === 'function') renderAdminNerdAlert();
+  if (typeof renderAdminTeamMembers === 'function') renderAdminTeamMembers();
   renderAdminOverview();
   renderAoVivo();
   initIntervalBellTimer();
@@ -309,6 +347,8 @@ function updateKPIs() {
   const links = window.db.getLinks().filter(l => l.active !== false);
   const unreadMessages = window.db.getMessages().filter(message => message.status === 'unread');
   const activeTasks = window.db.getTasks ? window.db.getTasks().filter(t => t.status !== 'done') : [];
+  const activeNerd = window.db.getActiveNerdChallenge ? window.db.getActiveNerdChallenge() : null;
+  const nerdSubs = window.db.getNerdSubmissions ? window.db.getNerdSubmissions(activeNerd ? activeNerd.id : null) : [];
 
   const sideSongs = document.getElementById('sideKpiSongs');
   const sideMessages = document.getElementById('sideKpiMessages');
@@ -316,6 +356,7 @@ function updateKPIs() {
   const badgeSongs = document.getElementById('sideNavBadgeSongs');
   const badgeMessages = document.getElementById('sideNavBadgeMessages');
   const badgeTasks = document.getElementById('sideNavBadgeTasks');
+  const badgeNerd = document.getElementById('sideNavBadgeNerd');
 
   if (sideSongs) sideSongs.innerText = pending.length;
   if (sideMessages) sideMessages.innerText = unreadMessages.length;
@@ -329,6 +370,9 @@ function updateKPIs() {
   }
   if (badgeTasks) {
     badgeTasks.innerText = activeTasks.length > 0 ? activeTasks.length : '';
+  }
+  if (badgeNerd) {
+    badgeNerd.innerText = activeNerd ? (nerdSubs.length > 0 ? String(nerdSubs.length) : 'ON') : '';
   }
 }
 
@@ -363,6 +407,7 @@ function renderSongRankingTable(filterStatus = 'all') {
         previewUrl: item.previewUrl,
         count: 0,
         ids: [],
+        dtClasses: [],
         status: item.status
       });
     }
@@ -370,6 +415,10 @@ function renderSongRankingTable(filterStatus = 'all') {
     const group = map.get(key);
     group.count += 1;
     group.ids.push(item.id);
+    if (item.studentClass) {
+      const dtLabel = item.teacherName ? `${item.studentClass} (${item.teacherName})` : item.studentClass;
+      if (!group.dtClasses.includes(dtLabel)) group.dtClasses.push(dtLabel);
+    }
   });
 
   const rankedList = Array.from(map.values()).sort((a, b) => b.count - a.count);
@@ -386,6 +435,9 @@ function renderSongRankingTable(filterStatus = 'all') {
     let statusLabel = 'Pendente';
     if (song.status === 'played') { statusBadgeClass = 'status-played'; statusLabel = 'Tocado na Rádio'; }
     if (song.status === 'archived') { statusBadgeClass = 'status-archived'; statusLabel = 'Arquivado'; }
+    const dtBadgeHtml = song.dtClasses.length
+      ? `<div style="margin-top: 0.25rem; display: flex; flex-wrap: wrap; gap: 0.3rem;">${song.dtClasses.map(c => `<span style="font-size: 0.7rem; background: rgba(56, 189, 248, 0.16); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 4px; padding: 0.1rem 0.4rem;"><i class="ri-Graduation-cap-line"></i> DT • ${escapeHtml(c)}</span>`).join('')}</div>`
+      : '';
 
     tr.innerHTML = `
       <td style="font-weight: 800; color: var(--cascais-blue); font-size: 1.1rem;">#${idx + 1}</td>
@@ -395,6 +447,7 @@ function renderSongRankingTable(filterStatus = 'all') {
           <div>
             <strong style="display: block; color: white;">${escapeHtml(song.songTitle)}</strong>
             <span style="font-size: 0.8rem; color: var(--text-muted);">${escapeHtml(song.artist)}</span>
+            ${dtBadgeHtml}
           </div>
         </div>
       </td>
@@ -601,6 +654,53 @@ window.handlePodcastUrlInput = function (value) {
   }
 };
 
+window.handlePodCoverFileUpload = async function (file) {
+  if (!file || typeof window.imageFileToBase64 !== 'function') return;
+  const statusEl = document.getElementById('podThumbStatus');
+  if (statusEl) statusEl.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> A converter foto para Base64...';
+  try {
+    const res = await window.imageFileToBase64(file, {
+      maxWidth: 640,
+      maxHeight: 640,
+      quality: 0.84,
+      maxBase64Chars: 240000
+    });
+    const thumbInput = document.getElementById('podThumbnailInput');
+    if (thumbInput) thumbInput.value = res.dataUrl;
+    updatePodThumbPreview(res.dataUrl, res.sizeKB);
+    showToast(`Capa do episódio convertida para Base64 (${res.sizeKB} KB).`, 'success');
+  } catch (err) {
+    showToast(err.message || 'Erro ao carregar imagem.', 'error');
+  }
+};
+
+window.updatePodThumbPreview = function (val, sizeKB = null) {
+  const preview = document.getElementById('podThumbPreview');
+  const statusEl = document.getElementById('podThumbStatus');
+  const clean = String(val || '').trim();
+  if (preview) {
+    preview.src = clean || 'assets/logo-radio.jpg';
+  }
+  if (statusEl) {
+    if (clean.startsWith('data:image/')) {
+      const kb = sizeKB || Math.max(1, Math.round((clean.length * 0.75) / 1024));
+      statusEl.innerHTML = `<i class="ri-checkbox-circle-fill" style="color:#34d399;"></i> Foto Base64 pronta (${kb} KB — alojamento gratuito)`;
+    } else if (clean) {
+      statusEl.innerHTML = '<i class="ri-link" style="color:#38bdf8;"></i> URL externo configurado';
+    } else {
+      statusEl.innerHTML = '<i class="ri-image-line"></i> Alojamento 100% gratuito em Base64 ou ligação direta.';
+    }
+  }
+};
+
+window.clearPodCoverImage = function () {
+  const thumbInput = document.getElementById('podThumbnailInput');
+  const fileInput = document.getElementById('podCoverFileInput');
+  if (thumbInput) thumbInput.value = '';
+  if (fileInput) fileInput.value = '';
+  updatePodThumbPreview('');
+};
+
 window.openPodcastModal = function (id = null) {
   const modal = document.getElementById('addPodcastModal');
   const form = document.getElementById('addPodcastForm');
@@ -612,6 +712,7 @@ window.openPodcastModal = function (id = null) {
   document.getElementById('podIdInput').value = '';
   document.getElementById('podPreviewWrapper').style.display = 'none';
   document.getElementById('podPreviewFrameContainer').innerHTML = '';
+  updatePodThumbPreview('');
 
   if (id) {
     const pod = window.db.getPodcast ? window.db.getPodcast(id) : window.db.getPodcasts().find(p => p.id === id);
@@ -627,9 +728,12 @@ window.openPodcastModal = function (id = null) {
       document.getElementById('podDateInput').value = pod.date || '';
       document.getElementById('podDurationInput').value = pod.duration || '';
       document.getElementById('podDescInput').value = pod.description || '';
-      if (document.getElementById('podImageInput')) {
-        document.getElementById('podImageInput').value = pod.thumbnail || pod.image || '';
+      const thumbVal = pod.thumbnail || pod.image || '';
+      const thumbInput = document.getElementById('podThumbnailInput');
+      if (thumbInput) {
+        thumbInput.value = thumbVal;
       }
+      updatePodThumbPreview(thumbVal);
       document.getElementById('podFeaturedInput').checked = !!pod.featured;
 
       window.handlePodcastUrlInput(pod.spotifyUrl || pod.audioUrl || pod.originalUrl || '');
@@ -646,7 +750,8 @@ window.openPodcastModal = function (id = null) {
   const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
   document.getElementById('podDateInput').value = `${now.getDate()} ${months[now.getMonth()]}, ${now.getFullYear()}`;
   document.getElementById('podCategoryInput').value = 'Geral';
-  if (document.getElementById('podImageInput')) document.getElementById('podImageInput').value = '';
+  const thumbInput = document.getElementById('podThumbnailInput');
+  if (thumbInput) thumbInput.value = '';
   document.getElementById('podFeaturedInput').checked = false;
 
   openModal('addPodcastModal');
@@ -740,7 +845,8 @@ window.saveNewPodcast = function (e) {
   const date = document.getElementById('podDateInput').value.trim();
   const duration = document.getElementById('podDurationInput').value.trim() || '20 min';
   const description = document.getElementById('podDescInput')?.value?.trim() || '';
-  const thumbnail = document.getElementById('podImageInput')?.value?.trim() || '';
+  const thumbEl = document.getElementById('podThumbnailInput');
+  const thumbnail = thumbEl?.value?.trim() || '';
   const featured = document.getElementById('podFeaturedInput').checked;
 
   if (!title || !rawUrl) {
@@ -784,21 +890,92 @@ window.saveNewPodcast = function (e) {
   renderAdminPodcastsTable();
 };
 
+let activeAnnouncementFilter = 'all';
+
+window.filterAdminAnnouncements = function (filterMode = 'all') {
+  activeAnnouncementFilter = filterMode;
+  document.querySelectorAll('[data-ann-filter]').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-ann-filter') === filterMode);
+  });
+  renderAdminAnnouncementsTable();
+};
+
 function renderAdminAnnouncementsTable() {
   const tbody = document.getElementById('announcementsAdminTbody');
   if (!tbody) return;
 
-  const list = window.db.getPublicAnnouncements();
+  const query = (document.getElementById('annSearchInput')?.value || '').trim().toLowerCase();
+  let list = window.db.getAnnouncements();
+
+  if (activeAnnouncementFilter === 'public') {
+    list = list.filter(a => a.visibility !== 'internal' && a.onAir !== true && !a.broadcastDate);
+  } else if (activeAnnouncementFilter === 'internal') {
+    list = list.filter(a => a.visibility === 'internal' || a.onAir === true || Boolean(a.broadcastDate));
+  }
+
+  if (query) {
+    list = list.filter(a =>
+      String(a.title || '').toLowerCase().includes(query) ||
+      String(a.category || a.tag || '').toLowerCase().includes(query) ||
+      String(a.author || '').toLowerCase().includes(query) ||
+      String(a.excerpt || '').toLowerCase().includes(query)
+    );
+  }
+
+  if (list.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="admin-empty-cell">
+          <i class="ri-newspaper-line"></i>
+          Nenhum artigo encontrado. Clica em "Estúdio Editorial Completo" para escrever uma notícia com fotos.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
   tbody.innerHTML = '';
   list.forEach(ann => {
+    const isInternal = ann.visibility === 'internal' || ann.onAir === true || Boolean(ann.broadcastDate);
+    const isBase64 = String(ann.image || '').startsWith('data:image/');
+    const coverSrc = ann.image || 'assets/logo-radio.jpg';
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><span class="blog-tag">${escapeHtml(ann.tag || 'Notícia')}</span> <strong>${escapeHtml(ann.title)}</strong></td>
-      <td style="font-size: 0.85rem;">${escapeHtml(ann.date)}</td>
       <td>
-        <a class="btn-action" href="artigo.html?id=${encodeURIComponent(ann.id)}" target="_blank" title="Ver artigo"><i class="ri-eye-line"></i> Ver</a>
-        <a class="btn-action" href="admin-editor.html?id=${encodeURIComponent(ann.id)}" title="Editar artigo"><i class="ri-edit-line"></i> Editar</a>
-        <button class="btn-action" style="color: #ef4444;" onclick="deleteAnnouncementItem('${ann.id}')"><i class="ri-delete-bin-line"></i> Eliminar</button>
+        <div style="display: flex; align-items: center; gap: 0.85rem;">
+          <img src="${escapeHtml(coverSrc)}" alt="" style="width: 64px; height: 44px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(255,255,255,0.14); flex-shrink: 0;" onerror="this.onerror=null;this.src='assets/logo-radio.jpg';">
+          <div style="min-width: 0;">
+            <strong style="display: block; color: #ffffff; font-size: 0.95rem;">
+              ${escapeHtml(ann.title)}
+              ${ann.featured ? '<span class="badge" style="background: rgba(245,158,11,0.18); color: #fbbf24; font-size: 0.68rem; margin-left: 0.35rem;"><i class="ri-star-fill"></i> Destaque</span>' : ''}
+            </strong>
+            <small style="color: var(--text-muted); display: block; max-width: 420px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              ${escapeHtml(ann.excerpt || '')}
+            </small>
+          </div>
+        </div>
+      </td>
+      <td>
+        <div style="display: flex; flex-direction: column; gap: 0.3rem; align-items: flex-start;">
+          <span class="blog-tag">${escapeHtml(ann.category || ann.tag || 'Notícia')}</span>
+          <span class="status-badge ${isInternal ? 'status-pending' : 'status-played'}" style="font-size: 0.72rem;">
+            ${isInternal ? '<i class="ri-mic-line"></i> Aviso em Antena' : '<i class="ri-global-line"></i> Público no Site'}
+            ${isBase64 ? ' • Base64' : ''}
+          </span>
+        </div>
+      </td>
+      <td style="font-size: 0.85rem;">
+        <div style="color: #e2e8f0; font-weight: 500;">${escapeHtml(ann.author || 'Equipa da Rádio')}</div>
+        <small style="color: var(--text-muted);">${escapeHtml(ann.date || '')} • ${escapeHtml(ann.readTime || '2 min')}</small>
+      </td>
+      <td style="text-align: right;">
+        <div style="display: inline-flex; gap: 0.35rem; flex-wrap: wrap; justify-content: flex-end;">
+          ${!isInternal ? `<a class="btn-action" href="artigo.html?id=${encodeURIComponent(ann.id)}" target="_blank" title="Ver página do artigo"><i class="ri-eye-line"></i> Ver</a>` : ''}
+          <a class="btn-action" href="admin-editor.html?id=${encodeURIComponent(ann.id)}" style="border-color: rgba(56, 189, 248, 0.35); color: #7dd3fc;" title="Abrir no Estúdio Editorial Completo"><i class="ri-quill-pen-line"></i> Estúdio</a>
+          <button class="btn-action" type="button" onclick="openAnnouncementModal('${escapeHtml(ann.id)}')" title="Edição rápida"><i class="ri-edit-line"></i></button>
+          <button class="btn-action" type="button" onclick="duplicateAnnouncementItem('${escapeHtml(ann.id)}')" title="Duplicar artigo"><i class="ri-file-copy-line"></i></button>
+          <button class="btn-action" type="button" style="color: #ef4444;" onclick="deleteAnnouncementItem('${escapeHtml(ann.id)}')" title="Eliminar"><i class="ri-delete-bin-line"></i></button>
+        </div>
       </td>
     `;
     tbody.appendChild(tr);
@@ -806,11 +983,24 @@ function renderAdminAnnouncementsTable() {
 }
 
 window.deleteAnnouncementItem = function (id) {
-  if (confirm('Eliminar esta notícia?')) {
+  if (confirm('Eliminar este artigo permanentemente?')) {
     window.db.deleteAnnouncement(id);
     renderAdminAnnouncementsTable();
-    showToast('Notícia eliminada.', 'info');
+    renderAdminOverview();
+    showToast('Artigo eliminado.', 'info');
   }
+};
+
+window.duplicateAnnouncementItem = function (id) {
+  const orig = window.db.getAnnouncementById(id);
+  if (!orig) return;
+  const { id: _oldId, createdAt: _oldCreated, ...rest } = orig;
+  window.db.addAnnouncement({
+    ...rest,
+    title: `${orig.title} (Cópia)`
+  });
+  renderAdminAnnouncementsTable();
+  showToast('Artigo duplicado com sucesso!', 'success');
 };
 
 function renderAdminMessagesTable() {
@@ -907,23 +1097,171 @@ window.deleteMessageItem = function (id) {
   }
 };
 
+window.openAnnouncementModal = function (id = '') {
+  const form = document.getElementById('addAnnouncementForm');
+  if (!form) return;
+  form.reset();
+
+  const titleEl = document.getElementById('annModalTitle');
+  const idInput = document.getElementById('annIdInput');
+  const todayStr = new Date().toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' });
+
+  if (idInput) idInput.value = '';
+  document.getElementById('annAuthorInput').value = 'Equipa da Rádio • EBS Cidadela';
+  document.getElementById('annDateInput').value = todayStr;
+  document.getElementById('annVisibilityInput').value = 'public';
+  document.getElementById('annImageInput').value = '';
+  document.getElementById('annExcerptInput').value = '';
+  updateAnnModalCoverPreview('');
+
+  if (id) {
+    const ann = window.db.getAnnouncementById(id);
+    if (ann) {
+      if (titleEl) titleEl.textContent = 'Editar Artigo Rápido';
+      if (idInput) idInput.value = ann.id;
+      document.getElementById('annTagInput').value = ann.category || ann.tag || 'Notícia';
+      document.getElementById('annVisibilityInput').value = ann.visibility === 'internal' ? 'internal' : 'public';
+      document.getElementById('annTitleInput').value = ann.title || '';
+      document.getElementById('annAuthorInput').value = ann.author || 'Equipa da Rádio • EBS Cidadela';
+      document.getElementById('annDateInput').value = ann.date || todayStr;
+      document.getElementById('annImageInput').value = ann.image || '';
+      document.getElementById('annExcerptInput').value = ann.excerpt || '';
+      const plainContent = String(ann.content || '').replace(/<\/p>\s*<p>/gi, '\n\n').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>/g, '').trim();
+      document.getElementById('annContentInput').value = plainContent || ann.excerpt || '';
+      updateAnnModalCoverPreview(ann.image || '');
+    }
+  } else if (titleEl) {
+    titleEl.textContent = 'Publicação Rápida de Artigo';
+  }
+
+  openModal('addAnnouncementModal');
+};
+
+window.handleAnnModalCoverUpload = async function (file) {
+  if (!file || typeof window.imageFileToBase64 !== 'function') return;
+  const statusEl = document.getElementById('annCoverStatus');
+  if (statusEl) statusEl.textContent = 'A converter foto para Base64...';
+  try {
+    const res = await window.imageFileToBase64(file, {
+      maxWidth: 1100,
+      maxHeight: 850,
+      quality: 0.84,
+      maxBase64Chars: 310000
+    });
+    const input = document.getElementById('annImageInput');
+    if (input) input.value = res.dataUrl;
+    updateAnnModalCoverPreview(res.dataUrl, res.sizeKB);
+    showToast(`Fotografia de capa convertida para Base64 (${res.sizeKB} KB).`, 'success');
+  } catch (err) {
+    showToast(err.message || 'Erro ao converter imagem.', 'error');
+  }
+};
+
+window.updateAnnModalCoverPreview = function (val, sizeKB = null) {
+  const preview = document.getElementById('annCoverPreview');
+  const statusEl = document.getElementById('annCoverStatus');
+  const clean = String(val || '').trim();
+  if (preview) {
+    preview.src = clean || 'assets/logo-radio.jpg';
+  }
+  if (statusEl) {
+    if (clean.startsWith('data:image/')) {
+      const kb = sizeKB || Math.max(1, Math.round((clean.length * 0.75) / 1024));
+      statusEl.textContent = `Foto Base64 pronta (${kb} KB — alojamento gratuito)`;
+      statusEl.style.color = '#34d399';
+    } else if (clean) {
+      statusEl.textContent = 'URL externo configurado';
+      statusEl.style.color = '#38bdf8';
+    } else {
+      statusEl.textContent = 'Capa padrão ativa';
+      statusEl.style.color = 'var(--text-muted)';
+    }
+  }
+};
+
+window.clearAnnModalCover = function () {
+  const input = document.getElementById('annImageInput');
+  const fileInput = document.getElementById('annCoverFileInput');
+  if (input) input.value = '';
+  if (fileInput) fileInput.value = '';
+  updateAnnModalCoverPreview('');
+};
+
+window.openFullEditorFromModal = function () {
+  const id = document.getElementById('annIdInput')?.value?.trim();
+  if (id) {
+    window.location.href = `admin-editor.html?id=${encodeURIComponent(id)}`;
+    return;
+  }
+  // Guardar rascunho temporário para abrir diretamente no editor completo
+  const draft = {
+    title: document.getElementById('annTitleInput')?.value?.trim() || '',
+    category: document.getElementById('annTagInput')?.value || 'Notícia',
+    author: document.getElementById('annAuthorInput')?.value?.trim() || 'Equipa da Rádio • EBS Cidadela',
+    date: document.getElementById('annDateInput')?.value?.trim() || '',
+    image: document.getElementById('annImageInput')?.value?.trim() || '',
+    excerpt: document.getElementById('annExcerptInput')?.value?.trim() || '',
+    visibility: document.getElementById('annVisibilityInput')?.value || 'public',
+    content: (document.getElementById('annContentInput')?.value || '')
+      .split(/\n\s*\n/)
+      .filter(Boolean)
+      .map(p => `<p>${escapeHtml(p.trim())}</p>`)
+      .join('') || '<p>Começa a escrever o teu artigo...</p>',
+    savedAt: Date.now()
+  };
+  try {
+    localStorage.setItem('wave_editor_draft_new', JSON.stringify(draft));
+  } catch (_) {}
+  window.location.href = 'admin-editor.html';
+};
+
 window.saveNewAnnouncement = function (e) {
   e.preventDefault();
+  const id = document.getElementById('annIdInput')?.value?.trim() || '';
   const tag = document.getElementById('annTagInput').value.trim() || 'Notícia';
+  const visibility = document.getElementById('annVisibilityInput')?.value || 'public';
   const title = document.getElementById('annTitleInput').value.trim();
-  const date = document.getElementById('annDateInput')?.value?.trim() || new Date().toLocaleDateString('pt-PT');
-  const content = document.getElementById('annContentInput').value.trim();
+  const author = document.getElementById('annAuthorInput')?.value?.trim() || 'Equipa da Rádio • EBS Cidadela';
+  const date = document.getElementById('annDateInput')?.value?.trim() || new Date().toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' });
+  const image = document.getElementById('annImageInput')?.value?.trim() || 'assets/logo-radio.jpg';
+  const excerptInput = document.getElementById('annExcerptInput')?.value?.trim() || '';
+  const rawContent = document.getElementById('annContentInput').value.trim();
 
-  if (!title || !content) {
-    showToast('Por favor, indica o título e o conteúdo da notícia.', 'warning');
+  if (!title || !rawContent) {
+    showToast('Por favor, indica o título e o conteúdo do artigo.', 'warning');
     return;
   }
 
-  window.db.addAnnouncement({ tag, title, date, content });
+  const formattedHtml = rawContent.startsWith('<')
+    ? rawContent
+    : rawContent.split(/\n\s*\n/).map(p => `<p>${escapeHtml(p.trim()).replace(/\n/g, '<br>')}</p>`).join('');
+
+  const words = rawContent.split(/\s+/).filter(Boolean).length;
+  const readTime = `${Math.max(1, Math.ceil(words / 180))} min de leitura`;
+  const excerpt = excerptInput || (rawContent.length > 155 ? `${rawContent.slice(0, 152)}...` : rawContent);
+
+  const payload = {
+    id: id || undefined,
+    tag,
+    category: tag,
+    visibility,
+    onAir: visibility === 'internal',
+    broadcastDate: visibility === 'internal' ? localDateKey(new Date()) : '',
+    title,
+    author,
+    date,
+    image,
+    excerpt,
+    content: formattedHtml,
+    readTime
+  };
+
+  window.db.saveAnnouncement(payload);
   document.getElementById('addAnnouncementForm').reset();
   closeModal('addAnnouncementModal');
   renderAdminAnnouncementsTable();
-  showToast('Notícia publicada com sucesso!', 'success');
+  renderAdminOverview();
+  showToast(id ? 'Artigo atualizado com sucesso!' : 'Artigo publicado com sucesso!', 'success');
 };
 
 /* ==========================================================================
@@ -1071,7 +1409,6 @@ function escapeHtml(text) {
 /* ===========================================================================
    CALENDÁRIO PARTILHADO E UTILIZADORES
    =========================================================================== */
-let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 let selectedCalendarDate = localDateKey(new Date());
 let adminDashboardReady = false;
 
@@ -1098,43 +1435,6 @@ window.onCalendarCategoryChange = function (category) {
   }
 };
 
-function renderCalendarSelectedDayPanel() {
-  const panel = document.getElementById('calendarSelectedDayEvents');
-  const label = document.getElementById('calendarSelectedDateLabel');
-  if (!panel || !label) return;
-
-  const date = parseLocalDate(selectedCalendarDate) || new Date();
-  const formattedDate = new Intl.DateTimeFormat('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }).format(date);
-  label.textContent = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
-  label.dataset.date = selectedCalendarDate;
-
-  const events = window.db.getCalendarEvents().filter(item => item.date === selectedCalendarDate).sort((a, b) => (a.startTime || '00:00').localeCompare(b.startTime || '00:00'));
-  if (!events.length) {
-    panel.innerHTML = '<div class="calendar-empty calendar-empty-compact"><i class="ri-calendar-event-line"></i><strong>Sem eventos</strong><span>Nenhum compromisso marcado para este dia.</span></div>';
-    return;
-  }
-
-  panel.innerHTML = events.map(item => {
-    const status = item.status === 'importante' ? 'Importante' : item.status === 'confirmado' ? 'Confirmado' : 'Planeado';
-    const time = [item.startTime, item.endTime].filter(Boolean).join(' – ') || 'Todo o dia';
-    const catConfig = CALENDAR_CATEGORY_COLORS[item.category || item.eventType] || { color: item.color || 'blue' };
-    const colorKey = item.color || catConfig.color || 'blue';
-    const leadTime = item.leadTimeDays ?? item.leadTime ?? 3;
-    const leadBadge = Number(leadTime) === 0 ? 'No próprio dia' : `${leadTime}d antes`;
-    return `
-      <button class="calendar-day-event-card chip-${colorKey}" type="button" draggable="true" ondragstart="calendarDragStart(event, '${item.id}')" onclick="openCalendarEventModal('${item.id}', '${selectedCalendarDate}')">
-        <div class="calendar-event-pill" data-type="${escapeHtml(item.eventType || item.category || 'Agenda')}">${escapeHtml(item.eventType || item.category || 'Agenda')}</div>
-        <div class="calendar-event-main">
-          <strong>${escapeHtml(item.title)}</strong>
-          <span>${escapeHtml(time)} · <i class="ri-broadcast-line" style="font-size:0.75rem;"></i> Guião: ${leadBadge}</span>
-          ${item.assignedUserName ? `<small>${escapeHtml(item.assignedUserName)}</small>` : ''}
-        </div>
-        <span class="calendar-status-badge">${escapeHtml(status)}</span>
-      </button>
-    `;
-  }).join('');
-}
-
 window.calendarDragStart = function (event, eventId) {
   if (!event || !event.dataTransfer) return;
   event.dataTransfer.setData('text/plain', eventId);
@@ -1158,36 +1458,10 @@ window.calendarDropOnDay = function (event, dateKey) {
 };
 
 function renderSharedCalendar() {
-  const grid = document.getElementById('calendarGrid');
-  const title = document.getElementById('calendarMonthTitle');
-  const upcoming = document.getElementById('upcomingEventsList');
-  if (!grid || !title || !upcoming) return;
-  title.textContent = new Intl.DateTimeFormat('pt-PT', { month: 'long', year: 'numeric' }).format(calendarMonth);
-  const events = window.db.getCalendarEvents();
-  const eventMap = events.reduce((map, item) => ((map[item.date] ||= []).push(item), map), {});
-  const first = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1);
-  first.setDate(first.getDate() - ((first.getDay() + 6) % 7));
-  const today = localDateKey(new Date());
-  grid.innerHTML = Array.from({ length: 42 }, (_, index) => {
-    const date = new Date(first); date.setDate(first.getDate() + index);
-    const key = localDateKey(date); const items = eventMap[key] || [];
-    const current = date.getMonth() === calendarMonth.getMonth();
-    const isSelected = key === selectedCalendarDate;
-    return `<button type="button" class="calendar-day${current ? '' : ' calendar-day-muted'}${key === today ? ' calendar-day-today' : ''}${isSelected ? ' calendar-day-selected' : ''}" draggable="false" ondragover="calendarAllowDrop(event)" ondrop="calendarDropOnDay(event, '${key}')" onclick="selectCalendarDate('${key}')"><span class="calendar-day-number">${date.getDate()}</span><span class="calendar-day-events">${items.slice(0, 3).map(item => {
-      const catConfig = CALENDAR_CATEGORY_COLORS[item.category || item.eventType] || { color: item.color || 'blue' };
-      const colorKey = item.color || catConfig.color || 'blue';
-      return `<span class="calendar-event-chip chip-${colorKey}" data-type="${escapeHtml(item.eventType || item.category || 'Agenda')}" title="${escapeHtml(item.title)}">${escapeHtml(item.startTime ? `${item.startTime} · ` : '')}${escapeHtml(item.title)}</span>`;
-    }).join('')}${items.length > 3 ? `<span class="calendar-more-events">+${items.length - 3}</span>` : ''}</span></button>`;
-  }).join('');
-  const now = localDateKey(new Date());
-  const future = events.filter(item => item.date >= now).slice(0, 6);
-  upcoming.innerHTML = future.length ? future.map(item => {
-    const date = new Date(`${item.date}T00:00`);
-    const day = date.getDate(); const month = new Intl.DateTimeFormat('pt-PT', { month: 'short' }).format(date).replace('.', '');
-    const time = [item.startTime, item.endTime].filter(Boolean).join(' – ') || 'Todo o dia';
-    return `<article class="upcoming-event"><div class="upcoming-event-date"><strong>${day}</strong><span>${month}</span></div><div class="upcoming-event-content"><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(time)}${item.assignedUserName ? ` · ${escapeHtml(item.assignedUserName)}` : ''}</span>${item.notes ? `<small>${escapeHtml(item.notes)}</small>` : ''}</div><button class="btn-action" onclick="selectCalendarDate('${item.date}'); openCalendarEventModal('${item.id}', '${item.date}')" title="Editar evento"><i class="ri-edit-line"></i></button></article>`;
-  }).join('') : '<div class="calendar-empty"><i class="ri-calendar-check-line"></i><strong>Sem eventos futuros</strong><span>Adiciona o primeiro compromisso da equipa.</span></div>';
-  renderCalendarSelectedDayPanel();
+  if (typeof GCal !== 'undefined' && typeof GCal.render === 'function') {
+    window.CALENDAR_CATEGORY_COLORS = CALENDAR_CATEGORY_COLORS;
+    GCal.render();
+  }
 }
 
 window.selectCalendarDate = function (dateKey) {
@@ -1195,8 +1469,11 @@ window.selectCalendarDate = function (dateKey) {
   renderSharedCalendar();
 };
 
-window.moveCalendarMonth = offset => { calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + offset, 1); renderSharedCalendar(); };
-window.goToCurrentMonth = () => { calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1); selectedCalendarDate = localDateKey(new Date()); renderSharedCalendar(); };
+window.goToCurrentMonth = () => {
+  selectedCalendarDate = localDateKey(new Date());
+  if (typeof GCal !== 'undefined' && typeof GCal.goToday === 'function') GCal.goToday();
+  else renderSharedCalendar();
+};
 
 function populateCalendarUserSelect(selectedId = '') {
   const select = document.getElementById('calendarEventUserInput');
@@ -1325,7 +1602,7 @@ window.deleteOpenCalendarEvent = function () {
   }
 };
 /* ==========================================================================
-   GESTÃO DE UTILIZADORES & MATRIZ DE PERMISSÕES (GOOGLE WORKSPACE STYLE)
+   GESTÃO DE UTILIZADORES & MATRIZ DE PERMISSÕES
    ========================================================================== */
 let activeUserRoleFilter = 'all';
 let userSearchQuery = '';
@@ -1402,15 +1679,15 @@ function renderAdminUsersTable() {
     } else {
       const activeCount = Object.values(user.permissions || {}).filter(Boolean).length;
       const chips = [];
-      if (user.permissions?.access_aovivo) chips.push('📻 Ao Vivo');
-      if (user.permissions?.manage_rundowns) chips.push('📄 Guiões');
-      if (user.permissions?.manage_songs) chips.push('🎵 Músicas');
-      if (user.permissions?.manage_podcasts) chips.push('🎙️ Podcasts');
-      if (user.permissions?.manage_messages) chips.push('💬 Mensagens');
-      if (user.permissions?.manage_calendar) chips.push('🗓️ Agenda');
-      if (user.permissions?.manage_tasks) chips.push('📋 Tarefas');
-      if (user.permissions?.manage_polls) chips.push('🗳️ Votações');
-      if (user.permissions?.manage_users) chips.push('🛡️ Utilizadores');
+      if (user.permissions?.access_aovivo) chips.push('Ao Vivo');
+      if (user.permissions?.manage_rundowns) chips.push('Guiões');
+      if (user.permissions?.manage_songs) chips.push('Músicas');
+      if (user.permissions?.manage_podcasts) chips.push('Podcasts');
+      if (user.permissions?.manage_messages) chips.push('Mensagens');
+      if (user.permissions?.manage_calendar) chips.push('Agenda');
+      if (user.permissions?.manage_tasks) chips.push('Tarefas');
+      if (user.permissions?.manage_polls) chips.push('Votações');
+      if (user.permissions?.manage_users) chips.push('Utilizadores');
 
       if (chips.length === 0) {
         permsSummaryHtml = '<span class="rbac-perm-chip perm-chip-none">Sem permissões</span>';
@@ -1493,6 +1770,11 @@ window.openUserModal = function (id = '') {
   document.getElementById('adminUserModalTitle').textContent = isEditing ? `Editar: ${user.name}` : 'Novo Utilizador da Equipa';
   document.getElementById('adminUserPasswordHint').textContent = isEditing ? '(deixa em branco para manter a atual)' : '(mínimo 8 caracteres)';
 
+  const resetPassWrap = document.getElementById('adminUserResetPassWrap');
+  if (resetPassWrap) {
+    resetPassWrap.style.display = isEditing && user?.email ? 'block' : 'none';
+  }
+
   const deleteBtn = document.getElementById('adminUserDeleteBtn');
   if (deleteBtn) {
     deleteBtn.style.display = isEditing && !isSelf ? 'inline-flex' : 'none';
@@ -1559,12 +1841,13 @@ window.toggleAllPermissions = function (checked) {
   }
 };
 
-window.saveAdminUser = function (event) {
+window.saveAdminUser = async function (event) {
   event.preventDefault();
   const id = document.getElementById('adminUserIdInput').value;
   const name = document.getElementById('adminUserNameInput').value.trim();
   const position = document.getElementById('adminUserPositionInput').value.trim();
   const email = document.getElementById('adminUserEmailInput').value.trim();
+  const password = document.getElementById('adminUserPasswordInput')?.value?.trim();
   const avatarColor = document.getElementById('adminUserAvatarColorInput').value;
   const status = document.getElementById('adminUserStatusInput').value;
   const roleKey = document.getElementById('adminUserRoleSelect').value;
@@ -1572,6 +1855,49 @@ window.saveAdminUser = function (event) {
   const roleTitle = rolePreset.title;
 
   if (!name || !email) return;
+
+  const submitBtn = event.target.querySelector('button[type="submit"]');
+  const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> A guardar...';
+  }
+
+  // Se foi inserida uma palavra-passe, registar automaticamente a conta no Firebase Authentication
+  let authMessage = '';
+  if (password) {
+    if (password.length < 6) {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHtml;
+      }
+      alert('A palavra-passe deve ter pelo menos 6 caracteres.');
+      return;
+    }
+
+    try {
+      const options = window.firebaseServices?.app?.options || (typeof firebase !== 'undefined' && firebase.apps.length ? firebase.app().options : null);
+      if (options && typeof firebase !== 'undefined') {
+        const tempAppName = 'userProvisioningApp_' + Date.now();
+        const tempApp = firebase.initializeApp(options, tempAppName);
+        try {
+          await tempApp.auth().createUserWithEmailAndPassword(email, password);
+          authMessage = ' (Conta criada com sucesso no Firebase Authentication)';
+        } catch (authErr) {
+          console.warn('Firebase Auth provisioning info:', authErr);
+          if (authErr.code === 'auth/email-already-in-use') {
+            authMessage = ' (A conta já existia no Firebase Authentication)';
+          } else {
+            authMessage = ` (Aviso no Firebase Auth: ${authErr.message || authErr.code})`;
+          }
+        } finally {
+          await tempApp.delete();
+        }
+      }
+    } catch (err) {
+      console.warn('Erro ao aprovisionar conta no Firebase Auth:', err);
+    }
+  }
 
   // Construir mapa de permissões modulares
   const permissions = {};
@@ -1600,10 +1926,33 @@ window.saveAdminUser = function (event) {
     window.applyUserPermissionsToUI();
   }
 
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalBtnHtml;
+  }
+
   closeModal('adminUserModal');
   renderAdminUsersTable();
   if (typeof populateCalendarUserSelect === 'function') populateCalendarUserSelect();
-  showToast(id ? 'Perfil e permissões do membro atualizados!' : 'Novo membro registado com sucesso!', 'success');
+  showToast((id ? 'Perfil e permissões do membro atualizados!' : 'Novo membro registado com sucesso!') + authMessage, authMessage.includes('Aviso') ? 'warning' : 'success');
+};
+
+window.sendCurrentModalUserPasswordReset = async function () {
+  const email = document.getElementById('adminUserEmailInput')?.value?.trim();
+  if (!email) {
+    alert('Por favor introduz o email do utilizador.');
+    return;
+  }
+  if (!confirm(`Enviar email de reposição de palavra-passe para ${email}?`)) return;
+  try {
+    const auth = window.firebaseServices?.auth || (typeof firebase !== 'undefined' ? firebase.auth() : null);
+    if (!auth) throw new Error('Serviço de autenticação não inicializado.');
+    await auth.sendPasswordResetEmail(email);
+    showToast(`Email de reposição de palavra-passe enviado para ${email}!`, 'success');
+  } catch (err) {
+    console.error('Erro ao enviar reposição:', err);
+    showToast(`Erro ao enviar reposição: ${err.message}`, 'error');
+  }
 };
 
 window.toggleUserStatus = function (id) {
@@ -1657,11 +2006,37 @@ document.addEventListener('radio-db-updated', event => {
   if (collection === 'rundowns') {
     if (typeof loadAoVivoDailyScript === 'function') loadAoVivoDailyScript();
     if (typeof renderEditorialDailyScript === 'function') renderEditorialDailyScript();
+    if (typeof renderRundownsList === 'function') renderRundownsList();
   }
   if (collection === 'teamMemos') { renderTeamMemos(); }
-  if (collection === 'announcements' || collection === 'messages') {
+  if (collection === 'announcements') {
+    renderAdminAnnouncementsTable();
     renderAdminOverview();
+    updateKPIs();
+  }
+  if (collection === 'messages') {
     renderAdminMessagesTable();
+    renderAdminOverview();
+    updateKPIs();
+  }
+  if (collection === 'podcasts') {
+    renderAdminPodcastsTable();
+    renderAdminOverview();
+    updateKPIs();
+  }
+  if (collection === 'links') {
+    renderAdminLinksTable();
+    updateKPIs();
+  }
+  if (collection === 'tasks') {
+    renderTasksView();
+    updateKPIs();
+  }
+  if (collection === 'polls') {
+    renderAdminPollsTable();
+  }
+  if (collection === 'nerdChallenges' || collection === 'nerdSubmissions') {
+    if (typeof renderAdminNerdAlert === 'function') renderAdminNerdAlert();
     updateKPIs();
   }
   if (collection === 'suggestions') {
@@ -1878,6 +2253,7 @@ window.switchAdminSection = function (target) {
     'sec-links': 'manage_links',
     'sec-tarefas': 'manage_tasks',
     'sec-votacoes': 'manage_polls',
+    'sec-nerd-alert': 'manage_polls',
     'sec-utilizadores': 'manage_users'
   };
 
@@ -1916,12 +2292,13 @@ window.switchAdminSection = function (target) {
   if (target === 'sec-utilizadores') renderAdminUsersTable();
   if (target === 'sec-tarefas') renderTasksView();
   if (target === 'sec-votacoes') renderAdminPollsTable();
+  if (target === 'sec-nerd-alert' && typeof renderAdminNerdAlert === 'function') renderAdminNerdAlert();
 };
 
 
 /* ==========================================================================
-   CONSOLA DE EMISSÃO AO VIVO (STUDIO BROADCASTER COMPANION)
-   Guião Word/Notion por dia + Músicas Pedidas + Relógio de Estúdio
+   CONSOLA DE EMISSÃO AO VIVO
+   Guião por dia + Músicas Pedidas + Relógio de Estúdio
    ========================================================================== */
 let aoVivoClockTimer = null;
 let aoVivoSelectedDate = localDateKey(new Date());
@@ -1993,6 +2370,7 @@ window.toggleAoVivoFullscreen = function () {
 // Main Ao Vivo Renderer
 function renderAoVivo() {
   initAoVivoClock();
+  if (typeof initIntervalBellTimer === 'function') initIntervalBellTimer();
   const datePicker = document.getElementById('aoVivoDatePicker');
   if (datePicker) {
     datePicker.value = aoVivoSelectedDate;
@@ -2200,10 +2578,6 @@ window.insertSingleTopicToScript = function (topicIndex, isAoVivo = false) {
   }
 };
 
-window.syncAoVivoTopicsFromCalendar = function () {
-  syncTopicsFromCalendar(true);
-};
-
 window.syncEditorialTopicsFromCalendar = function () {
   syncTopicsFromCalendar(false);
 };
@@ -2352,25 +2726,6 @@ window.autoSaveAoVivoScript = function () {
   }, 400);
 };
 
-window.insertBulletPointToScript = function () {
-  const textarea = document.getElementById('aoVivoScriptContent');
-  if (!textarea) return;
-
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
-  const text = textarea.value;
-  const before = text.substring(0, start);
-  const after = text.substring(end);
-
-  const needsNewline = before.length > 0 && !before.endsWith('\n');
-  const insertion = (needsNewline ? '\n' : '') + '• ';
-
-  textarea.value = before + insertion + after;
-  textarea.selectionStart = textarea.selectionEnd = start + insertion.length;
-  textarea.focus();
-  autoSaveAoVivoScript();
-};
-
 window.adjustAoVivoFontSize = function (delta) {
   aoVivoFontSize = Math.max(14, Math.min(32, aoVivoFontSize + delta));
   const readerDisplay = document.getElementById('aoVivoScriptDisplay');
@@ -2500,8 +2855,32 @@ window.autoSaveEditorialScript = function () {
   }, 400);
 };
 
-window.insertBulletPointToEditorialScript = function () {
-  window.formatEditorialText('bullet');
+window.resetEditorialToTemplate = function () {
+  if (!confirm('Queres repor o guião deste dia para o template padrão com base nos eventos agendados?')) return;
+  const titleInput = document.getElementById('editorialScriptTitle');
+  const textarea = document.getElementById('editorialScriptContent');
+  if (titleInput) titleInput.value = `Emissão • ${formatDateHuman(editorialSelectedDate)}`;
+  if (textarea) textarea.value = generateDefaultScriptTemplate(editorialSelectedDate);
+  window.autoSaveEditorialScript();
+  showToast('Template padrão reposto para este dia.', 'info');
+};
+
+window.saveEditorialScriptExplicit = function () {
+  if (editorialSaveDebounceTimer) clearTimeout(editorialSaveDebounceTimer);
+  const titleInput = document.getElementById('editorialScriptTitle');
+  const textarea = document.getElementById('editorialScriptContent');
+  const title = titleInput ? titleInput.value.trim() : '';
+  const content = textarea ? textarea.value : '';
+
+  window.db.saveDailyScript({
+    id: `script-${editorialSelectedDate}`,
+    date: editorialSelectedDate,
+    title: title || `Emissão • ${formatDateHuman(editorialSelectedDate)}`,
+    content: content
+  });
+
+  setEditorialStatusState('saved');
+  showToast('Guião guardado com sucesso!', 'success');
 };
 
 window.formatEditorialText = function (action) {
@@ -2529,7 +2908,7 @@ window.formatEditorialText = function (action) {
       break;
     case 'heading': {
       const needsNewline = before.length > 0 && !before.endsWith('\n');
-      replacement = (needsNewline ? '\n\n' : '') + '## 📌 ' + (selectedText || 'Título da Secção');
+      replacement = (needsNewline ? '\n\n' : '') + '## ' + (selectedText || 'Título da Secção');
       newCursorPos = start + replacement.length;
       break;
     }
@@ -2547,7 +2926,7 @@ window.formatEditorialText = function (action) {
     }
     case 'quote': {
       const needsNewline = before.length > 0 && !before.endsWith('\n');
-      replacement = (needsNewline ? '\n' : '') + '> 💡 ' + (selectedText || 'Nota / Lembrete importante para o locutor');
+      replacement = (needsNewline ? '\n' : '') + '> ' + (selectedText || 'Nota / Lembrete importante para o locutor');
       newCursorPos = start + replacement.length;
       break;
     }
@@ -2594,6 +2973,7 @@ function renderAoVivoSongs(filterStatus = 'pending') {
         artwork: item.artwork,
         count: 0,
         ids: [],
+        dtClasses: [],
         status: item.status
       });
     }
@@ -2601,6 +2981,9 @@ function renderAoVivoSongs(filterStatus = 'pending') {
     const group = map.get(key);
     group.count += 1;
     group.ids.push(item.id);
+    if (item.studentClass && !group.dtClasses.includes(item.studentClass)) {
+      group.dtClasses.push(item.studentClass);
+    }
   });
 
   const rankedList = Array.from(map.values()).sort((a, b) => b.count - a.count);
@@ -2617,6 +3000,7 @@ function renderAoVivoSongs(filterStatus = 'pending') {
 
   listEl.innerHTML = rankedList.map((song, idx) => {
     const isPlayed = song.status === 'played';
+    const dtTag = song.dtClasses.length ? ` · <span style="color:#38bdf8;">DT ${escapeHtml(song.dtClasses.join(', '))}</span>` : '';
     return `
       <div class="musica-live-card ${isPlayed ? 'is-played' : ''}">
         <div class="musica-live-rank">#${idx + 1}</div>
@@ -2625,7 +3009,7 @@ function renderAoVivoSongs(filterStatus = 'pending') {
         </div>
         <div class="musica-live-info">
           <span class="musica-live-title">${escapeHtml(song.songTitle)}</span>
-          <span class="musica-live-artist">${escapeHtml(song.artist)}</span>
+          <span class="musica-live-artist">${escapeHtml(song.artist)}${dtTag}</span>
         </div>
         <div class="musica-live-actions">
           <span class="musica-live-votes"><i class="ri-fire-fill"></i> ${song.count}</span>
@@ -2652,101 +3036,6 @@ window.toggleAoVivoSongStatus = function (ids, newStatus) {
   renderSongRankingTable();
 };
 /* Contas Firebase reais: criação, alteração e eliminação através de endpoints HTTP CORS-safe. */
-async function callAdminUserFunction(name, payload) {
-  const auth = window.firebaseServices && window.firebaseServices.auth;
-  let token = '';
-
-  if (auth && auth.currentUser) {
-    try {
-      token = await auth.currentUser.getIdToken();
-    } catch (error) {
-      token = '';
-    }
-  }
-
-  let lastError = null;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      const response = await fetch(`https://europe-west1-testes-cidadela.cloudfunctions.net/${name}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify(payload || {})
-      });
-
-      const text = await response.text();
-      let json = {};
-      try {
-        json = text ? JSON.parse(text) : {};
-      } catch (error) {
-        json = {};
-      }
-
-      if (!response.ok) {
-        throw new Error(json.error || 'Não foi possível completar a operação no painel.');
-      }
-
-      return json.data || {};
-    } catch (error) {
-      lastError = error;
-      if (attempt < 2) {
-        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
-      }
-    }
-  }
-
-  throw lastError || new Error('Não foi possível completar a operação no painel.');
-}
-
-window.openUserModal = function (id = '') {
-  const user = id ? window.db.getAdminUsers().find(item => item.id === id) : null;
-  document.getElementById('adminUserForm').reset();
-  document.getElementById('adminUserIdInput').value = user?.authUid || user?.id || '';
-  document.getElementById('adminUserNameInput').value = user?.name || '';
-  document.getElementById('adminUserEmailInput').value = user?.email || '';
-  const passwordInput = document.getElementById('adminUserPasswordInput');
-  const isEditing = Boolean(user);
-  passwordInput.required = !isEditing;
-  passwordInput.value = '';
-  document.getElementById('adminUserPasswordHint').textContent = isEditing ? '(deixa em branco para manter a atual)' : '(mínimo 8 caracteres)';
-  document.getElementById('adminUserModalTitle').textContent = isEditing ? 'Editar conta de administrador' : 'Criar conta de administrador';
-  openModal('adminUserModal');
-};
-
-window.saveAdminUser = async function (event) {
-  event.preventDefault();
-  const userId = document.getElementById('adminUserIdInput').value;
-  const name = document.getElementById('adminUserNameInput').value.trim();
-  const email = document.getElementById('adminUserEmailInput').value.trim();
-  const password = document.getElementById('adminUserPasswordInput').value;
-  const submit = document.querySelector('#adminUserForm button[type="submit"]');
-  if (!name || !email || (!userId && password.length < 8) || (password && password.length < 8)) return;
-  submit.disabled = true;
-  submit.textContent = 'A guardar…';
-  try {
-    await callAdminUserFunction(userId ? 'updateAdminUser' : 'createAdminUser', { userId, name, email, password });
-    closeModal('adminUserModal');
-  } catch (error) {
-    console.error('Não foi possível gerir a conta:', error);
-    alert(error.message || 'Não foi possível guardar a conta.');
-  } finally {
-    submit.disabled = false;
-    submit.textContent = 'Guardar utilizador';
-  }
-};
-
-window.deleteAdminUserItem = async function (id) {
-  if (!confirm('Eliminar esta conta de administrador? O acesso ao painel será removido imediatamente.')) return;
-  try {
-    await callAdminUserFunction('deleteAdminUser', { userId: id });
-  } catch (error) {
-    console.error('Não foi possível eliminar a conta:', error);
-    alert(error.message || 'Não foi possível eliminar a conta.');
-  }
-};
-
 /* ==========================================================================
    SOUNDBOARD DE ESTÚDIO & MOTOR DE ÁUDIO WEB (FX & BGM CAMA SONORA)
    ========================================================================== */
@@ -2982,13 +3271,6 @@ function stopSoundboardBGM() {
   isBgmPlaying = false;
 }
 
-window.setSoundboardBGMVolume = function (val) {
-  bgmVolume = parseFloat(val) || 0.35;
-  if (bgmGainNode && audioCtx) {
-    bgmGainNode.gain.setValueAtTime(bgmVolume, audioCtx.currentTime);
-  }
-};
-
 /* ==========================================================================
    TELEPROMPTER DE ESTÚDIO AO VIVO (LEITOR DE EMISSÃO)
    ========================================================================== */
@@ -3205,7 +3487,8 @@ window.saveQuickNoticeForm = function (event) {
   window.db.saveAnnouncement(announcement);
   closeModal('quickNoticeModal');
   renderAdminOverview();
-  renderAoVivoOnAirList();
+  if (typeof renderAoVivoOnAirList === 'function') renderAoVivoOnAirList();
+  renderAoVivo();
   showToast(id ? 'Aviso atualizado com sucesso!' : 'Novo aviso preparado para emissão!', 'success');
 };
 
@@ -3462,7 +3745,7 @@ window.printOpenRundown = function () {
 };
 
 /* ==========================================================================
-   MURAL DE RECADOS DA EQUIPA (NOTION-STYLE MEMOS)
+   MURAL DE RECADOS DA EQUIPA
    ========================================================================== */
 window.renderTeamMemos = function () {
   const container = document.getElementById('teamMemosGrid');
@@ -3477,13 +3760,15 @@ window.renderTeamMemos = function () {
   container.innerHTML = memos.map(m => {
     const colorClass = `memo-color-${m.color || 'amber'}`;
     const dateFormatted = m.createdAt ? new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'short' }).format(new Date(m.createdAt)) : '';
+    const memoTitle = m.title || 'Recado da Equipa';
+    const memoBody = m.content || m.text || '';
     return `
       <div class="team-memo-card ${colorClass}" onclick="openEditTeamMemoModal('${escapeHtml(m.id)}')">
         <div class="team-memo-top">
-          <strong class="team-memo-title">${escapeHtml(m.title)}</strong>
+          <strong class="team-memo-title">${escapeHtml(memoTitle)}</strong>
           <span class="team-memo-author">${escapeHtml(m.author || 'Equipa')}</span>
         </div>
-        <p class="team-memo-body">${escapeHtml(m.content || '')}</p>
+        <p class="team-memo-body">${escapeHtml(memoBody)}</p>
         <div class="team-memo-footer">
           <span><i class="ri-time-line"></i> ${escapeHtml(dateFormatted)}</span>
           <i class="ri-edit-line" style="opacity: 0.6;"></i>
@@ -3507,8 +3792,8 @@ window.openEditTeamMemoModal = function (id) {
 
   document.getElementById('teamMemoForm').reset();
   document.getElementById('teamMemoIdInput').value = memo.id;
-  document.getElementById('teamMemoTitleInput').value = memo.title || '';
-  document.getElementById('teamMemoContentInput').value = memo.content || '';
+  document.getElementById('teamMemoTitleInput').value = memo.title || 'Recado da Equipa';
+  document.getElementById('teamMemoContentInput').value = memo.content || memo.text || '';
   document.getElementById('teamMemoAuthorInput').value = memo.author || '';
   document.getElementById('teamMemoColorInput').value = memo.color || 'amber';
   document.getElementById('teamMemoModalTitle').textContent = 'Editar Recado da Equipa';
@@ -3638,7 +3923,7 @@ window.renderTasksView = function () {
 function renderTaskCard(task) {
   const isDone = task.status === 'done';
   const isInProgress = task.status === 'in_progress';
-  const priorityLabels = { urgent: 'Urgente 🔥', high: 'Alta', normal: 'Normal', low: 'Baixa' };
+  const priorityLabels = { urgent: 'Urgente ', high: 'Alta', normal: 'Normal', low: 'Baixa' };
   const priorityColors = { urgent: 'priority-urgent', high: 'priority-high', normal: 'priority-normal', low: 'priority-low' };
   const priorityClass = priorityColors[task.priority] || 'priority-normal';
 
@@ -3854,11 +4139,11 @@ window.renderAdminPollsTable = async function () {
   const renderedCards = await Promise.all(polls.map(async (p) => {
     const isClosed = p.closed || (p.closingDate && new Date(p.closingDate).setHours(23, 59, 59, 999) < Date.now());
     const audienceLabels = {
-      all: '🌍 Público Geral',
-      school_process: '🏫 Alunos (N.º Processo)',
-      school_class: '🏫 Alunos (Ano/Turma)'
+      all: 'Público Geral',
+      school_process: 'Alunos (N.º Processo)',
+      school_class: 'Alunos (Ano/Turma)'
     };
-    const audienceLabel = audienceLabels[p.audience] || '🌍 Público';
+    const audienceLabel = audienceLabels[p.audience] || 'Público';
 
     const voteCounts = await window.db.getPollVoteCounts(p.id);
     const totalVotes = Object.values(voteCounts).reduce((acc, c) => acc + c, 0);
@@ -3870,7 +4155,7 @@ window.renderAdminPollsTable = async function () {
         <div class="poll-card-header">
           <div style="display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;">
             <span class="poll-badge ${isClosed ? 'poll-badge-closed' : 'poll-badge-active'}">
-              ${isClosed ? '🔒 Encerrada' : '🟢 Aberta'}
+              ${isClosed ? 'Encerrada' : 'Aberta'}
             </span>
             <span class="poll-audience-tag">${audienceLabel}</span>
           </div>
@@ -4036,6 +4321,13 @@ window.deleteOpenPoll = function () {
   }
 };
 
+window.onPollAudienceChange = function (audience) {
+  const limitSelect = document.getElementById('pollVoteLimitInput');
+  if (limitSelect && (audience === 'school_process' || audience === 'school_class')) {
+    limitSelect.value = 'single';
+  }
+};
+
 window.deletePollDirect = function (id) {
   if (confirm('Eliminar esta votação permanentemente?')) {
     window.db.deletePoll(id);
@@ -4053,7 +4345,7 @@ window.viewPollDetailsModal = async function (id) {
   currentViewedPollId = id;
   const isClosed = poll.closed || (poll.closingDate && new Date(poll.closingDate).setHours(23, 59, 59, 999) < Date.now());
 
-  document.getElementById('pollResultBadge').textContent = isClosed ? '🔒 Votação Encerrada' : '🟢 Votação Aberta';
+  document.getElementById('pollResultBadge').textContent = isClosed ? 'Votação Encerrada' : 'Votação Aberta';
   document.getElementById('pollResultTitle').textContent = poll.question;
   document.getElementById('pollResultDesc').textContent = poll.description || `Criada em ${new Date(poll.createdAt).toLocaleDateString('pt-PT')}`;
 
@@ -4111,7 +4403,7 @@ window.copyCurrentPollShareLink = function () {
 };
 
 /* ==========================================================================
-   ROBUSTEZ: TIMEOUT DE SESSÃO
+   TIMEOUT DE SESSÃO
    ========================================================================== */
 const SESSION_CONFIG = {
   IDLE_TIMEOUT_MS: 30 * 60 * 1000,
@@ -4194,7 +4486,7 @@ window.forceLogout = function () {
 };
 
 /* ==========================================================================
-   ROBUSTEZ: DETEÇÃO DE OFFLINE
+   DETEÇÃO DE OFFLINE
    ========================================================================== */
 function _updateOfflineStatus() {
   const banner = document.getElementById('offlineBanner');
@@ -4212,7 +4504,7 @@ document.addEventListener('online', _updateOfflineStatus);
 document.addEventListener('offline', _updateOfflineStatus);
 
 /* ==========================================================================
-   ROBUSTEZ: ATALHOS DE TECLADO
+   ATALHOS DE TECLADO
    ========================================================================== */
 document.addEventListener('keydown', (e) => {
   if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT')) {
@@ -4244,7 +4536,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 /* ==========================================================================
-   ROBUSTEZ: REGISTO DE AUDITORIA LOCAL
+   REGISTO DE AUDITORIA LOCAL
    ========================================================================== */
 window.logAdminAction = function (action, details, severity = 'info') {
   const entry = {
@@ -4264,7 +4556,7 @@ window.logAdminAction = function (action, details, severity = 'info') {
 };
 
 /* ==========================================================================
-   ROBUSTEZ: BOTÃO COM ESTADO DE CARREGAMENTO
+   BOTÃO COM ESTADO DE CARREGAMENTO
    ========================================================================== */
 window.setButtonLoading = function (btn, loading, originalText) {
   if (!btn) return;
@@ -4279,38 +4571,10 @@ window.setButtonLoading = function (btn, loading, originalText) {
 };
 
 /* ==========================================================================
-   ROBUSTEZ: ENVIO DE FORMULÁRIO COM TRATAMENTO DE ERROS
+   ENVIO DE FORMULÁRIO COM TRATAMENTO DE ERROS
    ========================================================================== */
-window.safeSubmit = async function (formEl, submitBtn, asyncFn, options = {}) {
-  if (!formEl) return;
-  const btn = submitBtn || formEl.querySelector('button[type="submit"]');
-  const originalText = btn ? btn.dataset.originalText || btn.textContent : '';
-  try {
-    if (btn) setButtonLoading(btn, true, originalText);
-    const result = await asyncFn();
-    if (options.onSuccess) options.onSuccess(result);
-    return result;
-  } catch (error) {
-    console.error('Erro no envio do formulário:', error);
-    showToast(error.message || 'Ocorreu um erro. Tenta novamente.', 'error');
-    logAdminAction('form_error', { message: error.message, stack: error.stack }, 'error');
-    if (options.onError) options.onError(error);
-  } finally {
-    if (btn) setButtonLoading(btn, false, originalText);
-  }
-};
-
 /* ==========================================================================
-   INICIALIZAÇÃO DE ROBUSTEZ
-   ========================================================================== */
-function initRobustness() {
-  _startSessionMonitor();
-  _updateOfflineStatus();
-  logAdminAction('session_start', 'Painel de administração aberto', 'info');
-}
-
-/* ==========================================================================
-   ROBUSTEZ: MONITORIZAÇÃO DE AUTENTICAÇÃO
+   MONITORIZAÇÃO DE AUTENTICAÇÃO
    ========================================================================== */
 function _monitorAuthState() {
   const auth = window.firebaseServices && window.firebaseServices.auth;
@@ -4338,7 +4602,7 @@ function _monitorAuthState() {
 }
 
 /* ==========================================================================
-   ROBUSTEZ: TRATAMENTO GLOBAL DE ERROS
+   TRATAMENTO GLOBAL DE ERROS
    ========================================================================== */
 window.addEventListener('error', (event) => {
   console.error('Erro global:', event.error);
@@ -4358,47 +4622,10 @@ window.addEventListener('unhandledrejection', (event) => {
 });
 
 /* ==========================================================================
-   ROBUSTEZ: AUTO-SAVE DE RASCUNHOS DE FORMULÁRIOS
+   AUTO-SAVE DE RASCUNHOS DE FORMULÁRIOS
    ========================================================================== */
-window.saveFormDraft = function (formId, data) {
-  try {
-    localStorage.setItem('adminDraft:' + formId, JSON.stringify({
-      data,
-      timestamp: Date.now()
-    }));
-  } catch (_) { }
-};
-
-window.loadFormDraft = function (formId) {
-  try {
-    const stored = localStorage.getItem('adminDraft:' + formId);
-    if (!stored) return null;
-    const draft = JSON.parse(stored);
-    if (Date.now() - draft.timestamp > 86400000) {
-      localStorage.removeItem('adminDraft:' + formId);
-      return null;
-    }
-    return draft.data;
-  } catch (_) {
-    return null;
-  }
-};
-
-window.clearFormDraft = function (formId) {
-  localStorage.removeItem('adminDraft:' + formId);
-};
-
-function _initFormDraftSave() {
-  document.addEventListener('submit', (e) => {
-    const form = e.target;
-    if (form && form.id && form.tagName === 'FORM') {
-      clearFormDraft(form.id);
-    }
-  }, true);
-}
-
 /* ==========================================================================
-   ROBUSTEZ: REVERIFICAÇÃO DE PERMISSÕES
+   REVERIFICAÇÃO DE PERMISSÕES
    ========================================================================== */
 async function _recheckPermissions() {
   const auth = window.firebaseServices && window.firebaseServices.auth;
@@ -4409,8 +4636,9 @@ async function _recheckPermissions() {
     const claims = token.claims || {};
     const hasAdminClaim = claims.admin === true || claims.super_admin === true;
     const hasAnyPerm = Object.values(claims.permissions || {}).some(v => v === true);
+    const hasProfilePerm = window.currentUserProfile && window.currentUserProfile.status !== 'suspended';
 
-    if (!hasAdminClaim && !hasAnyPerm) {
+    if (!hasAdminClaim && !hasAnyPerm && !hasProfilePerm) {
       showToast('A tua permissão de administrador não foi detetada. Contacta o administrador.', 'error', 'Sem Permissões');
       logAdminAction('permission_check', 'Utilizador sem permissões de admin', 'error');
     }
@@ -4418,65 +4646,17 @@ async function _recheckPermissions() {
 }
 
 /* ==========================================================================
-   ROBUSTEZ: EXPORTAÇÃO DE DADOS DE BACKUP
+   EXPORTAÇÃO DE DADOS DE BACKUP
    ========================================================================== */
-window.exportAdminBackup = function () {
-  try {
-    const backup = {
-      timestamp: Date.now(),
-      version: '1.0',
-      collections: {}
-    };
-
-    const cacheKeys = ['podcasts', 'announcements', 'links', 'suggestions', 'messages', 'rundowns', 'teamMemos', 'calendarEvents', 'adminUsers', 'polls', 'tasks'];
-    cacheKeys.forEach(key => {
-      if (window.db.cache && window.db.cache[key]) {
-        backup.collections[key] = window.db.cache[key];
-      }
-    });
-
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `admin-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    showToast('Backup exportado com sucesso!', 'success', 'Backup Feito');
-    logAdminAction('data_export', 'Backup de dados exportado', 'info');
-  } catch (error) {
-    showToast('Erro ao exportar backup.', 'error');
-    logAdminAction('export_error', error.message, 'error');
-  }
-};
-
 /* ==========================================================================
-   INICIALIZAÇÃO DE ROBUSTEZ
+   INICIALIZAÇÃO DE SESSÃO E ERROS
    ========================================================================== */
-function initRobustness() {
+function initSessionGuards() {
   _startSessionMonitor();
   _updateOfflineStatus();
   logAdminAction('session_start', 'Painel de administração aberto', 'info');
   _monitorAuthState();
-  _initFormDraftSave();
   _recheckPermissions();
-  _initUnsavedWarning();
-}
-
-function _initUnsavedWarning() {
-  window.addEventListener('beforeunload', (e) => {
-    try {
-      const drafts = Object.keys(localStorage).filter(k => k.startsWith('adminDraft:'));
-      if (drafts.length > 0) {
-        e.preventDefault();
-        e.returnValue = 'Tens formulários com rascunhos não guardados. Queres sair mesmo assim?';
-        return e.returnValue;
-      }
-    } catch (_) { }
-  });
 }
 
 function _checkStorageQuota() {
@@ -4494,4 +4674,926 @@ function _checkStorageQuota() {
 
 _checkStorageQuota();
 
-initRobustness();
+initSessionGuards();
+
+/* ==========================================================================
+   MODO ESCURO EXCLUSIVO NO PAINEL DE ADMINISTRAÇÃO
+   ========================================================================== */
+document.documentElement.setAttribute('data-theme', 'dark');
+
+/* ==========================================================================
+   GESTÃO DE NERD ALERT (DESAFIOS E SUBMISSÕES COM HORA EXATA)
+   ========================================================================== */
+let selectedNerdChallengeFilter = 'all';
+let selectedNerdSubmissionStatusFilter = 'all';
+
+function normalizeNerdAnswerText(str) {
+  return String(str || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function evaluateNerdSubmissionCorrectness(submission, challenge) {
+  if (!submission) return false;
+  if (submission.status === 'correct') return true;
+  if (submission.status === 'incorrect') return false;
+  if (challenge && challenge.expectedAnswer && String(challenge.expectedAnswer).trim()) {
+    const normSub = normalizeNerdAnswerText(submission.answer);
+    const normExpected = normalizeNerdAnswerText(challenge.expectedAnswer);
+    if (normSub && normExpected && (normSub === normExpected || normSub.includes(normExpected))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function formatNerdExactTimestamp(ms) {
+  const d = new Date(Number(ms) || Date.now());
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const pad3 = (n) => String(n).padStart(3, '0');
+  return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}.${pad3(d.getMilliseconds())}`;
+}
+
+window.renderAdminNerdAlert = function () {
+  if (!window.db || typeof window.db.getNerdChallenges !== 'function') return;
+
+  const challenges = window.db.getNerdChallenges();
+  const activeChallenge = window.db.getActiveNerdChallenge();
+  const statusBadge = document.getElementById('nerdSiteStatusBadge');
+
+  if (statusBadge) {
+    if (activeChallenge) {
+      statusBadge.style.background = 'rgba(16, 185, 129, 0.2)';
+      statusBadge.style.color = '#34d399';
+      statusBadge.style.border = '1px solid rgba(52, 211, 153, 0.45)';
+      statusBadge.innerHTML = `<i class="ri-checkbox-blank-circle-fill" style="font-size: 0.5rem;"></i> Ativo no site: ${escapeHtml(activeChallenge.title || 'Desafio')}`;
+    } else {
+      statusBadge.style.background = 'rgba(148, 163, 184, 0.16)';
+      statusBadge.style.color = 'var(--text-muted)';
+      statusBadge.style.border = '1px solid rgba(148, 163, 184, 0.3)';
+      statusBadge.innerHTML = '<i class="ri-eye-off-line"></i> Oculto no site (Nenhum desafio ativo)';
+    }
+  }
+
+  // Atualizar seletor de desafios para a tabela de respostas
+  const selectEl = document.getElementById('nerdSubmissionsChallengeSelect');
+  if (selectEl) {
+    const prevValue = selectedNerdChallengeFilter;
+    selectEl.innerHTML = '<option value="all">Todos os Desafios</option>' +
+      challenges.map(c => `<option value="${escapeHtml(c.id)}">${c.active ? '● [ATIVO] ' : ''}${escapeHtml(c.title || 'Desafio')}</option>`).join('');
+    if (prevValue !== 'all' && challenges.some(c => c.id === prevValue)) {
+      selectEl.value = prevValue;
+    } else if (activeChallenge && prevValue === 'all' && challenges.length === 1) {
+      selectEl.value = activeChallenge.id;
+      selectedNerdChallengeFilter = activeChallenge.id;
+    } else {
+      selectEl.value = 'all';
+      selectedNerdChallengeFilter = 'all';
+    }
+  }
+
+  renderNerdChallengesGrid(challenges);
+  renderNerdSubmissionsTable();
+};
+
+function renderNerdChallengesGrid(challenges) {
+  const grid = document.getElementById('nerdChallengesAdminGrid');
+  if (!grid) return;
+
+  if (!challenges || challenges.length === 0) {
+    grid.innerHTML = `
+      <div class="card-panel" style="grid-column: 1 / -1; text-align: center; padding: 2.5rem 1.5rem;">
+        <i class="ri-flashlight-line" style="font-size: 2.4rem; color: #f59e0b; display: block; margin-bottom: 0.5rem;"></i>
+        <h3 style="margin: 0 0 0.35rem;">Sem desafios Alerta Nerd criados</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 48ch; margin: 0 auto 1.15rem;">
+          Quando criares e ativares um desafio aqui, a página <code>nerd-alert.html</code> fica imediatamente visível no menu do site para os alunos responderem.
+        </p>
+        <button class="btn-submit-main" onclick="openNerdChallengeModal()">
+          <i class="ri-add-line"></i> Criar Primeiro Desafio
+        </button>
+      </div>`;
+    return;
+  }
+
+  const allSubs = window.db.getNerdSubmissions();
+
+  grid.innerHTML = challenges.map(c => {
+    const subsForChallenge = allSubs.filter(s => s.challengeId === c.id);
+    const correctSubs = subsForChallenge.filter(s => evaluateNerdSubmissionCorrectness(s, c));
+    const firstWinner = correctSubs.length > 0 ? correctSubs[0] : null;
+
+    return `
+      <article class="card-panel poll-admin-card" style="display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; padding: 1.25rem; border: 1px solid ${c.active ? 'rgba(245, 158, 11, 0.55)' : 'rgba(148, 163, 184, 0.16)'};">
+        <div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.7rem;">
+            <span class="badge" style="background: ${c.active ? 'rgba(16, 185, 129, 0.2)' : 'rgba(148, 163, 184, 0.15)'}; color: ${c.active ? '#34d399' : 'var(--text-muted)'}; border: 1px solid ${c.active ? 'rgba(52, 211, 153, 0.4)' : 'rgba(148, 163, 184, 0.25)'};">
+              ${c.active ? '● Ativo no Site' : 'Inativo / Oculto'}
+            </span>
+            <span style="font-size: 0.78rem; color: var(--text-muted);">
+              <i class="ri-inbox-archive-line"></i> ${subsForChallenge.length} resposta${subsForChallenge.length === 1 ? '' : 's'}
+            </span>
+          </div>
+
+          <h3 style="margin: 0 0 0.45rem; font-size: 1.1rem;">${escapeHtml(c.title || 'Desafio Alerta Nerd')}</h3>
+          <p style="margin: 0 0 0.75rem; font-size: 0.88rem; color: var(--text-muted); line-height: 1.45;">${escapeHtml(c.question || '')}</p>
+
+          ${c.expectedAnswer ? `<div style="font-size: 0.78rem; padding: 0.4rem 0.65rem; border-radius: 6px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; margin-bottom: 0.5rem;"><strong>Resposta esperada:</strong> ${escapeHtml(c.expectedAnswer)}</div>` : ''}
+
+          ${firstWinner ? `
+            <div style="font-size: 0.8rem; padding: 0.5rem 0.7rem; border-radius: 8px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(52, 211, 153, 0.35); color: #6ee7b7;">
+              <i class="ri-trophy-fill" style="color: #fbbf24;"></i> <strong>1.º a acertar:</strong> ${escapeHtml(firstWinner.fullName)} (${escapeHtml(firstWinner.studentClass)}) — <span style="font-family: monospace;">${formatNerdExactTimestamp(firstWinner.submittedAt)}</span>
+            </div>
+          ` : ''}
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.45rem; flex-wrap: wrap; padding-top: 0.75rem; border-top: 1px solid rgba(148, 163, 184, 0.14);">
+          <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+            <button type="button" class="btn-action" onclick="toggleNerdChallengeStatus('${escapeHtml(c.id)}')" style="${c.active ? 'color: #f59e0b;' : 'color: #34d399;'}">
+              <i class="${c.active ? 'ri-eye-off-line' : 'ri-flashlight-fill'}"></i> ${c.active ? 'Desativar' : 'Ativar no Site'}
+            </button>
+            <button type="button" class="btn-action" onclick="onNerdChallengeFilterChange('${escapeHtml(c.id)}')">
+              <i class="ri-list-Ordered"></i> Ver Respostas (${subsForChallenge.length})
+            </button>
+          </div>
+          <div style="display: flex; gap: 0.35rem;">
+            <button type="button" class="btn-action" onclick="openNerdChallengeModal('${escapeHtml(c.id)}')" title="Editar desafio">
+              <i class="ri-edit-line"></i>
+            </button>
+            <button type="button" class="btn-action danger-action" onclick="deleteNerdChallengeItem('${escapeHtml(c.id)}')" title="Eliminar desafio">
+              <i class="ri-delete-bin-line"></i>
+            </button>
+          </div>
+        </div>
+      </article>
+    `;
+  }).join('');
+}
+
+window.onNerdChallengeFilterChange = function (challengeId) {
+  selectedNerdChallengeFilter = challengeId || 'all';
+  const selectEl = document.getElementById('nerdSubmissionsChallengeSelect');
+  if (selectEl && selectEl.value !== selectedNerdChallengeFilter) {
+    selectEl.value = selectedNerdChallengeFilter;
+  }
+  renderNerdSubmissionsTable();
+};
+
+window.setNerdSubmissionStatusFilter = function (status) {
+  selectedNerdSubmissionStatusFilter = status || 'all';
+  document.querySelectorAll('[data-nerd-sub-filter]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.nerdSubFilter === selectedNerdSubmissionStatusFilter);
+  });
+  renderNerdSubmissionsTable();
+};
+
+window.renderNerdSubmissionsTable = function () {
+  const tbody = document.getElementById('nerdSubmissionsTbody');
+  const winnerBanner = document.getElementById('nerdFirstWinnerBanner');
+  if (!tbody || !window.db) return;
+
+  const challenges = window.db.getNerdChallenges();
+  const challengesById = new Map(challenges.map(c => [c.id, c]));
+
+  const challengeIdFilter = selectedNerdChallengeFilter === 'all' ? null : selectedNerdChallengeFilter;
+  const rawSubs = window.db.getNerdSubmissions(challengeIdFilter); // Já ordenadas por submittedAt ASC (mais rápida primeiro)
+
+  // Calcular a 1.ª pessoa que acertou dentro do filtro de desafio selecionado
+  const allCorrectInScope = rawSubs.filter(sub => evaluateNerdSubmissionCorrectness(sub, challengesById.get(sub.challengeId)));
+  const firstWinner = allCorrectInScope.length > 0 ? allCorrectInScope[0] : null;
+
+  if (winnerBanner) {
+    if (firstWinner) {
+      const ch = challengesById.get(firstWinner.challengeId);
+      winnerBanner.style.display = 'block';
+      winnerBanner.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 0.85rem;">
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(251, 191, 36, 0.2); color: #fbbf24; display: flex; align-items: center; justify-content: center; font-size: 1.45rem; flex-shrink: 0;">
+              <i class="ri-trophy-fill"></i>
+            </div>
+            <div>
+              <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: #6ee7b7; font-weight: 700;">
+                1.ª Pessoa a Acertar ${ch ? `· ${escapeHtml(ch.title)}` : ''}
+              </div>
+              <div style="font-size: 1.05rem; font-weight: 700;">
+                ${escapeHtml(firstWinner.fullName || `${firstWinner.firstName} ${firstWinner.lastName}`)}
+                <span style="font-size: 0.85rem; color: #a7f3d0; font-weight: 600;">(${escapeHtml(firstWinner.studentClass)})</span>
+                · <a href="mailto:${escapeHtml(firstWinner.email)}" style="color: #38bdf8; font-size: 0.85rem;">${escapeHtml(firstWinner.email)}</a>
+              </div>
+              <div style="font-size: 0.84rem; color: var(--text-muted); margin-top: 0.15rem;">
+                Resposta: <strong>"${escapeHtml(firstWinner.answer)}"</strong>
+              </div>
+            </div>
+          </div>
+          <div style="text-align: right; font-family: monospace; background: rgba(0,0,0,0.28); padding: 0.45rem 0.8rem; border-radius: 8px; border: 1px solid rgba(52, 211, 153, 0.35);">
+            <small style="display: block; font-size: 0.68rem; color: #6ee7b7; text-transform: uppercase;">Hora Exata de Entrega</small>
+            <strong style="font-size: 0.95rem; color: #fff;">${formatNerdExactTimestamp(firstWinner.submittedAt)}</strong>
+          </div>
+        </div>
+      `;
+    } else {
+      winnerBanner.style.display = 'none';
+      winnerBanner.innerHTML = '';
+    }
+  }
+
+  const searchInput = document.getElementById('nerdSubSearchInput');
+  const query = String(searchInput?.value || '').trim().toLowerCase();
+
+  const filteredSubs = rawSubs.filter(sub => {
+    const ch = challengesById.get(sub.challengeId);
+    const isCorrect = evaluateNerdSubmissionCorrectness(sub, ch);
+
+    if (selectedNerdSubmissionStatusFilter === 'correct' && !isCorrect) return false;
+    if (selectedNerdSubmissionStatusFilter === 'pending' && sub.status !== 'pending') return false;
+
+    if (query) {
+      const hay = `${sub.fullName || ''} ${sub.firstName || ''} ${sub.lastName || ''} ${sub.studentClass || ''} ${sub.email || ''} ${sub.answer || ''} ${sub.challengeTitle || ''}`.toLowerCase();
+      if (!hay.includes(query)) return false;
+    }
+    return true;
+  });
+
+  if (filteredSubs.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2.25rem;">Nenhuma resposta registada para os critérios selecionados.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filteredSubs.map((sub) => {
+    const arrivalOrder = rawSubs.findIndex(item => item.id === sub.id) + 1;
+    const ch = challengesById.get(sub.challengeId);
+    const isCorrect = evaluateNerdSubmissionCorrectness(sub, ch);
+    const isFirstWinner = firstWinner && firstWinner.id === sub.id;
+
+    let statusPill = '<span class="status-badge status-pending">Por Validar</span>';
+    if (isFirstWinner) {
+      statusPill = '<span class="status-badge status-played" style="background: rgba(245, 158, 11, 0.22); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45);"><i class="ri-trophy-fill"></i> 1.º a Acertar!</span>';
+    } else if (isCorrect) {
+      statusPill = '<span class="status-badge status-played"><i class="ri-check-double-line"></i> Acertou</span>';
+    } else if (sub.status === 'incorrect') {
+      statusPill = '<span class="status-badge status-archived"><i class="ri-close-circle-line"></i> Incorreta</span>';
+    }
+
+    return `
+      <tr style="${isFirstWinner ? 'background: rgba(16, 185, 129, 0.09);' : ''}">
+        <td>
+          <div style="display: flex; align-items: center; gap: 0.55rem;">
+            <span style="font-weight: 800; font-size: 0.95rem; color: ${isFirstWinner ? '#fbbf24' : 'var(--cascais-blue)'};">#${arrivalOrder}</span>
+            <div>
+              <strong style="display: block; font-family: monospace; font-size: 0.86rem;">${formatNerdExactTimestamp(sub.submittedAt)}</strong>
+              <small style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(ch ? ch.title : (sub.challengeTitle || 'Desafio'))}</small>
+            </div>
+          </div>
+        </td>
+        <td>
+          <strong>${escapeHtml(sub.fullName || `${sub.firstName || ''} ${sub.lastName || ''}`.trim())}</strong>
+          <span style="display: inline-block; margin-left: 0.35rem; font-size: 0.74rem; padding: 0.1rem 0.45rem; border-radius: 4px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 700;">
+            ${escapeHtml(sub.studentClass || '—')}
+          </span>
+        </td>
+        <td>
+          <a href="mailto:${escapeHtml(sub.email || '')}" style="color: #38bdf8; font-size: 0.85rem;">${escapeHtml(sub.email || '—')}</a>
+        </td>
+        <td style="max-width: 320px; overflow-wrap: anywhere;">
+          <div style="font-weight: 600;">${escapeHtml(sub.answer || '')}</div>
+        </td>
+        <td>${statusPill}</td>
+        <td style="text-align: right; white-space: nowrap;">
+          <button type="button" class="btn-action" title="Marcar como Resposta Certa" onclick="markNerdSubmissionStatus('${escapeHtml(sub.id)}', 'correct')" style="color: #34d399;">
+            <i class="ri-check-line"></i> Certa
+          </button>
+          <button type="button" class="btn-action" title="Marcar como Incorreta" onclick="markNerdSubmissionStatus('${escapeHtml(sub.id)}', 'incorrect')" style="color: #f87171;">
+            <i class="ri-close-line"></i> Errada
+          </button>
+          <button type="button" class="btn-action danger-action" title="Eliminar resposta" onclick="deleteNerdSubmissionItem('${escapeHtml(sub.id)}')">
+            <i class="ri-delete-bin-line"></i>
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+};
+
+window.openNerdChallengeModal = function (id = '') {
+  const modalTitle = document.getElementById('nerdChallengeModalTitle');
+  const idInput = document.getElementById('nerdChallengeIdInput');
+  const titleInput = document.getElementById('nerdChallengeTitleInput');
+  const activeInput = document.getElementById('nerdChallengeActiveInput');
+  const questionInput = document.getElementById('nerdChallengeQuestionInput');
+  const expectedInput = document.getElementById('nerdChallengeExpectedAnswerInput');
+  const hintInput = document.getElementById('nerdChallengeHintInput');
+  const prizeInput = document.getElementById('nerdChallengePrizeInput');
+  const imageInput = document.getElementById('nerdChallengeImageInput');
+  const deleteBtn = document.getElementById('nerdChallengeDeleteBtn');
+
+  if (id) {
+    const existing = window.db.getNerdChallenges().find(c => c.id === id);
+    if (!existing) return;
+    if (modalTitle) modalTitle.textContent = 'Editar Desafio Alerta Nerd';
+    if (idInput) idInput.value = existing.id;
+    if (titleInput) titleInput.value = existing.title || '';
+    if (activeInput) activeInput.value = existing.active ? 'true' : 'false';
+    if (questionInput) questionInput.value = existing.question || '';
+    if (expectedInput) expectedInput.value = existing.expectedAnswer || '';
+    if (hintInput) hintInput.value = existing.hint || '';
+    if (prizeInput) prizeInput.value = existing.prize || '';
+    if (imageInput) imageInput.value = existing.image || '';
+    if (deleteBtn) deleteBtn.style.display = 'inline-flex';
+  } else {
+    if (modalTitle) modalTitle.textContent = 'Novo Desafio Alerta Nerd';
+    if (idInput) idInput.value = '';
+    if (titleInput) titleInput.value = '';
+    if (activeInput) activeInput.value = 'true';
+    if (questionInput) questionInput.value = '';
+    if (expectedInput) expectedInput.value = '';
+    if (hintInput) hintInput.value = '';
+    if (prizeInput) prizeInput.value = '';
+    if (imageInput) imageInput.value = '';
+    if (deleteBtn) deleteBtn.style.display = 'none';
+  }
+
+  openModal('nerdChallengeModal');
+};
+
+window.handleNerdChallengeImageUpload = async function (inputEl) {
+  const file = inputEl?.files?.[0];
+  if (!file) return;
+  try {
+    if (typeof window.imageFileToBase64 !== 'function') {
+      showToast('Conversor Base64 indisponível.', 'error');
+      return;
+    }
+    showToast('A otimizar imagem para Base64...', 'info');
+    const converted = await window.imageFileToBase64(file, { maxWidth: 1100, maxHeight: 1100, quality: 0.84 });
+    const imageInput = document.getElementById('nerdChallengeImageInput');
+    if (imageInput && converted?.dataUrl) {
+      imageInput.value = converted.dataUrl;
+      showToast(`Imagem pronta (${converted.sizeKB} KB em Base64)!`, 'success');
+    }
+  } catch (err) {
+    showToast(err.message || 'Erro ao converter imagem.', 'error');
+  } finally {
+    inputEl.value = '';
+  }
+};
+
+window.saveNerdChallengeForm = async function (event) {
+  event.preventDefault();
+  const id = document.getElementById('nerdChallengeIdInput')?.value?.trim() || '';
+  const title = document.getElementById('nerdChallengeTitleInput')?.value?.trim() || '';
+  const active = document.getElementById('nerdChallengeActiveInput')?.value === 'true';
+  const question = document.getElementById('nerdChallengeQuestionInput')?.value?.trim() || '';
+  const expectedAnswer = document.getElementById('nerdChallengeExpectedAnswerInput')?.value?.trim() || '';
+  const hint = document.getElementById('nerdChallengeHintInput')?.value?.trim() || '';
+  const prize = document.getElementById('nerdChallengePrizeInput')?.value?.trim() || '';
+  const image = document.getElementById('nerdChallengeImageInput')?.value?.trim() || '';
+
+  if (!title || !question) {
+    showToast('Preenche o título e a pergunta do desafio.', 'warning');
+    return;
+  }
+
+  const saved = window.db.saveNerdChallenge({
+    id: id || undefined,
+    title,
+    active,
+    question,
+    expectedAnswer,
+    hint,
+    prize,
+    image
+  });
+
+  if (saved && saved._writePromise) {
+    try { await saved._writePromise; } catch (_) {}
+  }
+
+  closeModal('nerdChallengeModal');
+  renderAdminNerdAlert();
+  updateKPIs();
+  showToast(active ? 'Desafio guardado e ATIVO no site!' : 'Desafio guardado (oculto no site).', 'success');
+};
+
+window.toggleNerdChallengeStatus = async function (id) {
+  const updated = window.db.toggleNerdChallengeActive(id);
+  if (updated && updated._writePromise) {
+    try { await updated._writePromise; } catch (_) {}
+  }
+  renderAdminNerdAlert();
+  updateKPIs();
+  if (updated) {
+    showToast(updated.active ? 'Desafio ativado! A página Alerta Nerd está agora visível no site.' : 'Desafio desativado e ocultado do site.', 'info');
+  }
+};
+
+window.deleteOpenNerdChallenge = function () {
+  const id = document.getElementById('nerdChallengeIdInput')?.value;
+  if (!id) return;
+  deleteNerdChallengeItem(id);
+  closeModal('nerdChallengeModal');
+};
+
+window.deleteNerdChallengeItem = function (id) {
+  if (!confirm('Eliminar este desafio Alerta Nerd?')) return;
+  window.db.deleteNerdChallenge(id);
+  renderAdminNerdAlert();
+  updateKPIs();
+  showToast('Desafio eliminado.', 'info');
+};
+
+window.markNerdSubmissionStatus = function (id, status) {
+  window.db.updateNerdSubmissionStatus(id, status);
+  renderAdminNerdAlert();
+  showToast(status === 'correct' ? 'Resposta marcada como CERTA!' : 'Resposta marcada como incorreta.', 'success');
+};
+
+window.deleteNerdSubmissionItem = function (id) {
+  if (!confirm('Eliminar esta submissão de aluno?')) return;
+  window.db.deleteNerdSubmission(id);
+  renderAdminNerdAlert();
+  updateKPIs();
+  showToast('Submissão eliminada.', 'info');
+};
+
+window.exportNerdSubmissionsCSV = function () {
+  const challengeIdFilter = selectedNerdChallengeFilter === 'all' ? null : selectedNerdChallengeFilter;
+  const subs = window.db.getNerdSubmissions(challengeIdFilter);
+  if (!subs.length) {
+    showToast('Não existem respostas para exportar.', 'warning');
+    return;
+  }
+  const challengesById = new Map(window.db.getNerdChallenges().map(c => [c.id, c]));
+  const headers = ['Ordem', 'Hora Exata', 'ISO Timestamp', 'Desafio', 'Nome', 'Apelido', 'Turma', 'Email', 'Resposta', 'Validacao'];
+  const rows = subs.map((s, idx) => {
+    const ch = challengesById.get(s.challengeId);
+    const isCorrect = evaluateNerdSubmissionCorrectness(s, ch);
+    const cols = [
+      idx + 1,
+      formatNerdExactTimestamp(s.submittedAt),
+      s.submittedAtIso || '',
+      ch ? ch.title : (s.challengeTitle || ''),
+      s.firstName || '',
+      s.lastName || '',
+      s.studentClass || '',
+      s.email || '',
+      s.answer || '',
+      isCorrect ? 'CERTA' : (s.status === 'incorrect' ? 'INCORRETA' : 'POR VALIDAR')
+    ];
+    return cols.map(val => `"${String(val).replace(/"/g, '""')}"`).join(';');
+  });
+
+  const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `nerd-alert-respostas-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+/* ==========================================================================
+   GESTÃO DA PÁGINA PÚBLICA DA EQUIPA (equipa.html — FOTO, NOME E CARGO)
+   ========================================================================== */
+
+document.addEventListener('radio-db-updated', (e) => {
+  if (!e.detail || e.detail.collection === 'teamMembers') {
+    if (typeof renderAdminTeamMembers === 'function') renderAdminTeamMembers();
+  }
+});
+
+function getAdminTeamInitials(name) {
+  const parts = String(name || 'WR').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'WR';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+window.renderAdminTeamMembers = function () {
+  const grid = document.getElementById('teamMembersAdminGrid');
+  if (!grid || !window.db || typeof window.db.getTeamMembers !== 'function') return;
+
+  const members = window.db.getTeamMembers();
+
+  if (members.length === 0) {
+    grid.innerHTML = `
+      <div class="card-panel" style="grid-column: 1 / -1; text-align: center; padding: 2.5rem 1.5rem;">
+        <i class="ri-team-line" style="font-size: 2.4rem; color: #f472b6; display: block; margin-bottom: 0.6rem;"></i>
+        <h3 style="margin: 0 0 0.35rem;">Ainda não adicionaste membros à página da Equipa</h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem; max-width: 520px; margin: 0 auto 1.2rem;">
+          Adiciona o nome e o cargo de cada elemento da rádio. As fotografias podem ser carregadas agora ou adicionadas mais tarde quando estiverem prontas (convertidas gratuitamente para Base64).
+        </p>
+        <button class="btn-submit-main" onclick="openTeamMemberModal()">
+          <i class="ri-user-add-line"></i> Adicionar Primeiro Membro
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = members.map(member => {
+    const hasPhoto = Boolean(member.photo && String(member.photo).trim());
+    const initials = getAdminTeamInitials(member.name);
+    const safeId = escapeHtml(member.id);
+
+    return `
+      <div class="card-panel" style="padding: 1.15rem 1.25rem; display: flex; flex-direction: column; gap: 0.9rem;">
+        <div style="display: flex; align-items: center; gap: 0.95rem;">
+          <div style="width: 68px; height: 68px; border-radius: 12px; overflow: hidden; flex-shrink: 0; background: #1e293b; border: 2px solid ${hasPhoto ? 'rgba(52, 211, 153, 0.45)' : 'rgba(244, 114, 182, 0.4)'}; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.35rem; color: #f8fafc; position: relative;">
+            ${hasPhoto ? `
+              <img src="${escapeHtml(member.photo)}" alt="${escapeHtml(member.name)}" style="width: 100%; height: 100%; object-fit: cover;">
+            ` : `
+              <span>${escapeHtml(initials)}</span>
+            `}
+          </div>
+          <div style="min-width: 0; flex: 1;">
+            <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+              <span class="badge ${hasPhoto ? 'badge-success' : 'badge-warning'}" style="font-size: 0.66rem;">
+                <i class="${hasPhoto ? 'ri-camera-check-line' : 'ri-camera-off-line'}"></i> ${hasPhoto ? 'Com Foto' : 'Sem Foto (Avatar)'}
+              </span>
+              ${member.bio ? `<span class="badge" style="font-size: 0.66rem; background: rgba(228, 35, 42, 0.22); color: #fda4af; border: 1px solid rgba(228, 35, 42, 0.45);">${escapeHtml(member.bio)}</span>` : ''}
+              ${member.socialEnabled && member.socialUrl ? `<span class="badge badge-info" style="font-size: 0.66rem;"><i class="ri-share-box-line"></i> Rede Social Ativa</span>` : ''}
+              <span class="badge" style="font-size: 0.66rem; background: rgba(148, 163, 184, 0.14);">Ordem #${Number(member.order) || 10}</span>
+            </div>
+            <h4 style="margin: 0; font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(member.name)}</h4>
+            <div style="font-size: 0.82rem; color: #f472b6; font-weight: 600; margin-top: 0.15rem;">${escapeHtml(member.role || 'Equipa Wave Rádio')}</div>
+            ${member.socialEnabled && member.socialUrl ? `<div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><i class="ri-link"></i> ${escapeHtml(member.socialUrl)}</div>` : ''}
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.45rem; flex-wrap: wrap; margin-top: auto; padding-top: 0.65rem; border-top: 1px solid rgba(148, 163, 184, 0.14);">
+          <label class="btn-action" style="flex: 1; justify-content: center; cursor: pointer; margin: 0; border-color: rgba(236, 72, 153, 0.4); color: #f472b6;" title="Carregar ou atualizar fotografia deste membro (PNG/JPG para Base64)">
+            <i class="ri-upload-cloud-2-line"></i> ${hasPhoto ? 'Trocar Foto' : 'Carregar Foto'}
+            <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" style="display: none;" onchange="quickUploadTeamMemberPhoto('${safeId}', this)">
+          </label>
+          <button type="button" class="btn-action" onclick="openTeamMemberModal('${safeId}')" title="Editar dados">
+            <i class="ri-edit-line"></i> Editar
+          </button>
+          <button type="button" class="btn-action danger-action" onclick="deleteTeamMemberItem('${safeId}')" title="Eliminar membro">
+            <i class="ri-delete-bin-line"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+};
+
+window.updateTeamMemberModalPhotoPreview = function (photoValue) {
+  const val = String(photoValue || '').trim();
+  const imgEl = document.getElementById('teamMemberPhotoPreviewImg');
+  const initialsEl = document.getElementById('teamMemberPhotoPreviewInitials');
+  const clearBtn = document.getElementById('teamMemberClearPhotoBtn');
+  const statusEl = document.getElementById('teamMemberPhotoStatus');
+
+  if (val) {
+    if (imgEl) {
+      imgEl.src = val;
+      imgEl.style.display = 'block';
+    }
+    if (initialsEl) initialsEl.style.display = 'none';
+    if (clearBtn) clearBtn.style.display = 'inline-flex';
+    if (statusEl) {
+      if (val.startsWith('data:image/')) {
+        const kb = Math.max(1, Math.round((val.length * 0.75) / 1024));
+        statusEl.textContent = `Fotografia pronta em Base64 gratuito (${kb} KB).`;
+        statusEl.style.color = '#34d399';
+      } else {
+        statusEl.textContent = 'Fotografia definida por URL.';
+        statusEl.style.color = '#38bdf8';
+      }
+    }
+  } else {
+    if (imgEl) {
+      imgEl.src = '';
+      imgEl.style.display = 'none';
+    }
+    if (initialsEl) {
+      const nameVal = document.getElementById('teamMemberNameInput')?.value || '';
+      initialsEl.innerHTML = nameVal.trim() ? escapeHtml(getAdminTeamInitials(nameVal)) : '<i class="ri-user-smile-line"></i>';
+      initialsEl.style.display = 'inline';
+    }
+    if (clearBtn) clearBtn.style.display = 'none';
+    if (statusEl) {
+      statusEl.textContent = 'Se deixares sem foto, o site mostra um avatar com as iniciais até carregares a fotografia.';
+      statusEl.style.color = 'var(--text-muted)';
+    }
+  }
+};
+
+window.clearTeamMemberPhoto = function () {
+  const input = document.getElementById('teamMemberPhotoInput');
+  const fileInput = document.getElementById('teamMemberPhotoFileInput');
+  if (input) input.value = '';
+  if (fileInput) fileInput.value = '';
+  updateTeamMemberModalPhotoPreview('');
+};
+
+window.handleTeamMemberPhotoUpload = async function (inputEl) {
+  const file = inputEl && inputEl.files && inputEl.files[0];
+  if (!file || typeof window.imageFileToBase64 !== 'function') return;
+  try {
+    showToast('A otimizar fotografia do membro para Base64...', 'info');
+    const res = await window.imageFileToBase64(file, {
+      maxWidth: 640,
+      maxHeight: 720,
+      quality: 0.84,
+      maxBase64Chars: 240000
+    });
+    const photoInput = document.getElementById('teamMemberPhotoInput');
+    if (photoInput) photoInput.value = res.dataUrl;
+    updateTeamMemberModalPhotoPreview(res.dataUrl);
+    showToast(`Fotografia carregada (${res.sizeKB} KB em Base64).`, 'success');
+  } catch (err) {
+    showToast(err.message || 'Erro ao carregar a fotografia.', 'error');
+  } finally {
+    inputEl.value = '';
+  }
+};
+
+window.quickUploadTeamMemberPhoto = async function (memberId, inputEl) {
+  const file = inputEl && inputEl.files && inputEl.files[0];
+  if (!file || !memberId || typeof window.imageFileToBase64 !== 'function') return;
+  const existing = window.db.getTeamMembers().find(m => m.id === memberId);
+  if (!existing) return;
+
+  try {
+    showToast(`A carregar foto de ${existing.name}...`, 'info');
+    const res = await window.imageFileToBase64(file, {
+      maxWidth: 640,
+      maxHeight: 720,
+      quality: 0.84,
+      maxBase64Chars: 240000
+    });
+    const saved = window.db.saveTeamMember({
+      ...existing,
+      photo: res.dataUrl
+    });
+    if (saved && saved._writePromise) {
+      try { await saved._writePromise; } catch (_) {}
+    }
+    renderAdminTeamMembers();
+    showToast(`Fotografia de ${existing.name} atualizada com sucesso!`, 'success');
+  } catch (err) {
+    showToast(err.message || 'Erro ao atualizar a fotografia.', 'error');
+  } finally {
+    inputEl.value = '';
+  }
+};
+
+window.toggleTeamMemberSocialInput = function (checked) {
+  const wrap = document.getElementById('teamMemberSocialUrlWrap');
+  if (wrap) {
+    wrap.style.display = checked ? 'block' : 'none';
+  }
+};
+
+window.openTeamMemberModal = function (id = null) {
+  const members = window.db.getTeamMembers();
+  const existing = id ? members.find(m => m.id === id) : null;
+
+  document.getElementById('teamMemberModalTitle').textContent = existing
+    ? 'Editar Membro da Equipa'
+    : 'Adicionar Membro da Equipa';
+
+  document.getElementById('teamMemberIdInput').value = existing ? existing.id : '';
+  document.getElementById('teamMemberNameInput').value = existing ? (existing.name || '') : '';
+  document.getElementById('teamMemberRoleInput').value = existing ? (existing.role || '') : '';
+  document.getElementById('teamMemberBioInput').value = existing ? (existing.bio || '') : '';
+  document.getElementById('teamMemberOrderInput').value = existing && Number.isFinite(Number(existing.order))
+    ? Number(existing.order)
+    : (members.length + 1);
+  document.getElementById('teamMemberPhotoInput').value = existing ? (existing.photo || '') : '';
+
+  const socialEnabled = Boolean(existing && existing.socialEnabled);
+  const socialCheck = document.getElementById('teamMemberSocialEnabledInput');
+  const socialUrlInput = document.getElementById('teamMemberSocialUrlInput');
+  if (socialCheck) socialCheck.checked = socialEnabled;
+  if (socialUrlInput) socialUrlInput.value = existing ? (existing.socialUrl || '') : '';
+  toggleTeamMemberSocialInput(socialEnabled);
+
+  updateTeamMemberModalPhotoPreview(existing ? (existing.photo || '') : '');
+
+  const delBtn = document.getElementById('teamMemberDeleteBtn');
+  if (delBtn) delBtn.style.display = existing ? 'inline-flex' : 'none';
+
+  const modal = document.getElementById('teamMemberModal');
+  if (modal) modal.classList.add('active');
+};
+
+window.saveTeamMemberForm = async function (event) {
+  event.preventDefault();
+  const id = document.getElementById('teamMemberIdInput')?.value?.trim() || '';
+  const name = document.getElementById('teamMemberNameInput')?.value?.trim() || '';
+  const role = document.getElementById('teamMemberRoleInput')?.value?.trim() || '';
+  const bio = document.getElementById('teamMemberBioInput')?.value?.trim() || '';
+  const order = Number(document.getElementById('teamMemberOrderInput')?.value) || 10;
+  const photo = document.getElementById('teamMemberPhotoInput')?.value?.trim() || '';
+  const socialEnabled = Boolean(document.getElementById('teamMemberSocialEnabledInput')?.checked);
+  const socialUrl = document.getElementById('teamMemberSocialUrlInput')?.value?.trim() || '';
+
+  if (!name || !role) {
+    showToast('Preenche pelo menos o nome e o cargo do membro.', 'warning');
+    return;
+  }
+
+  if (socialEnabled && !socialUrl) {
+    showToast('Indica o link ou @ da rede social, ou desativa a opção de abrir rede social.', 'warning');
+    return;
+  }
+
+  const saved = window.db.saveTeamMember({
+    id: id || undefined,
+    name,
+    role,
+    bio,
+    order,
+    photo,
+    socialEnabled: socialEnabled && Boolean(socialUrl),
+    socialUrl
+  });
+
+  if (saved && saved._writePromise) {
+    try { await saved._writePromise; } catch (_) {}
+  }
+
+  closeModal('teamMemberModal');
+  renderAdminTeamMembers();
+  showToast(`Membro "${name}" guardado na página da Equipa!`, 'success');
+};
+
+window.deleteOpenTeamMember = function () {
+  const id = document.getElementById('teamMemberIdInput')?.value;
+  if (!id) return;
+  deleteTeamMemberItem(id);
+  closeModal('teamMemberModal');
+};
+
+window.deleteTeamMemberItem = function (id) {
+  if (!confirm('Remover este membro da página pública da Equipa?')) return;
+  window.db.deleteTeamMember(id);
+  renderAdminTeamMembers();
+  showToast('Membro removido da equipa.', 'info');
+};
+
+/* ==========================================================================
+   MODO DE MANUTENÇÃO DO SITE (ATIVAR / DESATIVAR A QUALQUER MOMENTO NO ADMIN)
+   ========================================================================== */
+function renderAdminMaintenanceUI() {
+  if (!window.db || typeof window.db.getSiteMaintenance !== 'function') return;
+  const state = window.db.getSiteMaintenance();
+  const isEnabled = Boolean(state.enabled);
+
+  // 1. Botão na Topbar Editorial
+  const topBtn = document.getElementById('btnTopbarMaintenance');
+  const topDot = document.getElementById('topbarMaintDot');
+  const topLabel = document.getElementById('topbarMaintLabel');
+  if (topBtn && topDot && topLabel) {
+    if (isEnabled) {
+      topBtn.style.borderColor = 'rgba(245, 158, 11, 0.65)';
+      topBtn.style.background = 'rgba(245, 158, 11, 0.14)';
+      topBtn.style.color = '#fbbf24';
+      topDot.style.background = '#f59e0b';
+      topDot.style.boxShadow = '0 0 10px #f59e0b';
+      topLabel.textContent = 'EM MANUTENÇÃO';
+    } else {
+      topBtn.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+      topBtn.style.background = '';
+      topBtn.style.color = '#34d399';
+      topDot.style.background = '#10b981';
+      topDot.style.boxShadow = '0 0 8px #10b981';
+      topLabel.textContent = 'Site Online';
+    }
+  }
+
+  // 2. Botão na Topbar Ao Vivo
+  const aoVivoBtn = document.getElementById('btnAoVivoMaintenance');
+  const aoVivoLabel = document.getElementById('aoVivoMaintLabel');
+  if (aoVivoBtn && aoVivoLabel) {
+    if (isEnabled) {
+      aoVivoBtn.style.borderColor = 'rgba(245, 158, 11, 0.65)';
+      aoVivoBtn.style.color = '#fbbf24';
+      aoVivoLabel.textContent = 'Em Manutenção';
+    } else {
+      aoVivoBtn.style.borderColor = '';
+      aoVivoBtn.style.color = '';
+      aoVivoLabel.textContent = 'Manutenção';
+    }
+  }
+
+  // 3. Modal de Controlo de Manutenção
+  const statusBox = document.getElementById('maintModalStatusBox');
+  const statusIcon = document.getElementById('maintModalStatusIcon');
+  const statusTitle = document.getElementById('maintModalStatusTitle');
+  const statusSub = document.getElementById('maintModalStatusSub');
+  const toggleBtn = document.getElementById('btnToggleMaintenanceNow');
+  const msgInput = document.getElementById('maintenanceCustomMsgInput');
+
+  if (statusBox && statusIcon && statusTitle && statusSub && toggleBtn) {
+    if (isEnabled) {
+      statusBox.style.background = 'rgba(245, 158, 11, 0.12)';
+      statusBox.style.borderColor = 'rgba(245, 158, 11, 0.45)';
+      statusIcon.style.background = 'rgba(245, 158, 11, 0.22)';
+      statusIcon.style.color = '#fbbf24';
+      statusIcon.innerHTML = '<i class="ri-tools-fill"></i>';
+      statusTitle.textContent = 'Site em Manutenção (Bloqueado ao Público)';
+      statusSub.textContent = 'Os visitantes são redirecionados para manutencao.html. O Admin permanece acessível.';
+      toggleBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+      toggleBtn.innerHTML = '<i class="ri-lock-unlock-line"></i> Desativar Manutenção (Abrir Site)';
+    } else {
+      statusBox.style.background = 'rgba(16, 185, 129, 0.1)';
+      statusBox.style.borderColor = 'rgba(16, 185, 129, 0.35)';
+      statusIcon.style.background = 'rgba(16, 185, 129, 0.2)';
+      statusIcon.style.color = '#34d399';
+      statusIcon.innerHTML = '<i class="ri-checkbox-circle-fill"></i>';
+      statusTitle.textContent = 'Site Público Online';
+      statusSub.textContent = 'Todos os visitantes podem navegar normalmente no site.';
+      toggleBtn.style.background = '';
+      toggleBtn.innerHTML = '<i class="ri-tools-fill"></i> Ativar Manutenção Agora';
+    }
+  }
+
+  if (msgInput && document.activeElement !== msgInput) {
+    msgInput.value = state.message || '';
+  }
+}
+
+window.openSiteMaintenanceModal = function () {
+  renderAdminMaintenanceUI();
+  const modal = document.getElementById('siteMaintenanceModal');
+  if (modal) modal.classList.add('active');
+};
+
+window.toggleSiteMaintenanceNow = async function () {
+  if (!window.db || typeof window.db.getSiteMaintenance !== 'function') return;
+  const current = window.db.getSiteMaintenance();
+  const nextEnabled = !current.enabled;
+  const msgInput = document.getElementById('maintenanceCustomMsgInput');
+  const message = msgInput ? msgInput.value.trim() : current.message;
+  const userEmail = window.firebaseServices?.auth?.currentUser?.email || 'Admin';
+
+  const saved = window.db.setSiteMaintenance(nextEnabled, {
+    message,
+    updatedBy: userEmail
+  });
+
+  renderAdminMaintenanceUI();
+
+  if (saved && saved._writePromise) {
+    try { await saved._writePromise; } catch (_) {}
+  }
+
+  if (nextEnabled) {
+    showToast('Modo de Manutenção ATIVADO! O site público encontra-se agora trancado para visitantes.', 'warning');
+  } else {
+    showToast('Modo de Manutenção DESATIVADO! O site está novamente aberto ao público.', 'success');
+  }
+};
+
+window.saveMaintenanceCustomMessage = async function () {
+  if (!window.db || typeof window.db.getSiteMaintenance !== 'function') return;
+  const current = window.db.getSiteMaintenance();
+  const msgInput = document.getElementById('maintenanceCustomMsgInput');
+  const message = msgInput ? msgInput.value.trim() : '';
+  const userEmail = window.firebaseServices?.auth?.currentUser?.email || 'Admin';
+
+  const saved = window.db.setSiteMaintenance(current.enabled, {
+    message,
+    updatedBy: userEmail
+  });
+
+  if (saved && saved._writePromise) {
+    try { await saved._writePromise; } catch (_) {}
+  }
+
+  renderAdminMaintenanceUI();
+  showToast('Mensagem da página de manutenção atualizada!', 'success');
+};
+
+window.copyMaintenanceUnlockLink = function () {
+  const baseUrl = window.location.href.replace(/\/admin\.html.*$/i, '/index.html');
+  const unlockUrl = `${baseUrl}?unlock=OlhaAOnda1@`;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(unlockUrl).then(() => {
+      showToast('Link de acesso direto copiado para a área de transferência!', 'success');
+    }).catch(() => {});
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(renderAdminMaintenanceUI, 300);
+});
+document.addEventListener('radio-maintenance-updated', () => {
+  renderAdminMaintenanceUI();
+});
+document.addEventListener('radio-db-updated', (e) => {
+  const col = e && e.detail && e.detail.collection;
+  if (!col || col === 'announcements' || col === 'siteMaintenance') {
+    renderAdminMaintenanceUI();
+  }
+});

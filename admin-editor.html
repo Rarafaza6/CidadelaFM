@@ -1,47 +1,569 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Editor de Artigos | Rádio Escolar</title>
-  <meta name="theme-color" content="#070913">
-  <link rel="icon" type="image/jpeg" href="assets/logo-radio.jpg">
-  <link rel="apple-touch-icon" href="assets/logo-radio.jpg">
+  <title>Estúdio Editorial de Artigos | Rádio EBS Cidadela</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/png" href="assets/brand/favicon-negativa.png">
+  <link rel="apple-touch-icon" href="assets/brand/favicon-negativa.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
-  <link rel="stylesheet" href="css/styles.css?v=20261023">
-  <script src="js/maintenance-guard.js?v=20261023"></script>
+  <link rel="stylesheet" href="css/styles.css?v=20261027">
 </head>
 <body class="word-app-container">
-  <header class="word-top-bar"><div class="word-doc-info"><a class="btn-back-link" href="admin.html"><i class="ri-arrow-left-line"></i> Painel</a><span class="word-doc-badge">Editor</span><span class="word-save-status" id="saveStatus"><i class="ri-checkbox-circle-line"></i> Rascunho local</span></div><div class="word-actions-group"><button class="btn-action" type="button" id="previewButton"><i class="ri-eye-line"></i> Pré-visualizar</button><button class="btn-submit-main" type="button" id="publishButton"><i class="ri-send-plane-line"></i> Publicar Artigo</button></div></header>
-  <div class="word-ribbon" role="toolbar" aria-label="Ferramentas de formatação">
-    <div class="word-tool-group"><select class="word-select-style" id="formatSelect" aria-label="Estilo de parágrafo"><option value="p">Normal</option><option value="h2">Título 2</option><option value="h3">Título 3</option><option value="blockquote">Citação</option></select></div>
-    <div class="word-tool-group"><button class="word-tool-btn" data-command="bold" title="Negrito"><strong>B</strong></button><button class="word-tool-btn" data-command="italic" title="Itálico"><em>I</em></button><button class="word-tool-btn" data-command="underline" title="Sublinhado"><u>U</u></button><button class="word-tool-btn" data-command="strikeThrough" title="Riscado"><s>S</s></button><button class="word-tool-btn" data-command="hiliteColor" data-value="#f59e0b" title="Destacar"><i class="ri-mark-pen-line"></i></button></div>
-    <div class="word-tool-group"><button class="word-tool-btn" data-command="insertUnorderedList" title="Lista com marcadores"><i class="ri-list-unordered"></i></button><button class="word-tool-btn" data-command="insertOrderedList" title="Lista numerada"><i class="ri-list-ordered"></i></button><button class="word-tool-btn" id="imageButton" title="Adicionar imagem"><i class="ri-image-add-line"></i></button><button class="word-tool-btn" id="linkButton" title="Adicionar ligação"><i class="ri-link"></i></button><button class="word-tool-btn" id="dividerButton" title="Adicionar divisor"><i class="ri-separator"></i></button></div>
-    <div class="word-tool-group"><button class="word-tool-btn" data-command="undo" title="Desfazer"><i class="ri-arrow-go-back-line"></i></button><button class="word-tool-btn" data-command="redo" title="Refazer"><i class="ri-arrow-go-forward-line"></i></button><button class="word-tool-btn" data-command="removeFormat" title="Limpar formatação"><i class="ri-format-clear"></i></button></div>
+
+  <!-- MODAL DE AUTENTICAÇÃO (CASO A SESSÃO NÃO ESTEJA ATIVA) -->
+  <div class="modal-overlay" id="editorAuthModal">
+    <div class="card-panel modal-window" style="max-width: 420px; text-align: center;">
+      <div style="width: 56px; height: 56px; border-radius: 14px; background: rgba(228, 35, 42, 0.14); border: 1px solid rgba(228, 35, 42, 0.35); color: #ff545b; display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem;">
+        <i class="ri-lock-2-line"></i>
+      </div>
+      <h3 style="font-size: 1.35rem; margin-bottom: 0.35rem;">Iniciar Sessão Editorial</h3>
+      <p style="color: var(--text-muted); font-size: 0.86rem; margin-bottom: 1.25rem;">
+        Inicia sessão com a tua conta da equipa da rádio para guardar e publicar artigos.
+      </p>
+      <form id="editorLoginForm" onsubmit="handleEditorLogin(event)" style="text-align: left;">
+        <div class="form-field">
+          <label for="editorAuthEmail">Email da Equipa</label>
+          <input type="email" id="editorAuthEmail" class="form-input-lg" placeholder="equipa@escola.pt" required autocomplete="email">
+        </div>
+        <div class="form-field">
+          <label for="editorAuthPassword">Palavra-passe</label>
+          <input type="password" id="editorAuthPassword" class="form-input-lg" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+        <div id="editorAuthAlert" style="min-height: 1.25rem; margin-bottom: 0.75rem; font-size: 0.84rem;"></div>
+        <button type="submit" id="editorLoginBtn" class="btn-submit-main" style="width: 100%; justify-content: center;">
+          <i class="ri-login-box-line"></i> Entrar no Editor
+        </button>
+      </form>
+    </div>
   </div>
-  <main class="word-workspace-grid"><section class="word-sheet-wrapper"><div class="word-paper-sheet"><input class="word-doc-title-input" id="titleInput" placeholder="Título do artigo" maxlength="140"><div class="word-editable-body" id="editorBody" contenteditable="true"></div></div></section><aside class="word-sidebar-panel"><section class="word-side-card"><h4><i class="ri-settings-3-line"></i> Publicação</h4><label class="form-label" for="categoryInput">Categoria</label><select class="form-input-lg" id="categoryInput"><option>Evento</option><option>Recrutamento</option><option>Cultura</option><option>Emissão</option><option>Aviso</option><option>Entrevista</option><option>Concurso</option></select><label class="form-label" for="authorInput">Autor / Redator</label><input class="form-input-lg" id="authorInput" value="Equipa da Rádio • EBS Cidadela">
-<label class="form-label" for="broadcastDateInput">Data para leitura em antena</label><input class="form-input-lg" id="broadcastDateInput" type="date">
-<label class="word-air-checkbox"><input id="onAirInput" type="checkbox"> <span><strong>Aviso para ler em antena</strong><small>Fica destacado no briefing diário.</small></span></label><label class="form-label" for="excerptInput">Resumo / Excerto</label><textarea class="form-input-lg" id="excerptInput" rows="4" maxlength="240" placeholder="Uma frase para os cartões de notícias"></textarea></section><section class="word-side-card"><h4><i class="ri-image-line"></i> Capa do artigo</h4><input class="form-input-lg" id="imageInput" type="url" placeholder="https://..."><div class="word-cover-preview-box" id="coverPreview"><span style="color:var(--text-muted)">Pré-visualização da capa</span></div><div class="word-preset-images"><img class="word-preset-thumb" data-image="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=1200&q=80" src="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=300&q=80" alt="Evento escolar"><img class="word-preset-thumb" data-image="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?auto=format&fit=crop&w=1200&q=80" src="https://images.unsplash.com/photo-1478737270239-2f02b77fc618?auto=format&fit=crop&w=300&q=80" alt="Estúdio"><img class="word-preset-thumb" data-image="https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=1200&q=80" src="https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=300&q=80" alt="Microfone"></div></section></aside></main>
-  <div class="word-bottom-statusbar"><span id="wordCount">0 palavras</span><span>As alterações ficam guardadas ao publicar.</span></div>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="js/firebase-config.js"></script><script src="js/editor.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const topBar = document.querySelector('.word-top-bar');
-      if (topBar) { topBar.style.opacity = '0'; topBar.style.animation = 'fadeInDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.05s forwards'; }
-      const ribbon = document.querySelector('.word-ribbon');
-      if (ribbon) { ribbon.style.opacity = '0'; ribbon.style.animation = 'fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards'; }
-      const workspace = document.querySelector('.word-workspace-grid');
-      if (workspace) { workspace.style.opacity = '0'; workspace.style.animation = 'fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards'; }
-      const statusbar = document.querySelector('.word-bottom-statusbar');
-      if (statusbar) { statusbar.style.opacity = '0'; statusbar.style.animation = 'fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards'; }
-      document.querySelectorAll('.btn-submit-main, .btn-action').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-          const rect = this.getBoundingClientRect();
-          this.style.setProperty('--ripple-x', ((e.clientX - rect.left) / rect.width * 100) + '%');
-          this.style.setProperty('--ripple-y', ((e.clientY - rect.top) / rect.height * 100) + '%');
-        });
-      });
-    });
-  </script>
+
+  <!-- BARRA DE TOPO DO ESTÚDIO EDITORIAL -->
+  <header class="word-top-bar">
+    <div class="word-doc-info">
+      <a class="btn-action" href="admin.html" title="Voltar ao Painel de Administração">
+        <i class="ri-arrow-left-line"></i> Painel Admin
+      </a>
+      <span class="word-doc-badge" id="editorModeBadge">Novo Artigo</span>
+      <span class="word-save-status" id="saveStatusText">
+        <i class="ri-checkbox-circle-line"></i> Pronto a editar
+      </span>
+      <button type="button" class="btn-action" id="restoreDraftBtn" style="display: none; border-color: rgba(245, 158, 11, 0.45); color: #fbbf24;" onclick="restoreLocalDraft()">
+        <i class="ri-history-line"></i> Recuperar Rascunho Local
+      </button>
+    </div>
+
+    <div class="word-actions-group">
+      <button class="btn-action" type="button" onclick="saveLocalDraftExplicit()" title="Guardar rascunho no navegador (Ctrl+S)">
+        <i class="ri-save-3-line"></i> Guardar Rascunho
+      </button>
+      <button class="btn-action" type="button" onclick="openPreviewModal()" title="Ver como o artigo fica na página pública">
+        <i class="ri-eye-line"></i> Pré-visualizar
+      </button>
+      <button class="btn-action" type="button" onclick="resetEditor()" title="Limpar campos">
+        <i class="ri-refresh-line"></i> Limpar
+      </button>
+      <button class="btn-submit-main" type="button" id="publishArticleBtn" onclick="publishArticle()">
+        <i class="ri-send-plane-fill"></i> <span id="publishArticleBtnLabel">Guardar e Publicar</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- RIBBON / BARRA DE FERRAMENTAS RICA -->
+  <div class="word-ribbon" role="toolbar" aria-label="Ferramentas de formatação do artigo">
+    <!-- Histórico -->
+    <div class="word-tool-group">
+      <button class="word-tool-btn" type="button" onclick="execCmd('undo')" title="Desfazer (Ctrl+Z)">
+        <i class="ri-arrow-go-back-line"></i>
+      </button>
+      <button class="word-tool-btn" type="button" onclick="execCmd('redo')" title="Refazer (Ctrl+Y)">
+        <i class="ri-arrow-go-forward-line"></i>
+      </button>
+    </div>
+
+    <!-- Formato de Bloco -->
+    <div class="word-tool-group">
+      <select class="word-select-style" id="blockFormatSelect" onchange="formatBlock(this.value)" aria-label="Estilo de bloco">
+        <option value="p">Parágrafo normal</option>
+        <option value="h2">Título principal (H2)</option>
+        <option value="h3">Subtítulo (H3)</option>
+        <option value="h4">Secção menor (H4)</option>
+        <option value="blockquote">Citação em destaque</option>
+      </select>
+    </div>
+
+    <!-- Formatação de Texto -->
+    <div class="word-tool-group">
+      <button class="word-tool-btn" type="button" data-cmd="bold" onclick="execCmd('bold')" title="Negrito (Ctrl+B)">
+        <i class="ri-bold"></i>
+      </button>
+      <button class="word-tool-btn" type="button" data-cmd="italic" onclick="execCmd('italic')" title="Itálico (Ctrl+I)">
+        <i class="ri-italic"></i>
+      </button>
+      <button class="word-tool-btn" type="button" data-cmd="underline" onclick="execCmd('underline')" title="Sublinhado (Ctrl+U)">
+        <i class="ri-underline"></i>
+      </button>
+      <button class="word-tool-btn" type="button" data-cmd="strikeThrough" onclick="execCmd('strikeThrough')" title="Rasurado">
+        <i class="ri-strikethrough"></i>
+      </button>
+      <button class="word-tool-btn" type="button" onclick="toggleHighlight()" title="Realçar texto (Marcador)">
+        <i class="ri-mark-pen-line"></i>
+      </button>
+      <button class="word-tool-btn" type="button" onclick="clearFormatting()" title="Limpar formatação">
+        <i class="ri-format-clear"></i>
+      </button>
+    </div>
+
+    <!-- Alinhamento -->
+    <div class="word-tool-group">
+      <button class="word-tool-btn" type="button" onclick="execCmd('justifyLeft')" title="Alinhar à esquerda">
+        <i class="ri-align-left"></i>
+      </button>
+      <button class="word-tool-btn" type="button" onclick="execCmd('justifyCenter')" title="Centrar texto">
+        <i class="ri-align-center"></i>
+      </button>
+      <button class="word-tool-btn" type="button" onclick="execCmd('justifyRight')" title="Alinhar à direita">
+        <i class="ri-align-right"></i>
+      </button>
+      <button class="word-tool-btn" type="button" onclick="execCmd('justifyFull')" title="Justificar texto">
+        <i class="ri-align-justify"></i>
+      </button>
+    </div>
+
+    <!-- Listas & Blocos -->
+    <div class="word-tool-group">
+      <button class="word-tool-btn" type="button" onclick="execCmd('insertUnorderedList')" title="Lista de pontos">
+        <i class="ri-list-unordered"></i>
+      </button>
+      <button class="word-tool-btn" type="button" onclick="execCmd('insertOrderedList')" title="Lista numerada">
+        <i class="ri-list-ordered"></i>
+      </button>
+      <button class="word-tool-btn" type="button" onclick="insertChecklist()" title="Inserir lista de verificação">
+        <i class="ri-list-check-2"></i>
+      </button>
+      <button class="word-tool-btn" type="button" onclick="openCalloutModal()" title="Inserir Caixa de Destaque / Aviso">
+        <i class="ri-Seedling-line ri-chat-quote-line"></i>
+      </button>
+      <button class="word-tool-btn" type="button" onclick="openTableModal()" title="Inserir Tabela">
+        <i class="ri-table-2"></i>
+      </button>
+      <button class="word-tool-btn" type="button" onclick="insertDivider()" title="Inserir linha divisória">
+        <i class="ri-separator"></i>
+      </button>
+    </div>
+
+    <!-- Fotografias Base64, Links e Embeds -->
+    <div class="word-tool-group word-tool-group-media">
+      <input type="file" id="inlineImageFileInput" accept="image/png,image/jpeg,image/webp,image/gif" multiple style="display: none;" onchange="handleInlineImageFiles(this.files)">
+      <button class="word-tool-btn word-tool-btn-wide word-tool-btn-accent" type="button" onclick="document.getElementById('coverFileInput').click()" title="Carregar fotografia de capa do artigo (aparece acima do texto)">
+        <i class="ri-camera-lens-line"></i> <span>Carregar Capa</span>
+      </button>
+      <button class="word-tool-btn" type="button" onclick="triggerInlineImageUpload()" title="Inserir fotografia adicional no corpo do artigo">
+        <i class="ri-image-add-line"></i>
+      </button>
+      <button class="word-tool-btn" type="button" onclick="openImageUrlModal()" title="Inserir imagem por URL">
+        <i class="ri-image-line"></i>
+      </button>
+      <button class="word-tool-btn" type="button" onclick="openLinkModal()" title="Inserir hiperligação (Ctrl+K)">
+        <i class="ri-link"></i>
+      </button>
+      <button class="word-tool-btn" type="button" onclick="openEmbedModal()" title="Incorporar YouTube ou Spotify">
+        <i class="ri-vidicon-line"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- WORKSPACE PRINCIPAL -->
+  <main class="word-workspace-grid">
+    <!-- FOLHA DE DOCUMENTO -->
+    <div class="word-sheet-wrapper">
+      <div class="word-paper-sheet" id="editorPaperSheet">
+
+        <!-- CAPA DO ARTIGO ACIMA DE TUDO -->
+        <figure class="editor-sheet-cover-banner" id="sheetCoverFigure" onclick="document.getElementById('coverFileInput').click()" title="Clica para alterar a fotografia de capa (aparece acima de tudo)" style="margin: 0 0 1.5rem; border: 2px solid #282425; box-shadow: 4px 4px 0 #282425; background: #282425; position: relative; cursor: pointer; overflow: hidden;">
+          <img id="sheetCoverImg" src="assets/logo-radio.jpg" alt="Fotografia de capa do artigo" style="width: 100%; max-height: 340px; object-fit: cover; display: block;">
+          <figcaption style="position: absolute; right: 0.75rem; bottom: 0.75rem; background: rgba(40, 36, 37, 0.9); color: #f5f1f1; border: 1.5px solid #f5f1f1; padding: 0.35rem 0.75rem; font-family: monospace; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; display: inline-flex; align-items: center; gap: 0.4rem;">
+            <i class="ri-upload-cloud-2-line" style="color: #ff545b;"></i> Capa da Notícia (Acima de Tudo) — Clica para mudar
+          </figcaption>
+        </figure>
+
+        <!-- META PREVIEW BAR -->
+        <div class="editor-sheet-meta-bar">
+          <span class="editor-sheet-cat-pill" id="sheetCategoryPill"><i class="ri-price-tag-3-line"></i> Notícia</span>
+          <span class="editor-sheet-date-pill" id="sheetDatePill"><i class="ri-calendar-line"></i> Hoje</span>
+          <span class="editor-sheet-drop-hint"><i class="ri-camera-lens-line"></i> A capa aparece sempre no topo, acima de tudo</span>
+        </div>
+
+        <input id="articleTitle" class="word-doc-title-input" type="text" placeholder="Título principal do artigo..." oninput="onEditorMetaInput()">
+
+        <!-- BARRA DE CONTROLO DE IMAGEM SELECIONADA NO TEXTO -->
+        <div id="inlineImageToolbar" class="inline-image-toolbar" style="display: none;">
+          <span class="inline-img-toolbar-label"><i class="ri-image-edit-line"></i> Fotografia selecionada:</span>
+          <div class="inline-img-toolbar-btns">
+            <button type="button" onclick="resizeSelectedInlineImage('100%')" title="Largura total (100%)">100%</button>
+            <button type="button" onclick="resizeSelectedInlineImage('75%')" title="Largura média (75%)">75%</button>
+            <button type="button" onclick="resizeSelectedInlineImage('50%')" title="Largura reduzida (50%)">50%</button>
+            <span class="inline-img-sep"></span>
+            <button type="button" onclick="alignSelectedInlineImage('left')" title="Alinhar à esquerda"><i class="ri-align-left"></i></button>
+            <button type="button" onclick="alignSelectedInlineImage('center')" title="Centrar imagem"><i class="ri-align-center"></i></button>
+            <button type="button" onclick="alignSelectedInlineImage('right')" title="Alinhar à direita"><i class="ri-align-right"></i></button>
+            <span class="inline-img-sep"></span>
+            <button type="button" onclick="editSelectedInlineImageCaption()" title="Adicionar ou editar legenda"><i class="ri-text"></i> Legenda</button>
+            <button type="button" class="danger" onclick="removeSelectedInlineImage()" title="Remover fotografia"><i class="ri-delete-bin-line"></i></button>
+          </div>
+        </div>
+
+        <!-- CORPO EDITÁVEL DO ARTIGO -->
+        <div id="articleBody" class="word-editable-body" contenteditable="true" spellcheck="true"></div>
+      </div>
+    </div>
+
+    <!-- BARRA LATERAL DE DEFINIÇÕES E UPLOAD BASE64 -->
+    <aside class="word-sidebar-panel">
+
+      <!-- CARTÃO 1: IMAGEM DE CAPA (UPLOAD PNG/JPG BASE64 GRATUITO) -->
+      <div class="word-side-card">
+        <h4><i class="ri-camera-lens-line" style="color: #ff545b;"></i> Fotografia de Capa</h4>
+
+        <input type="file" id="coverFileInput" accept="image/png,image/jpeg,image/webp,image/gif" style="display: none;" onchange="handleCoverFileUpload(this.files[0])">
+
+        <div class="editor-cover-dropzone" id="coverDropzone" onclick="document.getElementById('coverFileInput').click()">
+          <i class="ri-upload-cloud-2-line"></i>
+          <strong>Carregar foto (PNG / JPG)</strong>
+          <small>Alojamento 100% gratuito via Base64 otimizado (arrasta ou clica aqui)</small>
+        </div>
+
+        <div class="word-cover-preview-box" id="coverPreviewBox">
+          <img id="coverPreview" class="word-cover-preview-img" src="assets/logo-radio.jpg" alt="Pré-visualização da capa">
+          <div class="cover-preview-overlay-bar">
+            <span id="coverSizeBadge" class="cover-size-badge">Capa padrão</span>
+            <button type="button" class="cover-remove-btn" onclick="clearCoverImage()" title="Repor imagem padrão">
+              <i class="ri-delete-bin-line"></i> Repor
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 0.85rem;">
+          <label for="articleImage" style="font-size: 0.78rem; color: var(--text-muted);">Ou colar URL / Base64 da capa</label>
+          <input id="articleImage" class="form-input-lg" type="text" placeholder="https://... ou data:image/..." oninput="updateCoverPreview(this.value)">
+        </div>
+
+        <div style="margin-top: 0.65rem;">
+          <small style="color: var(--text-muted); font-size: 0.74rem; display: block; margin-bottom: 0.35rem;">Capas rápidas da rádio:</small>
+          <div class="word-preset-images">
+            <img class="word-preset-thumb active" src="assets/logo-radio.jpg" alt="Logo Rádio" title="Logo Rádio Cidadela" onclick="selectPresetCover('assets/logo-radio.jpg', this)">
+            <img class="word-preset-thumb" src="assets/brand/og-image.jpg" alt="Wave Rádio" title="Banner Oficial Wave" onclick="selectPresetCover('assets/brand/og-image.jpg', this)">
+            <img class="word-preset-thumb" src="assets/logo-cidadela.png" alt="EBS Cidadela" title="Emblema EBS Cidadela" onclick="selectPresetCover('assets/logo-cidadela.png', this)">
+          </div>
+        </div>
+      </div>
+
+      <!-- CARTÃO 2: PUBLICAÇÃO E METADADOS -->
+      <div class="word-side-card">
+        <h4><i class="ri-settings-4-line" style="color: #38bdf8;"></i> Definições da Publicação</h4>
+
+        <div class="form-group" style="margin-bottom: 0.9rem;">
+          <label for="articleVisibility">Destino do Conteúdo</label>
+          <select id="articleVisibility" class="form-input-lg" onchange="toggleBroadcastDateVisibility()">
+            <option value="public">Publicar no site (Notícias)</option>
+            <option value="internal">Aviso interno para ler em antena</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="broadcastDateGroup" style="display: none; margin-bottom: 0.9rem; padding: 0.85rem; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 10px;">
+          <label for="articleBroadcastDate" style="color: #fbbf24;"><i class="ri-mic-line"></i> Data de Emissão em Antena</label>
+          <input id="articleBroadcastDate" class="form-input-lg" type="date" style="margin-bottom: 0.6rem;">
+          <label for="articleSpeaker" style="font-size: 0.78rem;">Locutor Responsável</label>
+          <input id="articleSpeaker" class="form-input-lg" type="text" placeholder="Ex: Equipa da Manhã" style="margin-bottom: 0.6rem;">
+          <label for="articleCue" style="font-size: 0.78rem;">Cama Sonora</label>
+          <select id="articleCue" class="form-input-lg">
+            <option value="Cama Sonora Suave">Cama Sonora Suave</option>
+            <option value="Jingle de Abertura + Cama">Jingle de Abertura + Cama</option>
+            <option value="Alerta de Notícias">Alerta de Notícias</option>
+            <option value="Sem Cama (Voz Direta)">Sem Cama (Voz Direta)</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0.9rem;">
+          <label for="articleCategory">Categoria Editorial</label>
+          <select id="articleCategory" class="form-input-lg" onchange="onEditorMetaInput()">
+            <option value="Notícia">Notícia</option>
+            <option value="Evento Escolar">Evento Escolar</option>
+            <option value="Desporto">Desporto</option>
+            <option value="Cultura & Música">Cultura &amp; Música</option>
+            <option value="Entrevista">Entrevista</option>
+            <option value="Recrutamento">Recrutamento</option>
+            <option value="Clubes & Projetos">Clubes &amp; Projetos</option>
+            <option value="Comunicado">Comunicado Oficial</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0.9rem;">
+          <label for="articleDatePicker">Data da Publicação</label>
+          <input id="articleDatePicker" class="form-input-lg" type="date" onchange="onArticleDatePickerChange(this.value)">
+          <input id="articleDate" class="form-input-lg" type="text" placeholder="Ex: 27 de outubro de 2026" style="margin-top: 0.45rem; font-size: 0.84rem;" oninput="onEditorMetaInput()">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0.9rem;">
+          <label for="articleAuthor">Autor / Redação</label>
+          <input id="articleAuthor" class="form-input-lg" type="text" value="Equipa da Rádio • EBS Cidadela" oninput="onEditorMetaInput()">
+        </div>
+
+        <label class="word-air-checkbox" style="margin-top: 0.5rem;">
+          <input type="checkbox" id="articleFeatured" onchange="onEditorMetaInput()">
+          <div>
+            <strong>Destacar Notícia</strong>
+            <small>Apresenta este artigo em destaque no topo do portal.</small>
+          </div>
+        </label>
+      </div>
+
+      <!-- CARTÃO 3: RESUMO / LEAD -->
+      <div class="word-side-card">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+          <h4 style="margin-bottom: 0;"><i class="ri-file-text-line" style="color: #a78bfa;"></i> Resumo / Lead</h4>
+          <button type="button" class="btn-action" style="padding: 0.2rem 0.55rem; font-size: 0.74rem;" onclick="generateExcerptFromBody()" title="Extrair resumo do primeiro parágrafo">
+            <i class="ri-magic-line"></i> Gerar do texto
+          </button>
+        </div>
+        <textarea id="articleExcerpt" class="form-input-lg" rows="4" maxlength="260" placeholder="Breve síntese do artigo que surge nos cartões de notícias e no subtítulo..." oninput="updateExcerptCounter(); onEditorMetaInput();"></textarea>
+        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-top: 0.35rem;">
+          <span>Visível nos cartões e cabeçalho</span>
+          <span id="excerptCharCount">0 / 260</span>
+        </div>
+      </div>
+
+      <!-- CARTÃO 4: DIAGNÓSTICO E CAPACIDADE BASE64 -->
+      <div class="word-side-card">
+        <h4><i class="ri-database-2-line" style="color: #34d399;"></i> Métricas &amp; Capacidade</h4>
+        <div class="editor-stats-list">
+          <div class="editor-stat-row">
+            <span>Palavras no artigo</span>
+            <strong id="sideStatWords">0</strong>
+          </div>
+          <div class="editor-stat-row">
+            <span>Tempo de leitura</span>
+            <strong id="sideStatReadTime">1 min</strong>
+          </div>
+          <div class="editor-stat-row">
+            <span>Fotografias no artigo</span>
+            <strong id="sideStatImages">0</strong>
+          </div>
+          <div class="editor-stat-row">
+            <span>Peso total (Texto + Base64)</span>
+            <strong id="sideStatSize">2 KB / 900 KB</strong>
+          </div>
+        </div>
+        <div class="editor-quota-bar-track" title="Capacidade do documento na base de dados gratuita">
+          <div class="editor-quota-bar-fill" id="sideStatQuotaFill" style="width: 1%;"></div>
+        </div>
+        <small style="display: block; margin-top: 0.45rem; font-size: 0.73rem; color: var(--text-muted); line-height: 1.4;">
+          As fotos PNG/JPG são comprimidas automaticamente em Base64 para carregamento rápido e alojamento 100% gratuito.
+        </small>
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- BARRA DE ESTADO INFERIOR -->
+  <footer class="word-bottom-statusbar">
+    <span id="wordCountDisplay">0 palavras • 0 caracteres</span>
+    <span id="readTimeDisplay">Tempo estimado: 1 min de leitura</span>
+  </footer>
+
+  <!-- ============================================================ -->
+  <!-- MODAIS DO EDITOR DE ARTIGOS                                   -->
+  <!-- ============================================================ -->
+
+  <!-- MODAL: INSERIR HIPERLIGAÇÃO -->
+  <div class="modal-overlay" id="editorLinkModal">
+    <div class="card-panel modal-window" style="max-width: 480px;">
+      <div class="modal-header-bar">
+        <div class="modal-header-left">
+          <div class="modal-header-icon"><i class="ri-link"></i></div>
+          <div class="modal-header-text">
+            <h3>Inserir Hiperligação</h3>
+            <p>Adiciona um link clicável no corpo do artigo.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="closeEditorModal('editorLinkModal')"><i class="ri-close-line"></i></button>
+      </div>
+      <form onsubmit="confirmInsertLink(event)">
+        <div class="form-field">
+          <label for="linkModalText">Texto a apresentar</label>
+          <input type="text" id="linkModalText" class="form-input-lg" placeholder="Ex: Consultar regulamento oficial">
+        </div>
+        <div class="form-field">
+          <label for="linkModalUrl">Endereço URL <span style="color: #ef4444;">*</span></label>
+          <input type="url" id="linkModalUrl" class="form-input-lg" placeholder="https://..." required>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-action" onclick="closeEditorModal('editorLinkModal')">Cancelar</button>
+          <button type="submit" class="btn-submit-main"><i class="ri-check-line"></i> Inserir Link</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: INSERIR IMAGEM POR URL -->
+  <div class="modal-overlay" id="editorImageUrlModal">
+    <div class="card-panel modal-window" style="max-width: 500px;">
+      <div class="modal-header-bar">
+        <div class="modal-header-left">
+          <div class="modal-header-icon"><i class="ri-image-add-line"></i></div>
+          <div class="modal-header-text">
+            <h3>Inserir Fotografia no Texto</h3>
+            <p>Carrega um ficheiro PNG/JPG para Base64 ou indica um endereço direto.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="closeEditorModal('editorImageUrlModal')"><i class="ri-close-line"></i></button>
+      </div>
+      <form onsubmit="confirmInsertImageUrl(event)">
+        <div class="editor-cover-dropzone" style="margin-bottom: 1rem;" onclick="closeEditorModal('editorImageUrlModal'); triggerInlineImageUpload();">
+          <i class="ri-upload-cloud-2-line"></i>
+          <strong>Preferes carregar do computador em Base64?</strong>
+          <small>Clica aqui para escolher um ficheiro PNG ou JPG</small>
+        </div>
+        <div class="form-field">
+          <label for="imageModalUrl">URL da Imagem <span style="color: #ef4444;">*</span></label>
+          <input type="url" id="imageModalUrl" class="form-input-lg" placeholder="https://..." required>
+        </div>
+        <div class="form-field">
+          <label for="imageModalCaption">Legenda da fotografia (opcional)</label>
+          <input type="text" id="imageModalCaption" class="form-input-lg" placeholder="Ex: Estúdio da Wave Rádio durante a emissão">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-action" onclick="closeEditorModal('editorImageUrlModal')">Cancelar</button>
+          <button type="submit" class="btn-submit-main"><i class="ri-check-line"></i> Inserir Imagem</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CAIXA DE DESTAQUE / CALLOUT -->
+  <div class="modal-overlay" id="editorCalloutModal">
+    <div class="card-panel modal-window" style="max-width: 500px;">
+      <div class="modal-header-bar">
+        <div class="modal-header-left">
+          <div class="modal-header-icon"><i class="ri-chat-quote-line"></i></div>
+          <div class="modal-header-text">
+            <h3>Inserir Caixa de Destaque</h3>
+            <p>Cria um bloco visual para destacar informações importantes no artigo.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="closeEditorModal('editorCalloutModal')"><i class="ri-close-line"></i></button>
+      </div>
+      <form onsubmit="confirmInsertCallout(event)">
+        <div class="form-field">
+          <label for="calloutModalType">Estilo da Caixa</label>
+          <select id="calloutModalType" class="form-input-lg">
+            <option value="wave">Destaque Wave Rádio (Vermelho)</option>
+            <option value="info">Informação Útil (Azul)</option>
+            <option value="warning">Aviso Importante (Âmbar)</option>
+            <option value="tip">Dica / Nota Positiva (Verde)</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="calloutModalTitle">Título da Caixa</label>
+          <input type="text" id="calloutModalTitle" class="form-input-lg" placeholder="Ex: Nota importante para os alunos" value="Em Destaque">
+        </div>
+        <div class="form-field">
+          <label for="calloutModalBody">Texto do Destaque <span style="color: #ef4444;">*</span></label>
+          <textarea id="calloutModalBody" class="form-input-lg" rows="3" placeholder="Escreve a informação a destacar..." required></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-action" onclick="closeEditorModal('editorCalloutModal')">Cancelar</button>
+          <button type="submit" class="btn-submit-main"><i class="ri-check-line"></i> Inserir Destaque</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: INSERIR TABELA -->
+  <div class="modal-overlay" id="editorTableModal">
+    <div class="card-panel modal-window" style="max-width: 440px;">
+      <div class="modal-header-bar">
+        <div class="modal-header-left">
+          <div class="modal-header-icon"><i class="ri-table-2"></i></div>
+          <div class="modal-header-text">
+            <h3>Inserir Tabela</h3>
+            <p>Adiciona uma tabela formatada para horários, resultados ou equipas.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="closeEditorModal('editorTableModal')"><i class="ri-close-line"></i></button>
+      </div>
+      <form onsubmit="confirmInsertTable(event)">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-field">
+            <label for="tableModalRows">Linhas</label>
+            <input type="number" id="tableModalRows" class="form-input-lg" min="2" max="20" value="3" required>
+          </div>
+          <div class="form-field">
+            <label for="tableModalCols">Colunas</label>
+            <input type="number" id="tableModalCols" class="form-input-lg" min="2" max="8" value="3" required>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-action" onclick="closeEditorModal('editorTableModal')">Cancelar</button>
+          <button type="submit" class="btn-submit-main"><i class="ri-check-line"></i> Inserir Tabela</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: INCORPORAR YOUTUBE OU SPOTIFY -->
+  <div class="modal-overlay" id="editorEmbedModal">
+    <div class="card-panel modal-window" style="max-width: 500px;">
+      <div class="modal-header-bar">
+        <div class="modal-header-left">
+          <div class="modal-header-icon"><i class="ri-vidicon-line"></i></div>
+          <div class="modal-header-text">
+            <h3>Incorporar Vídeo ou Áudio</h3>
+            <p>Cola uma ligação do YouTube ou do Spotify para inserir o leitor no artigo.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="closeEditorModal('editorEmbedModal')"><i class="ri-close-line"></i></button>
+      </div>
+      <form onsubmit="confirmInsertEmbed(event)">
+        <div class="form-field">
+          <label for="embedModalUrl">Ligação do YouTube ou Spotify <span style="color: #ef4444;">*</span></label>
+          <input type="url" id="embedModalUrl" class="form-input-lg" placeholder="https://www.youtube.com/watch?v=... ou https://open.spotify.com/..." required>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-action" onclick="closeEditorModal('editorEmbedModal')">Cancelar</button>
+          <button type="submit" class="btn-submit-main"><i class="ri-check-line"></i> Incorporar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: PRÉ-VISUALIZAÇÃO COMPLETA DO ARTIGO -->
+  <div class="modal-overlay" id="articlePreviewModal">
+    <div class="card-panel modal-window" style="max-width: 920px; width: 95%; max-height: 92vh; padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; background: #090d1a; border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <span class="word-doc-badge"><i class="ri-eye-line"></i> Pré-visualização</span>
+          <strong style="color: #fff; font-size: 0.95rem;">Assim será apresentado aos leitores no site</strong>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <button type="button" class="btn-action" onclick="closeEditorModal('articlePreviewModal')">Continuar a Editar</button>
+          <button type="button" class="btn-submit-main" onclick="closeEditorModal('articlePreviewModal'); publishArticle();">
+            <i class="ri-send-plane-fill"></i> Publicar Agora
+          </button>
+        </div>
+      </div>
+      <div id="articlePreviewContainer" style="padding: 2.25rem; overflow-y: auto; flex: 1; background: #f4efea; color: #282425;"></div>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/editor.js"></script>
 </body>
 </html>

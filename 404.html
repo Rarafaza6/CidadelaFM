@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>404 — Fora de Frequência | Wave Rádio • EBS Cidadela</title>
+  <meta name="robots" content="noindex, follow">
+  <meta name="theme-color" content="#282425">
+  <script>
+    /* Compatibilidade GitHub Pages: garante que assets, CSS e links funcionam
+       mesmo quando o 404 é servido num sub-caminho profundo (/pasta/inexistente/...) */
+    (function () {
+      document.documentElement.classList.add('js');
+      try {
+        var t = localStorage.getItem('wave_theme');
+        if (t === 'dark' || t === 'light') {
+          document.documentElement.setAttribute('data-theme', t);
+        }
+      } catch (e) {}
+
+      if (window.location.protocol !== 'file:') {
+        var baseHref = '/';
+        var pathParts = window.location.pathname.split('/').filter(Boolean);
+        var knownPages = [
+          'index.html', 'pedir-musica.html', 'podcasts.html', 'noticias.html',
+          'equipa.html', 'mensagem.html', 'links.html', 'dt.html', 'nerd-alert.html',
+          'artigo.html', 'vote.html', 'admin.html', 'admin-editor.html', '404.html'
+        ];
+        if (
+          window.location.hostname.endsWith('.github.io') &&
+          pathParts.length > 0 &&
+          knownPages.indexOf(pathParts[0].toLowerCase()) === -1
+        ) {
+          baseHref = '/' + pathParts[0] + '/';
+        }
+        var baseEl = document.createElement('base');
+        baseEl.href = baseHref;
+        document.head.appendChild(baseEl);
+      }
+    })();
+  </script>
+  <link rel="icon" type="image/png" href="assets/brand/favicon-negativa.png">
+  <link rel="apple-touch-icon" href="assets/brand/favicon-negativa.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+  <link rel="stylesheet" href="css/wave.css?v=20261027c">
+</head>
+<body>
+<a class="skip" href="#main">Saltar para o conteúdo</a>
+<header class="w-nav">
+  <div class="w-nav-in">
+    <a class="w-logo" href="index.html" aria-label="Wave Rádio — Página principal"><img src="assets/brand/logo-minima-positiva.png" alt="Wave Rádio" width="65" height="38"></a>
+    <nav class="w-navwrap" aria-label="Navegação principal">
+      <ul class="w-links">
+        <li><a href="index.html">Início</a></li>
+        <li><a href="podcasts.html">Podcasts</a></li>
+        <li><a href="noticias.html">Notícias</a></li>
+        <li><a href="equipa.html">Equipa</a></li>
+        <li><a href="mensagem.html">Fala Connosco</a></li>
+      </ul>
+    </nav>
+    <a class="w-btn w-btn-red w-nav-cta" href="pedir-musica.html" id="navCtaBtn"><i class="ri-music-2-fill" aria-hidden="true"></i> Pedir música</a>
+    <button class="w-burger" id="navBurger" type="button" aria-label="Abrir menu de navegação" aria-expanded="false" aria-controls="mobileMenu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+<div class="w-drawer" id="mobileMenu" aria-hidden="true">
+  <div class="w-drawer-top"><img src="assets/brand/logo-minima-negativa.png" alt="Wave Rádio"><button class="w-drawer-close" id="mobileClose" type="button" aria-label="Fechar menu"><i class="ri-close-line" aria-hidden="true"></i></button></div>
+  <a class="w-d-link" href="index.html">Início <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a>
+  <a class="w-d-link" href="podcasts.html">Podcasts <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a>
+  <a class="w-d-link" href="noticias.html">Notícias <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a>
+  <a class="w-d-link" href="equipa.html">Equipa <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a>
+  <a class="w-d-link" href="mensagem.html">Fala Connosco <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a>
+  <a class="w-btn w-btn-red w-btn-block" href="pedir-musica.html"><i class="ri-music-2-fill" aria-hidden="true"></i> Pedir música</a>
+</div>
+
+<main class="w-404-wrap" id="main">
+  <section class="w-404-card" aria-labelledby="err404Title">
+    <div class="w-404-top">
+      <span class="w-404-status"><span class="w-live"></span> ERRO 404 · FORA DE FREQUÊNCIA</span>
+      <span>WAVE RÁDIO · EBS CIDADELA</span>
+    </div>
+
+    <div class="w-404-body">
+      <div>
+        <div class="w-404-code" aria-hidden="true">404<span>FM</span></div>
+        <h1 class="w-404-title" id="err404Title">Esta frequência só está a dar estática.</h1>
+        <p class="w-404-desc">
+          A página que tentaste sintonizar não existe, mudou de endereço ou foi removida da grelha de emissão da Wave Rádio.
+        </p>
+
+        <div class="w-404-path-box" title="Endereço solicitado">
+          <i class="ri-radar-line" aria-hidden="true"></i>
+          <span id="brokenPathDisplay">/404</span>
+        </div>
+
+        <div class="w-404-suggestion" id="smartRouteSuggestion">
+          <div>
+            <strong style="display:block;font-family:var(--mono);font-size:.74rem;text-transform:uppercase;color:var(--red);">Sintonização automática sugerida:</strong>
+            <span id="smartRouteText">Encontrámos uma página correspondente.</span>
+          </div>
+          <a href="index.html" class="w-btn w-btn-red" id="smartRouteBtn" style="padding:.5rem .95rem;font-size:1.05rem;">Abrir página <i class="ri-arrow-right-up-line"></i></a>
+        </div>
+
+        <div class="w-404-actions">
+          <a href="index.html" class="w-btn w-btn-red"><i class="ri-broadcast-line" aria-hidden="true"></i> Voltar à emissão principal</a>
+          <a href="pedir-musica.html" class="w-btn"><i class="ri-music-2-fill" aria-hidden="true"></i> Pedir música</a>
+        </div>
+      </div>
+
+      <aside class="w-404-tuner-box" aria-label="Sintonizador rápido de páginas">
+        <div class="w-404-tuner-head">
+          <span><i class="ri-compass-discover-line"></i> Sintonizador Rápido</span>
+          <span>SINAL 100%</span>
+        </div>
+        <div class="w-404-freq">
+          <span>10:00</span>
+          <small>NO AR</small>
+        </div>
+        <div class="w-dial" style="height: 58px; border: 1.5px solid rgba(245,241,241,0.25);">
+          <div class="w-dial-scale"></div>
+          <div class="w-dial-needle"><b>404</b></div>
+        </div>
+        <nav class="w-404-quick-list" aria-label="Páginas principais">
+          <a class="w-404-quick-link" href="index.html"><span>01 · Página Inicial</span><i class="ri-arrow-right-up-line"></i></a>
+          <a class="w-404-quick-link" href="podcasts.html"><span>02 · Ouvir Podcasts</span><i class="ri-arrow-right-up-line"></i></a>
+          <a class="w-404-quick-link" href="noticias.html"><span>03 · Notícias &amp; Avisos</span><i class="ri-arrow-right-up-line"></i></a>
+          <a class="w-404-quick-link" href="equipa.html"><span>04 · Conhecer a Equipa</span><i class="ri-arrow-right-up-line"></i></a>
+          <a class="w-404-quick-link" href="DT.html"><span>05 · Diretores de Turma</span><i class="ri-arrow-right-up-line"></i></a>
+          <a class="w-404-quick-link" href="mensagem.html"><span>06 · Fala Connosco</span><i class="ri-arrow-right-up-line"></i></a>
+        </nav>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="w-foot" role="contentinfo">
+  <div class="w-foot-in">
+    <div class="w-foot-grid">
+      <div>
+        <a class="w-foot-logo" href="index.html" aria-label="Wave Rádio — Início"><img src="assets/brand/logo-slogan-negativa.png" alt="Wave Rádio — A tua rádio das 10:00!" width="220" height="128" loading="lazy" decoding="async"></a>
+        <p class="w-foot-blurb">A voz e a música dos alunos da EBS da Cidadela.</p>
+        <p class="w-foot-email"><a href="mailto:Geral@RadioWave.pt"><i class="ri-mail-send-line" aria-hidden="true"></i> Geral@RadioWave.pt</a></p>
+      </div>
+      <div>
+        <h4>Navegar</h4>
+        <ul class="w-foot-list" role="list">
+          <li><a href="index.html">Início</a></li>
+          <li><a href="pedir-musica.html">Pedir música</a></li>
+          <li><a href="DT.html">Diretores de Turma</a></li>
+          <li><a href="podcasts.html">Podcasts</a></li>
+          <li><a href="noticias.html">Notícias</a></li>
+          <li><a href="equipa.html">Equipa</a></li>
+          <li><a href="mensagem.html">Fala Connosco</a></li>
+          <li><a href="links.html">Links rápidos</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Entidades &amp; Parcerias</h4>
+        <div class="w-partners">
+          <a class="w-partner" href="https://www.cascais.pt" target="_blank" rel="noopener noreferrer" aria-label="Câmara Municipal de Cascais"><span>Parceria</span><img src="assets/logo-cmc.jpg" alt="Câmara Municipal de Cascais" loading="lazy" decoding="async"></a>
+          <a class="w-partner" href="https://criativa.org" target="_blank" rel="noopener noreferrer" aria-label="Criativa.org"><span>Produção</span><img src="assets/logo-criativa.jpg" alt="Criativa.org" loading="lazy" decoding="async"></a>
+          <a class="w-partner" href="https://aecidadela.pt" target="_blank" rel="noopener noreferrer" aria-label="Agrupamento de Escolas da Cidadela"><span>Escola</span><img src="assets/logo-cidadela.png" alt="Agrupamento de Escolas da Cidadela" loading="lazy" decoding="async"></a>
+        </div>
+      </div>
+    </div>
+    <div class="w-foot-bottom">
+      <span>&copy; 2026 <b>Wave Rádio</b> · EBS Cidadela · <a href="mailto:Geral@RadioWave.pt">Geral@RadioWave.pt</a> · Desenvolvido por Rafael Diogo</span>
+      <a href="admin.html"><i class="ri-lock-2-line" aria-hidden="true"></i> Área reservada</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var pathEl = document.getElementById('brokenPathDisplay');
+    var fullPath = window.location.pathname + window.location.search;
+    if (pathEl) {
+      pathEl.textContent = fullPath || '/404';
+    }
+
+    // No GitHub Pages, os URLs são case-sensitive (ex: /dt ou /dt.html vs /DT.html) e muitas vezes acedidos sem .html
+    var slug = (window.location.pathname.split('/').pop() || '').toLowerCase().replace(/\.html$/, '');
+    var routeMap = {
+      'dt': { url: 'DT.html', label: 'Diretores de Turma (DT.html)' },
+      'diretores': { url: 'DT.html', label: 'Diretores de Turma (DT.html)' },
+      'musica': { url: 'pedir-musica.html', label: 'Pedir Música' },
+      'pedir-musica': { url: 'pedir-musica.html', label: 'Pedir Música' },
+      'podcast': { url: 'podcasts.html', label: 'Podcasts' },
+      'podcasts': { url: 'podcasts.html', label: 'Podcasts' },
+      'noticia': { url: 'noticias.html', label: 'Notícias' },
+      'noticias': { url: 'noticias.html', label: 'Notícias' },
+      'equipa': { url: 'equipa.html', label: 'A Nossa Equipa' },
+      'team': { url: 'equipa.html', label: 'A Nossa Equipa' },
+      'mensagem': { url: 'mensagem.html', label: 'Fala Connosco' },
+      'contacto': { url: 'mensagem.html', label: 'Fala Connosco' },
+      'links': { url: 'links.html', label: 'Links Rápidos' },
+      'linktree': { url: 'links.html', label: 'Links Rápidos' },
+      'nerd': { url: 'nerd-alert.html', label: 'Alerta Nerd' },
+      'nerd-alert': { url: 'nerd-alert.html', label: 'Alerta Nerd' },
+      'alerta-nerd': { url: 'nerd-alert.html', label: 'Alerta Nerd' },
+      'admin': { url: 'admin.html', label: 'Painel de Gestão' },
+      'votar': { url: 'vote.html', label: 'Votações' },
+      'vote': { url: 'vote.html', label: 'Votações' }
+    };
+
+    if (slug && routeMap[slug]) {
+      var match = routeMap[slug];
+      var box = document.getElementById('smartRouteSuggestion');
+      var txt = document.getElementById('smartRouteText');
+      var btn = document.getElementById('smartRouteBtn');
+      if (box && txt && btn) {
+        txt.textContent = 'Procuravas a página «' + match.label + '»?';
+        btn.href = match.url + window.location.search + window.location.hash;
+        box.style.display = 'flex';
+      }
+    }
+  })();
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/site-ui.js?v=20261027"></script>
+</body>
+</html>

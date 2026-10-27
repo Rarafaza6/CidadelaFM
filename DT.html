@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Diretores de Turma • Sugestão de Músicas | Wave Rádio • EBS Cidadela</title>
+  <meta name="description"
+    content="Área exclusiva para Diretores de Turma sugerirem até 10 músicas semanalmente por turma para a emissão da Wave Rádio da EBS da Cidadela.">
+  <meta name="theme-color" content="#282425">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Diretores de Turma | Wave Rádio • EBS Cidadela">
+  <meta property="og:description"
+    content="Sugere com a tua turma até 10 músicas por semana para a playlist do intervalo da Wave Rádio.">
+  <meta property="og:image" content="assets/brand/og-image.jpg">
+  <link rel="icon" type="image/png" href="assets/brand/favicon-negativa.png">
+  <link rel="apple-touch-icon" href="assets/brand/favicon-negativa.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+  <link rel="stylesheet" href="css/wave.css?v=20261027c">
+  <script>document.documentElement.classList.add('js');try{var t=localStorage.getItem('wave_theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+  <script src="js/maintenance-guard.js?v=20261027d"></script>
+</head>
+<body>
+<a class="skip" href="#main">Saltar para o conteúdo</a>
+<header class="w-nav">
+  <div class="w-nav-in">
+    <a class="w-logo" href="index.html" aria-label="Wave Rádio — Página principal"><img src="assets/brand/logo-minima-positiva.png" alt="Wave Rádio" width="65" height="38"></a>
+    <nav class="w-navwrap" aria-label="Navegação principal"><ul class="w-links"><li><a href="index.html">Início</a></li><li><a href="podcasts.html">Podcasts</a></li><li><a href="noticias.html">Notícias</a></li><li><a href="mensagem.html">Fala Connosco</a></li></ul></nav>
+    <a class="w-btn w-btn-red w-nav-cta" href="pedir-musica.html" id="navCtaBtn"><i class="ri-music-2-fill" aria-hidden="true"></i> Pedir música</a>
+    <button class="w-burger" id="navBurger" type="button" aria-label="Abrir menu de navegação" aria-expanded="false" aria-controls="mobileMenu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+<div class="w-drawer" id="mobileMenu" aria-hidden="true">
+  <div class="w-drawer-top"><img src="assets/brand/logo-minima-negativa.png" alt="Wave Rádio"><button class="w-drawer-close" id="mobileClose" type="button" aria-label="Fechar menu"><i class="ri-close-line" aria-hidden="true"></i></button></div>
+  <a class="w-d-link" href="index.html">Início <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a><a class="w-d-link" href="podcasts.html">Podcasts <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a><a class="w-d-link" href="noticias.html">Notícias <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a><a class="w-d-link" href="mensagem.html">Fala Connosco <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a>
+  <a class="w-btn w-btn-red w-btn-block" href="pedir-musica.html"><i class="ri-music-2-fill" aria-hidden="true"></i> Pedir música</a>
+</div>
+
+<header class="w-page-head">
+  <div class="w-page-head-in">
+    <nav class="w-crumb" aria-label="Localização"><a href="index.html">Início</a><b>/</b><span>Diretores de Turma</span></nav>
+    <h1 class="w-page-title">Surf em<br><span class="out">Turma<span class="dot">.</span></span></h1>
+    <p class="w-page-sub">Escolhe com a tua turma até 10 músicas por semana para tocar nos intervalos da escola — rápido e passo a passo.</p>
+  </div>
+  <div class="w-tag" aria-hidden="true">DT</div>
+</header>
+
+<main class="w-main" id="main">
+  <div class="w-split">
+    <section class="w-card" aria-labelledby="dtFormHeading">
+      <h2 class="w-card-title" id="dtFormHeading"><i class="ri-graduation-cap-line" aria-hidden="true"></i> Sugerir Músicas da Turma</h2>
+
+      <!-- Barra de Passos Simples (1 -> 2 -> 3) -->
+      <div class="dt-stepper" role="list" aria-label="Passos de envio">
+        <div class="dt-step-pill is-active" id="dtStepIndicator1" role="listitem">
+          <b>1</b> <span>Identificar Turma</span>
+        </div>
+        <div class="dt-step-pill" id="dtStepIndicator2" role="listitem">
+          <b>2</b> <span>Escolher Músicas</span>
+        </div>
+        <div class="dt-step-pill" id="dtStepIndicator3" role="listitem">
+          <b>3</b> <span>Concluído</span>
+        </div>
+      </div>
+
+      <!-- PASSO 1: IDENTIFICAÇÃO SIMPLES -->
+      <form id="dtStep1Form" class="dt-step-pane is-active" novalidate>
+        <p class="dt-step-intro">
+          <strong>Passo 1 de 2:</strong> Indica o teu nome, a turma e a senha de professor para abrir a lista semanal da turma.
+        </p>
+
+        <div class="w-row2">
+          <div class="w-field">
+            <label for="dtTeacherName" class="w-label">O teu nome (Professor/a)</label>
+            <input type="text" id="dtTeacherName" class="w-input" placeholder="Ex.: Ana Martins" maxlength="80" required>
+          </div>
+          <div class="w-field">
+            <label for="dtClassName" class="w-label">Qual é a turma?</label>
+            <input type="text" id="dtClassName" class="w-input" placeholder="Ex.: 10.º A" maxlength="20" required>
+          </div>
+        </div>
+
+        <div class="w-field">
+          <label for="dtPassword" class="w-label">Senha de acesso</label>
+          <div class="dt-pass-wrap">
+            <input type="password" id="dtPassword" class="w-input" placeholder="Escreve a senha..." autocomplete="off" required>
+            <button type="button" class="dt-pass-toggle" id="dtTogglePassBtn" aria-label="Mostrar ou ocultar senha">
+              <i class="ri-eye-line" id="dtTogglePassIcon" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="w-btn w-btn-red w-btn-block" id="dtNextStepBtn">
+          Continuar para escolher músicas <i class="ri-arrow-right-line" aria-hidden="true"></i>
+        </button>
+      </form>
+
+      <!-- PASSO 2: ESCOLHER MÚSICAS -->
+      <form id="dtSuggestionForm" class="dt-step-pane" novalidate>
+        <div class="dt-session-chip">
+          <div class="dt-session-info">
+            <i class="ri-checkbox-circle-fill" aria-hidden="true"></i>
+            <div>
+              <strong id="dtSessionSummary">Turma —</strong>
+            </div>
+          </div>
+          <button type="button" class="dt-btn-link" id="dtChangeClassBtn">
+            <i class="ri-edit-line" aria-hidden="true"></i> Mudar turma
+          </button>
+        </div>
+
+        <div class="dt-quota-box" aria-live="polite">
+          <div class="dt-quota-top">
+            <strong id="dtQuotaClassTitle">Vagas desta semana</strong>
+            <span class="dt-quota-count" id="dtQuotaCountBadge">0 / 10 enviadas</span>
+          </div>
+          <div class="dt-quota-bar" aria-hidden="true">
+            <div class="dt-quota-fill" id="dtQuotaFill"></div>
+          </div>
+          <div class="dt-quota-meta">
+            <span id="dtQuotaRemainingText">Podes escolher até 10 músicas esta semana.</span>
+            <span id="dtWeekRangeLabel">Semana atual</span>
+          </div>
+        </div>
+
+        <div class="w-field" id="dtSearchFieldBox">
+          <label for="dtMusicSearchInput" class="w-label">Procurar música (clica no resultado para juntar à lista)</label>
+          <div class="w-search">
+            <i class="ri-search-line" aria-hidden="true"></i>
+            <input type="text" id="dtMusicSearchInput" class="w-input" placeholder="Escreve o nome da música ou artista..." autocomplete="off">
+            <div id="dtSearchResultsDropdown" class="search-dropdown" role="listbox" aria-label="Resultados de pesquisa musical"></div>
+          </div>
+          <div class="dt-manual-hint">
+            <span>Não encontraste na pesquisa? Escreve <b>Título - Artista</b> e clica ao lado:</span>
+            <button type="button" class="dt-btn-link" id="dtAddSongBtn">+ Juntar manualmente</button>
+          </div>
+        </div>
+
+        <div class="dt-queue-empty" id="dtQueueEmpty">
+          <i class="ri-music-2-line" aria-hidden="true"></i> Ainda não escolheste nenhuma música. Pesquisa acima e clica numa música para a adicionar!
+        </div>
+
+        <div class="dt-queue-wrap" id="dtQueueWrap" style="display: none;">
+          <div class="dt-queue-head">
+            <span><i class="ri-play-list-check" aria-hidden="true"></i> Músicas escolhidas agora</span>
+            <span id="dtQueueCountLabel">0 selecionadas</span>
+          </div>
+          <div class="dt-queue-list" id="dtQueueList"></div>
+        </div>
+
+        <button type="submit" class="w-btn w-btn-red w-btn-block" id="dtSubmitBtn">
+          <i class="ri-send-plane-fill" aria-hidden="true"></i> Enviar músicas da turma
+        </button>
+      </form>
+
+      <!-- PASSO 3: CONFIRMAÇÃO FINAL -->
+      <div id="dtStep3Pane" class="dt-step-pane">
+        <div class="dt-done-box">
+          <div class="dt-done-icon"><i class="ri-check-line" aria-hidden="true"></i></div>
+          <h3 class="dt-done-title">Músicas enviadas!</h3>
+          <p class="dt-done-sub" id="dtDoneMessage">
+            As sugestões da turma foram registadas com sucesso e já estão na lista da Wave Rádio.
+          </p>
+          <div class="dt-done-actions">
+            <button type="button" class="w-btn w-btn-red" id="dtAddMoreBtn">
+              <i class="ri-add-line" aria-hidden="true"></i> Escolher mais músicas para esta turma
+            </button>
+            <button type="button" class="w-btn w-btn-ink" id="dtSwitchClassDoneBtn">
+              <i class="ri-refresh-line" aria-hidden="true"></i> Outra turma
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="dtAlertContainer" aria-live="polite"></div>
+    </section>
+
+    <aside class="w-rules" aria-labelledby="dtRulesHeading">
+      <h2 id="dtRulesHeading">Como funciona</h2>
+      <div class="w-rule">
+        <span class="w-rule-n">1</span>
+        <div>
+          <strong>Identifica a turma</strong>
+          <p>Escreve o teu nome, a turma e a senha fornecida aos Diretores de Turma.</p>
+        </div>
+      </div>
+      <div class="w-rule">
+        <span class="w-rule-n">2</span>
+        <div>
+          <strong>Escolhe até 10 músicas</strong>
+          <p>Pesquisa as músicas pedidas pelos alunos e clica para juntar à lista (<span class="count" id="dtSidebarCountEl">0/10</span> enviadas esta semana).</p>
+        </div>
+      </div>
+      <div class="w-rule">
+        <span class="w-rule-n">3</span>
+        <div>
+          <strong>Já enviadas esta semana</strong>
+          <p>Músicas já guardadas para esta turma na semana atual:</p>
+          <div id="dtSubmittedListContainer">
+            <div class="dt-submitted-empty">Assim que entrares no Passo 1, vês aqui as músicas da turma.</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<footer class="w-foot" role="contentinfo">
+  <div class="w-foot-in">
+    <div class="w-foot-grid">
+      <div>
+        <a class="w-foot-logo" href="index.html" aria-label="Wave Rádio — Início"><img src="assets/brand/logo-slogan-negativa.png" alt="Wave Rádio — A tua rádio das 10:00!" width="220" height="128" loading="lazy" decoding="async"></a>
+        <p class="w-foot-blurb">A voz e a música dos alunos da EBS da Cidadela.</p>
+        <p class="w-foot-email"><a href="mailto:Geral@RadioWave.pt"><i class="ri-mail-send-line" aria-hidden="true"></i> Geral@RadioWave.pt</a></p>
+      </div>
+      <div>
+        <h4>Navegar</h4>
+        <ul class="w-foot-list" role="list">
+          <li><a href="index.html">Início</a></li>
+          <li><a href="pedir-musica.html">Pedir música</a></li>
+          <li><a href="DT.html">Diretores de Turma</a></li>
+          <li><a href="podcasts.html">Podcasts</a></li>
+          <li><a href="noticias.html">Notícias</a></li>
+          <li><a href="mensagem.html">Fala Connosco</a></li>
+          <li><a href="links.html">Links rápidos</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Entidades &amp; Parcerias</h4>
+        <div class="w-partners">
+          <a class="w-partner" href="https://www.cascais.pt" target="_blank" rel="noopener noreferrer" aria-label="Câmara Municipal de Cascais"><span>Parceria</span><img src="assets/logo-cmc.jpg" alt="Câmara Municipal de Cascais" loading="lazy" decoding="async"></a>
+          <a class="w-partner" href="https://criativa.org" target="_blank" rel="noopener noreferrer" aria-label="Criativa.org"><span>Produção</span><img src="assets/logo-criativa.jpg" alt="Criativa.org" loading="lazy" decoding="async"></a>
+          <a class="w-partner" href="https://aecidadela.pt" target="_blank" rel="noopener noreferrer" aria-label="Agrupamento de Escolas da Cidadela"><span>Escola</span><img src="assets/logo-cidadela.png" alt="Agrupamento de Escolas da Cidadela" loading="lazy" decoding="async"></a>
+        </div>
+      </div>
+    </div>
+    <div class="w-foot-bottom">
+      <span>&copy; 2026 <b>Wave Rádio</b> · EBS Cidadela · <a href="mailto:Geral@RadioWave.pt">Geral@RadioWave.pt</a> · Desenvolvido por Rafael Diogo</span>
+      <a href="admin.html"><i class="ri-lock-2-line" aria-hidden="true"></i> Área reservada</a>
+    </div>
+  </div>
+</footer>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/dt.js?v=20261027"></script>
+<script src="js/site-ui.js?v=20261027"></script>
+</body>
+</html>

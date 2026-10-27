@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="100%" height="100%">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;display=swap');
+      .brand-bg { fill: #282425; }
+      .brand-red { fill: #e4232a; }
+      .brand-white { fill: #f5f1f1; }
+      .brand-title { font-family: 'Bebas Neue', 'Outfit', sans-serif; font-size: 110px; fill: #f5f1f1; letter-spacing: 6px; }
+      .brand-sub { font-family: 'Bebas Neue', 'Outfit', sans-serif; font-size: 32px; fill: #e4232a; letter-spacing: 5px; }
+    </style>
+  </defs>
+  <rect width="800" height="450" class="brand-bg"/>
+  <!-- Central Wave Icon & Typography -->
+  <g transform="translate(400, 190)" text-anchor="middle">
+    <!-- Radio Waves -->
+    <path d="M-28,-100 A35,35 0 0,1 28,-100" fill="none" stroke="#e4232a" stroke-width="6" stroke-linecap="round"/>
+    <path d="M-20,-88 A25,25 0 0,1 20,-88" fill="none" stroke="#e4232a" stroke-width="5" stroke-linecap="round"/>
+    <path d="M-12,-76 A15,15 0 0,1 12,-76" fill="none" stroke="#e4232a" stroke-width="4" stroke-linecap="round"/>
+    <!-- Cone A -->
+    <path d="M0,-62 L-42,12 L42,12 Z" fill="#f5f1f1"/>
+    <!-- Mic Cutout -->
+    <rect x="-9" y="-38" width="18" height="28" rx="9" fill="#282425"/>
+    <path d="M-13,-24 A13,13 0 0,0 13,-24" fill="none" stroke="#282425" stroke-width="3" stroke-linecap="round"/>
+    <line x1="0" y1="-11" x2="0" y2="12" stroke="#282425" stroke-width="3"/>
+    <!-- Brand Title WAVE -->
+    <text x="0" y="20" class="brand-title">W<tspan dx="70">VE</tspan></text>
+    <!-- Slogan -->
+    <text x="0" y="95" class="brand-sub">A TUA RÁDIO DAS 10:00!</text>
+  </g>
+</svg>

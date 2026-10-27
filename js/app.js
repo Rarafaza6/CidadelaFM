@@ -17,13 +17,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderFullNews();
   initNewsFilters();
   initPodcastPlayer();
+  syncInitialPodcastSelection();
   checkDailyLimitUI();
 });
 
 document.addEventListener('radio-db-updated', (e) => {
-  if (!e.detail || e.detail.collection === 'podcasts') {
+  const col = e.detail && e.detail.collection;
+  if (!col || col === 'podcasts') {
     renderHomePodcasts();
     renderFullPodcasts();
+    syncInitialPodcastSelection();
+  }
+  if (!col || col === 'announcements') {
+    renderHomeNews();
+    renderFullNews();
   }
 });
 
@@ -62,8 +69,8 @@ function checkDailyLimitUI() {
     const alertContainer = document.getElementById('suggestionAlertContainer');
     if (alertContainer) {
       alertContainer.innerHTML = `
-        <div style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); color: #fcd34d; padding: 1rem 1.25rem; border-radius: var(--radius-md); margin-top: 1.25rem; font-size: 0.92rem;">
-          <i class="ri-information-fill" style="font-size: 1.2rem; vertical-align: middle;"></i>
+        <div class="form-feedback warning">
+          <i class="ri-information-fill"></i>
           <strong>Limite Diário Atingido:</strong> Já enviaste 3 sugestões hoje neste dispositivo. Volta amanhã para pedir mais temas!
         </div>
       `;
@@ -118,9 +125,9 @@ async function searchITunesMusic(query, dropdown) {
     if (!data.results || data.results.length === 0) {
       dropdown.innerHTML = `
         <div class="search-dropdown-status search-dropdown-empty">
-          <i class="ri-music-2-line" style="font-size: 1.5rem; display: block; margin-bottom: 0.35rem; color: #38bdf8;"></i>
+          <i class="ri-music-2-line" style="font-size: 1.5rem; display: block; margin-bottom: 0.35rem; color: #e4232a;"></i>
           <strong>Nenhuma música encontrada</strong>
-          <span style="display: block; font-size: 0.8rem; color: #94a3b8; margin-top: 0.25rem;">Podes submeter escrevendo o título manualmente.</span>
+          <span style="display: block; font-size: 0.8rem; color: #6f6768; margin-top: 0.25rem;">Podes submeter escrevendo o título manualmente.</span>
         </div>
       `;
       return;
@@ -215,7 +222,7 @@ window.toggleAudioPreview = function(e) {
 
   if (audio.paused) {
     document.querySelectorAll('audio').forEach(a => { if (a !== audio) { a.pause(); a.currentTime = 0; } });
-    audio.play().catch(err => console.log('Audio playback prevented:', err));
+    audio.play().catch(() => {});
     if (icon) icon.className = 'ri-pause-fill';
     if (btn) btn.classList.add('playing');
   } else {
@@ -274,7 +281,7 @@ function initSuggestionForm() {
       finalArtist = 'Não especificado';
     } else {
       alertContainer.innerHTML = `
-        <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 0.85rem 1rem; border-radius: var(--radius-md); margin-top: 1rem; font-size: 0.9rem;">
+        <div class="form-feedback error">
           <i class="ri-error-warning-line"></i> Escolhe uma música no catálogo ou escreve o título!
         </div>
       `;
@@ -301,8 +308,8 @@ function initSuggestionForm() {
     checkDailyLimitUI();
 
     alertContainer.innerHTML = `
-      <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; padding: 0.9rem 1.25rem; border-radius: var(--radius-md); margin-top: 1rem; font-size: 0.92rem; display: flex; align-items: center; gap: 0.6rem;">
-        <i class="ri-checkbox-circle-fill" style="font-size: 1.2rem;"></i>
+      <div class="form-feedback success">
+        <i class="ri-checkbox-circle-fill"></i>
         <span><strong>Sugestão Enviada!</strong> (${newCount}/${MAX_DAILY_REQUESTS} enviadas hoje).</span>
       </div>
     `;
@@ -425,6 +432,16 @@ function initPodcastPlayer() {
       const pct = Math.max(0, Math.min(1, clickX / rect.width));
       currentAudio.currentTime = pct * currentAudio.duration;
     });
+    seekTrack.addEventListener('keydown', (e) => {
+      if (!currentAudio.duration) return;
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        window.skipPodcastSeconds(15);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        window.skipPodcastSeconds(-15);
+      }
+    });
   }
 
   currentAudio.addEventListener('ended', () => {
@@ -502,12 +519,12 @@ window.changeVolume = function (val) {
 window.shareCurrentPodcast = function () {
   const pod = currentActivePodcastObj;
   const shareUrl = (pod && (pod.spotifyUrl || pod.originalUrl || pod.audioUrl)) || window.location.href;
-  const shareTitle = pod ? pod.title : 'Rádio Escolar EBS Cidadela — Podcasts';
+  const shareTitle = pod ? pod.title : 'Wave Rádio EBS Cidadela — Podcasts';
 
   if (navigator.share) {
     navigator.share({
       title: shareTitle,
-      text: `Ouve este episódio da Rádio Escolar da Cidadela: ${shareTitle}`,
+      text: `Ouve este episódio da Wave Rádio da Cidadela: ${shareTitle}`,
       url: shareUrl
     }).catch(() => {});
   } else {
@@ -552,7 +569,14 @@ function getSpotifyEmbedUrl(url) {
   return null;
 }
 
-window.loadAndPlayPodcast = function (audioOrSpotifyUrl, title, subtitle, podObj = null) {
+window.loadAndPlayPodcast = function (audioOrSpotifyUrl, title, subtitle, podObj = null, options = {}) {
+  const playerSec = document.getElementById('podcastMainPlayerSection');
+  if (!playerSec) {
+    const targetKey = (podObj && (podObj.id || podObj.title)) || title || 'latest';
+    window.location.href = `podcasts.html?play=${encodeURIComponent(targetKey)}#podcastMainPlayerSection`;
+    return;
+  }
+
   currentActivePodcastObj = podObj || { title, subtitle, audioUrl: audioOrSpotifyUrl };
 
   const spotifyExtLink = document.getElementById('podSpotifyExternalLink');
@@ -568,7 +592,7 @@ window.loadAndPlayPodcast = function (audioOrSpotifyUrl, title, subtitle, podObj
 
   // ── Metadados ──────────────────────────────────────────────────────────
   if (titleEl)   titleEl.innerText  = title || 'Episódio';
-  if (subEl)     subEl.innerText    = subtitle || (podObj && podObj.date) || 'Rádio Escolar EBS Cidadela';
+  if (subEl)     subEl.innerText    = subtitle || (podObj && podObj.date) || 'Wave Rádio • A Tua Rádio das 10:00!';
   if (descEl)    descEl.innerText   = (podObj && podObj.description) || '';
   if (catBadge)  catBadge.innerText = (podObj && podObj.category) || 'Podcast';
   if (idleHint)  idleHint.style.display = 'none';
@@ -647,18 +671,58 @@ window.loadAndPlayPodcast = function (audioOrSpotifyUrl, title, subtitle, podObj
     isSpotifyMode = false;
     currentAudio.pause();
     currentAudio.src = audioOrSpotifyUrl;
-    currentAudio.play().then(() => {
-      isPlaying = true;
-      updatePlayButtonState(true);
-    }).catch(err => {
-      console.error('Erro de áudio:', err);
-    });
+    if (options.autoplay !== false) {
+      currentAudio.play().then(() => {
+        isPlaying = true;
+        updatePlayButtonState(true);
+      }).catch(err => {
+        console.error('Erro de áudio:', err);
+      });
+    } else {
+      isPlaying = false;
+      updatePlayButtonState(false);
+    }
   }
 
   // ── Scroll suave para o player ─────────────────────────────────────────
-  const playerSec = document.getElementById('podcastMainPlayerSection');
-  if (playerSec) playerSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (playerSec && options.scroll !== false) {
+    playerSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 };
+
+function syncInitialPodcastSelection() {
+  const playerSec = document.getElementById('podcastMainPlayerSection');
+  if (!playerSec || currentActivePodcastObj) return;
+
+  const allPods = window.db && window.db.getPodcasts ? window.db.getPodcasts() : [];
+  if (!allPods || allPods.length === 0) return;
+
+  const sorted = [...allPods].sort((a, b) => {
+    if (a.featured && !b.featured) return -1;
+    if (!a.featured && b.featured) return 1;
+    return (b.createdAt || 0) - (a.createdAt || 0);
+  });
+
+  const params = new URLSearchParams(window.location.search);
+  const playParam = params.get('play') || params.get('ep');
+  let target = sorted[0];
+
+  if (playParam && playParam !== 'latest') {
+    const norm = playParam.toLowerCase();
+    const match = sorted.find(p =>
+      String(p.id || '').toLowerCase() === norm ||
+      String(p.title || '').toLowerCase() === norm
+    );
+    if (match) target = match;
+  }
+
+  const playUrl = target.audioUrl || target.spotifyUrl || target.originalUrl || '';
+  const shouldAutoplay = Boolean(playParam);
+  window.loadAndPlayPodcast(playUrl, target.title, target.date || '', target, {
+    autoplay: shouldAutoplay,
+    scroll: shouldAutoplay
+  });
+}
 
 function renderHomePodcasts() {
   const container = document.getElementById('homePodcastsContainer');
@@ -687,7 +751,7 @@ function renderHomePodcasts() {
     const playUrl = pod.audioUrl || pod.spotifyUrl || pod.originalUrl || '';
     const card = document.createElement('div');
     card.className = 'card-box podcast-card-pro';
-    card.innerHTML = buildPodcastCardHTML(pod, playUrl, 'Leitor no Topo', 'ri-play-circle-fill');
+    card.innerHTML = buildPodcastCardHTML(pod, playUrl, 'Ouvir Episódio', 'ri-play-circle-fill');
     container.appendChild(card);
   });
 }
@@ -720,7 +784,7 @@ function renderFullPodcasts() {
       <div class="hv2-empty-state" style="grid-column: 1 / -1;">
         <div class="hv2-empty-icon"><i class="ri-headphones-line"></i></div>
         <h3>Ainda não foram adicionados podcasts</h3>
-        <p>A equipa da Rádio Escolar está a preparar novos episódios. Fica atento às próximas emissões!</p>
+        <p>A equipa da Wave Rádio está a preparar novos episódios. Fica atento às próximas emissões!</p>
       </div>
     ` : `
       <div class="hv2-empty-state" style="grid-column: 1 / -1;">
@@ -742,17 +806,25 @@ function renderFullPodcasts() {
   });
 }
 
+window.playPodcastById = function (id) {
+  const pods = window.db.getPodcasts ? window.db.getPodcasts() : [];
+  const pod = pods.find(p => String(p.id) === String(id));
+  if (!pod) return;
+  const playUrl = pod.audioUrl || pod.spotifyUrl || pod.originalUrl || '';
+  window.loadAndPlayPodcast(playUrl, pod.title, pod.date || '', pod);
+};
+
 /* ── Helper: build a podcast episode card ───────────────────────────────── */
 function buildPodcastCardHTML(pod, playUrl, btnLabel, btnIcon) {
-  const podData = JSON.stringify(pod).replace(/"/g, '&quot;');
   const thumb   = pod.thumbnail || 'assets/logo-radio.jpg';
   const catColor = getCategoryColor(pod.category);
+  const safeId  = escapeJs(pod.id || '');
 
   return `
     <div class="podcast-card-inner">
 
       <!-- Thumbnail do episódio -->
-      <div class="podcast-card-thumb-wrap" onclick="loadAndPlayPodcast('${escapeJs(playUrl)}', '${escapeJs(pod.title)}', '${escapeJs(pod.date || '')}', ${podData})" title="Reproduzir ${escapeHtml(pod.title)}">
+      <div class="podcast-card-thumb-wrap" onclick="playPodcastById('${safeId}')" title="Reproduzir ${escapeHtml(pod.title)}">
         <img src="${escapeHtml(thumb)}" alt="${escapeHtml(pod.title)}" class="podcast-card-thumb"
           onerror="this.src='assets/logo-radio.jpg'" loading="lazy">
         <div class="podcast-card-thumb-overlay">
@@ -775,7 +847,7 @@ function buildPodcastCardHTML(pod, playUrl, btnLabel, btnIcon) {
       <!-- Rodapé do card -->
       <div class="podcast-card-footer">
         <button type="button" class="btn-spotlight-play"
-          onclick="loadAndPlayPodcast('${escapeJs(playUrl)}', '${escapeJs(pod.title)}', '${escapeJs(pod.date || '')}', ${podData})">
+          onclick="playPodcastById('${safeId}')">
           <i class="${escapeHtml(btnIcon)}"></i> ${escapeHtml(btnLabel)}
         </button>
       </div>

@@ -4,12 +4,14 @@
   apenas ao contador diário local de pedidos de música.
   ========================================================================== */
 const firebaseConfig = {
-  apiKey: "AIzaSyBfy_VtDld7ubowZOClaJ69WiWPnnL3CUo",
-  authDomain: "testes-cidadela.firebaseapp.com",
-  projectId: "testes-cidadela",
-  storageBucket: "testes-cidadela.firebasestorage.app",
-  messagingSenderId: "546992842962",
-  appId: "1:546992842962:web:55d02c8af60a4ae4f7650b"
+  apiKey: "AIzaSyCn04I22HdbvOFSFpxci1l_uRRepcLk5f8",
+  authDomain: "cidadelafm.firebaseapp.com",
+  databaseURL: "https://cidadelafm-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "cidadelafm",
+  storageBucket: "cidadelafm.firebasestorage.app",
+  messagingSenderId: "312932696570",
+  appId: "1:312932696570:web:2faf5d0036f2bb3b4fa443",
+  measurementId: "G-QZ6Q7RPG9B"
 };
 
 const firebaseApp = firebase.apps.length ? firebase.app() : firebase.initializeApp(firebaseConfig);
@@ -17,12 +19,10 @@ const firebaseApp = firebase.apps.length ? firebase.app() : firebase.initializeA
 const firestore = firebaseApp.firestore();
 firestore.settings({ merge: true, ignoreUndefinedProperties: true });
 const authInstance = typeof firebaseApp.auth === 'function' ? firebaseApp.auth() : null;
-const functionsInstance = typeof firebaseApp.functions === 'function' ? firebaseApp.functions('europe-west1') : null;
 window.firebaseServices = {
   app: firebaseApp,
   firestore,
-  auth: authInstance,
-  functions: functionsInstance
+  auth: authInstance
 };
 window.showFirebaseError = function (container) {
   if (!container) return;
@@ -31,154 +31,11 @@ window.showFirebaseError = function (container) {
 // Coleções públicas iniciam vazias para aguardar conteúdos oficiais da Rádio
 const DEFAULT_PODCASTS = [];
 
-const DEFAULT_RUNDOWNS = [
-  {
-    id: "rundown-1",
-    title: "Emissão do Intervalo Grande (Exemplo)",
-    date: "2026-09-10",
-    timeSlot: "10:15 - 10:35",
-    hosts: "Equipa da Rádio",
-    description: "Alinhamento padrão da manhã com música, aviso da AE e passatempo.",
-    blocks: [
-      {
-        id: "b1",
-        type: "jingle",
-        title: "Jingle Oficial & Abertura de Emissão",
-        body: "Bom dia, EBS Cidadela! São 10 horas e 15 minutos e está no ar a tua Rádio Escolar. Hoje temos as músicas mais pedidas e um aviso importante da Associação de Estudantes.",
-        durationSec: 30,
-        soundCue: "[JINGLE ENTRA FORTE -> CAMA SONORA]"
-      },
-      {
-        id: "b2",
-        type: "aviso",
-        title: "Aviso: Inscrições Abertas nos Clubes Escolares",
-        body: "Lembramos a todos os alunos do 2.º e 3.º ciclos que as inscrições para os Clubes de Ciência, Teatro e Robótica estão abertas na secretaria e através dos links no nosso site. Não percam a oportunidade de participar!",
-        durationSec: 45,
-        soundCue: "[CAMA SONORA SUAVE]"
-      },
-      {
-        id: "b3",
-        type: "musica",
-        title: "Música #1 Mais Pedida pelos Alunos",
-        body: "Vamos agora para a música mais votada esta semana pelos alunos da Cidadela no nosso site oficial!",
-        durationSec: 180,
-        soundCue: "[FADE OUT VOZ -> DISPARAR TRACK #1]"
-      },
-      {
-        id: "b4",
-        type: "aviso",
-        title: "Passatempo: Adivinha a Música & Ganha um Brinde",
-        body: "Atenção: durante o intervalo vamos passar um excerto invertido de uma música. Quem for o primeiro a enviar a resposta correta pela nossa página de mensagens ganha um brinde da Rádio!",
-        durationSec: 40,
-        soundCue: "[EFEITO SONORO MISTÉRIO / TENSÃO]"
-      },
-      {
-        id: "b5",
-        type: "fecho",
-        title: "Encerramento da Emissão & Contagem para a Campainha",
-        body: "Faltam dois minutos para tocar para as aulas. Obrigado por ouvirem a Rádio Cidadela! Continuem a pedir as vossas músicas para amanhã.",
-        durationSec: 30,
-        soundCue: "[JINGLE DE FECHO & CRÉDITOS]"
-      }
-    ],
-    updatedAt: Date.now()
-  }
-];
+const DEFAULT_RUNDOWNS = [];
 
-const DEFAULT_TEAM_MEMOS = [
-  {
-    id: "memo-1",
-    text: "Lembrete: na sexta-feira há entrevista com os delegados de turma às 13h15.",
-    author: "Rafael",
-    color: "amber",
-    pinned: true,
-    createdAt: Date.now()
-  },
-  {
-    id: "memo-2",
-    text: "Verificar cabos e nível dos auscultadores do microfone 2 antes da emissão.",
-    author: "Técnica",
-    color: "blue",
-    pinned: false,
-    createdAt: Date.now() - 3600000
-  }
-];
+const DEFAULT_TEAM_MEMOS = [];
 
-const DEFAULT_ANNOUNCEMENTS = [
-  {
-    id: "ann-1",
-    tag: "Recrutamento",
-    category: "Recrutamento",
-    title: "Inscrições Abertas para a Nova Equipa da Rádio Escolar!",
-    date: "08 Setembro, 2026",
-    readTime: "3 min de leitura",
-    author: "Equipa da Rádio • EBS Cidadela",
-    image: "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=1200&q=80",
-    excerpt: "Queres ser locutor, sonoplasta, técnico de som ou criar os teus próprios podcasts na escola? As inscrições estão abertas para todos os alunos.",
-    content: `<p>O novo ano letivo já arrancou e com ele chegam muitas novidades à <strong>Rádio Escolar da EBS da Cidadela</strong>! Se és apaixonado por música, comunicação, edição de áudio, jornalismo escolar ou sonoplastia, esta é a tua oportunidade de integrar o nosso projeto oficial.</p>
-
-<h2>Quem pode participar?</h2>
-<p>Todos os alunos do 2.º e 3.º ciclos e do Ensino Secundário podem candidatar-se. Não é necessária experiência prévia — terás formação dada pela equipa e pelos professores coordenadores da rádio com o apoio do Agrupamento de Escolas e do Município de Cascais.</p>
-
-<blockquote>"A rádio escolar é o espaço ideal para dares voz às tuas ideias, partilhares os teus gostos musicais e aprenderes a produzir conteúdos reais com tecnologia de estúdio profissional."</blockquote>
-
-<h2>Áreas de Atuação na Rádio:</h2>
-<ul>
-  <li><strong>Locução & Apresentação:</strong> Condução das emissões ao vivo nos intervalos grandes e no almoço.</li>
-  <li><strong>Produção de Podcasts:</strong> Criação de episódios temáticos sobre cinema, desporto, ciência e cultura juvenil.</li>
-  <li><strong>Técnica de Som & Mesa de Mistura:</strong> Gestão dos microfones, efeitos sonoros e playlists.</li>
-  <li><strong>Redação & Notícias:</strong> Redação dos comunicados escolares e cobertura de eventos da EBS Cidadela.</li>
-</ul>
-
-<h2>Como fazer a inscrição?</h2>
-<p>Basta acederes à nossa secção de <a href="links.html">Links Rápidos</a> e preencheres o formulário oficial de candidatura online até ao final da próxima semana. As entrevistas e sessões de acolhimento decorrerão no estúdio da rádio no Bloco Central.</p>
-
-<p>Não percas esta oportunidade de fazer a diferença e pôr a tua marca no som da nossa escola!</p>`
-  },
-  {
-    id: "ann-2",
-    tag: "Evento",
-    category: "Evento",
-    title: "Emissão Especial de Receção aos Novos Alunos no Pátio",
-    date: "02 Setembro, 2026",
-    readTime: "2 min de leitura",
-    author: "Redação Rádio Cidadela",
-    image: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=1200&q=80",
-    excerpt: "Prepara os teus fones e a tua melhor energia! Na próxima sexta-feira teremos uma emissão especial no intervalo grande com música ao vivo e passatempos.",
-    content: `<p>Para assinalar o arranque das aulas e dar as boas-vindas a todos os novos alunos que chegam pela primeira vez à Escola Básica e Secundária da Cidadela, a equipa da rádio preparou uma programação muito especial!</p>
-
-<h2>Programação da Emissão:</h2>
-<ul>
-  <li><strong>10h15 - 10h45 (Intervalo Grande da Manhã):</strong> Transmissão direta no sistema sonoro exterior do pátio principal com os maiores êxitos do verão e as músicas mais pedidas pelos alunos.</li>
-  <li><strong>13h00 - 13h40 (Pausa de Almoço):</strong> Apresentação dos clubes escolares, passatempos com ofertas de merchandise da Rádio e entrevistas aos novos delegados de turma.</li>
-</ul>
-
-<blockquote>"Queremos que cada aluno sinta que a escola tem uma voz vibrante, jovem e que os acompanha todos os dias."</blockquote>
-
-<p>Não te esqueças: podes pedir as tuas faixas favoritas diretamente aqui no website através do separador <a href="pedir-musica.html">Pedir Música</a>. As 10 músicas mais votadas passarão em direto durante o intervalo!</p>`
-  },
-  {
-    id: "ann-3",
-    tag: "Cultura",
-    category: "Cultura",
-    title: "Inauguração do Novo Espaço de Gravação de Podcasts",
-    date: "25 Agosto, 2026",
-    readTime: "3 min de leitura",
-    author: "Comunicação EBS Cidadela",
-    image: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?auto=format&fit=crop&w=1200&q=80",
-    excerpt: "Com novos microfones profissionais e isolamento acústico renovado, o estúdio da rádio está pronto para novas séries de podcasts.",
-    content: `<p>A Rádio Escolar da Cidadela dá mais um salto qualitativo com a recente modernização das suas instalações de gravação. O espaço conta agora com equipamento de áudio de alta fidelidade e uma mesa de mistura digital preparada para transmissões híbridas e gravação multipista.</p>
-
-<h2>O que há de novo no estúdio?</h2>
-<ul>
-  <li>4 microfones dinâmicos com braços articulados profissionais.</li>
-  <li>Mesa de som digital com interface USB direta para estações de edição.</li>
-  <li>Espaço de tertúlia preparado para entrevistas a professores, alunos e convidados externos do concelho de Cascais.</li>
-</ul>
-
-<p>Fica atento à nossa página de <a href="podcasts.html">Podcasts</a> para ouvires as estreias dos primeiros programas já na primeira quinzena deste mês!</p>`
-  }
-];
+const DEFAULT_ANNOUNCEMENTS = [];
 
 const DEFAULT_ANNOUNCEMENT_IMAGE = 'assets/logo-radio.jpg';
 
@@ -262,6 +119,8 @@ class RadioDatabase {
       podcasts: [],
       announcements: [],
       links: [],
+      nerdChallenges: [],
+      teamMembers: [],
       suggestions: [],
       messages: [],
       calendarEvents: [],
@@ -269,7 +128,8 @@ class RadioDatabase {
       rundowns: [],
       teamMemos: [],
       polls: [],
-      tasks: []
+      tasks: [],
+      nerdSubmissions: []
     };
     this.error = null;
     this.readyPromise = this.initialize();
@@ -280,9 +140,12 @@ class RadioDatabase {
       await Promise.all([
         this.loadCollection('podcasts', DEFAULT_PODCASTS),
         this.loadCollection('announcements', DEFAULT_ANNOUNCEMENTS),
-        this.loadCollection('links', DEFAULT_LINKS)
+        this.loadCollection('links', DEFAULT_LINKS),
+        this.loadCollection('nerdChallenges', []),
+        this.loadCollection('teamMembers', [])
       ]);
-      this.watchCollections(['podcasts', 'announcements', 'links']);
+      this.syncMaintenanceState();
+      this.watchCollections(['podcasts', 'announcements', 'links', 'nerdChallenges', 'teamMembers']);
       this.clearLegacyStorage(['radio_podcasts', 'radio_announcements', 'radio_links']);
     } catch (error) {
       this.error = error;
@@ -303,9 +166,10 @@ class RadioDatabase {
       this.loadCollection('calendarEvents', []),
       this.loadCollection('adminUsers', []),
       this.loadCollection('polls', []),
-      this.loadCollection('tasks', [])
+      this.loadCollection('tasks', []),
+      this.loadCollection('nerdSubmissions', [])
     ]);
-    this.watchCollections(['suggestions', 'messages', 'rundowns', 'teamMemos', 'calendarEvents', 'adminUsers', 'polls', 'tasks']);
+    this.watchCollections(['suggestions', 'messages', 'rundowns', 'teamMemos', 'calendarEvents', 'adminUsers', 'polls', 'tasks', 'nerdSubmissions']);
     this.clearLegacyStorage(['radio_suggestions', 'radio_messages', 'radio_rundowns', 'radio_team_memos', 'radio_calendar_events', 'radio_admin_users']);
   }
 
@@ -343,9 +207,11 @@ class RadioDatabase {
         firestore.collection(name).onSnapshot(snapshot => {
           if (!snapshot.empty) {
             this.cache[name] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          } else if (!this.cache[name] || this.cache[name].length === 0) {
-            if (name === 'podcasts') this.cache.podcasts = [...DEFAULT_PODCASTS];
-            else if (name === 'announcements') this.cache.announcements = [...DEFAULT_ANNOUNCEMENTS];
+          } else {
+            this.cache[name] = [];
+          }
+          if (name === 'announcements') {
+            this.syncMaintenanceState();
           }
           document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: name } }));
         }, error => {
@@ -358,7 +224,26 @@ class RadioDatabase {
   }
 
   write(name, id, data) {
-    return firestore.collection(name).doc(id).set(data, { merge: true });
+    const cleanData = {};
+    if (data && typeof data === 'object') {
+      Object.keys(data).forEach(key => {
+        if (data[key] !== undefined && key !== '_writePromise') {
+          cleanData[key] = data[key];
+        }
+      });
+    }
+    return firestore.collection(name).doc(id).set(cleanData, { merge: true });
+  }
+
+  _attachWritePromise(entry, promise) {
+    if (entry && typeof entry === 'object' && promise) {
+      Object.defineProperty(entry, '_writePromise', {
+        value: promise,
+        enumerable: false,
+        configurable: true
+      });
+    }
+    return entry;
   }
 
   remove(name, id) {
@@ -372,7 +257,7 @@ class RadioDatabase {
 
   addSuggestion(suggestion) {
     const newEntry = {
-      id: 'sug-' + Date.now(),
+      id: `sug-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       status: 'pending',
       timestamp: Date.now(),
       ...suggestion
@@ -381,6 +266,25 @@ class RadioDatabase {
     this.cache.suggestions.unshift(newEntry);
     this.write('suggestions', newEntry.id, newEntry).catch(console.error);
     return newEntry;
+  }
+
+  async getClassWeeklySuggestions(studentClass, weekKey) {
+    const normClass = String(studentClass || '').trim().toUpperCase().replace(/\s+/g, '');
+    if (!normClass || !weekKey) return [];
+    try {
+      const snapshot = await this.withTimeout(
+        firestore.collection('suggestions').where('source', '==', 'dt').where('weekKey', '==', weekKey).get(),
+        8000
+      );
+      return snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(item => String(item.studentClass || '').trim().toUpperCase().replace(/\s+/g, '') === normClass);
+    } catch (e) {
+      return (this.cache.suggestions || []).filter(item =>
+        item.weekKey === weekKey &&
+        String(item.studentClass || '').trim().toUpperCase().replace(/\s+/g, '') === normClass
+      );
+    }
   }
 
   updateSuggestionStatus(id, status) {
@@ -444,38 +348,104 @@ class RadioDatabase {
   addPodcast(podcast) {
     const newEntry = { id: 'pod-' + Date.now(), createdAt: Date.now(), ...podcast };
     this.cache.podcasts.unshift(newEntry);
-    this.write('podcasts', newEntry.id, newEntry).catch(console.error);
-    return newEntry;
+    const writePromise = this.write('podcasts', newEntry.id, newEntry);
+    writePromise.catch(console.error);
+    return this._attachWritePromise(newEntry, writePromise);
   }
 
   updatePodcast(id, data) {
     const index = this.cache.podcasts.findIndex(p => p.id === id);
     if (index !== -1) {
       this.cache.podcasts[index] = { ...this.cache.podcasts[index], ...data, updatedAt: Date.now() };
-      this.write('podcasts', id, this.cache.podcasts[index]).catch(console.error);
-      return this.cache.podcasts[index];
+      const writePromise = this.write('podcasts', id, this.cache.podcasts[index]);
+      writePromise.catch(console.error);
+      return this._attachWritePromise(this.cache.podcasts[index], writePromise);
     }
     return null;
   }
 
+  async savePodcastAsync(podcast) {
+    const saved = podcast.id && this.cache.podcasts.some(p => p.id === podcast.id)
+      ? this.updatePodcast(podcast.id, podcast)
+      : this.addPodcast(podcast);
+    if (saved && saved._writePromise) {
+      await saved._writePromise;
+    }
+    return saved;
+  }
+
   deletePodcast(id) {
     this.cache.podcasts = this.cache.podcasts.filter(podcast => podcast.id !== id);
-    this.remove('podcasts', id).catch(console.error);
+    return this.remove('podcasts', id).catch(console.error);
   }
 
   // ANNOUNCEMENTS / NOTÍCIAS & ARTIGOS
   getAnnouncements() {
-    return [...this.cache.announcements].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).map(announcement => ({
-      ...announcement,
-      category: announcement.category || announcement.tag || 'Notícia',
-      tag: announcement.tag || announcement.category || 'Notícia',
-      visibility: announcement.visibility === 'internal' || announcement.onAir === true || Boolean(announcement.broadcastDate)
-        ? 'internal'
-        : 'public',
-      image: announcement.image || DEFAULT_ANNOUNCEMENT_IMAGE,
-      excerpt: announcement.excerpt || getAnnouncementExcerpt(announcement.content),
-      content: announcement.content || `<p>${escapeHtmlForStorage(announcement.excerpt || '')}</p>`
-    }));
+    return [...this.cache.announcements]
+      .filter(a => a && a.id !== 'system_maintenance' && a.id !== '__system_maintenance__' && a.isSystemConfig !== true)
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+      .map(announcement => ({
+        ...announcement,
+        category: announcement.category || announcement.tag || 'Notícia',
+        tag: announcement.tag || announcement.category || 'Notícia',
+        visibility: announcement.visibility === 'internal' || announcement.onAir === true || Boolean(announcement.broadcastDate)
+          ? 'internal'
+          : 'public',
+        image: announcement.image || DEFAULT_ANNOUNCEMENT_IMAGE,
+        excerpt: announcement.excerpt || getAnnouncementExcerpt(announcement.content),
+        content: announcement.content || `<p>${escapeHtmlForStorage(announcement.excerpt || '')}</p>`
+      }));
+  }
+
+  // MODO DE MANUTENÇÃO GLOBAL DO SITE (ATIVADO/DESATIVADO EM TEMPO REAL NO ADMIN)
+  getSiteMaintenance() {
+    const doc = (this.cache.announcements || []).find(a => a && (a.id === 'system_maintenance' || a.id === '__system_maintenance__'));
+    const enabled = Boolean(doc && doc.maintenanceEnabled === true);
+    const message = String((doc && doc.maintenanceMessage) || '').trim();
+    const updatedBy = String((doc && doc.updatedBy) || '').trim();
+    const updatedAt = Number(doc && doc.updatedAt) || 0;
+    return { enabled, message, updatedBy, updatedAt };
+  }
+
+  syncMaintenanceState() {
+    const state = this.getSiteMaintenance();
+    try {
+      localStorage.setItem('radio_cloud_maintenance_active', state.enabled ? '1' : '0');
+      localStorage.setItem('radio_cloud_maintenance_msg', state.message || '');
+    } catch (_) {}
+    document.dispatchEvent(new CustomEvent('radio-maintenance-updated', { detail: state }));
+    return state;
+  }
+
+  setSiteMaintenance(enabled, options = {}) {
+    const id = 'system_maintenance';
+    const current = this.getSiteMaintenance();
+    const nextMessage = options.message !== undefined ? String(options.message || '').trim() : current.message;
+    const entry = {
+      id,
+      isSystemConfig: true,
+      visibility: 'internal',
+      maintenanceEnabled: Boolean(enabled),
+      maintenanceMessage: nextMessage,
+      updatedBy: String(options.updatedBy || current.updatedBy || 'Admin').trim(),
+      updatedAt: Date.now()
+    };
+
+    if (!this.cache.announcements) this.cache.announcements = [];
+    const idx = this.cache.announcements.findIndex(a => a && (a.id === id || a.id === '__system_maintenance__'));
+    if (idx === -1) {
+      this.cache.announcements.push(entry);
+    } else {
+      this.cache.announcements[idx] = { ...this.cache.announcements[idx], ...entry, id };
+    }
+
+    this.syncMaintenanceState();
+    const writePromise = this.write('announcements', id, entry);
+    writePromise.catch(console.error);
+    // Sincronizar também em siteSettings/maintenance caso as regras tenham sido publicadas
+    this.write('siteSettings', 'maintenance', entry).catch(() => {});
+    document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'siteMaintenance' } }));
+    return this._attachWritePromise(entry, writePromise);
   }
 
   getPublicAnnouncements() {
@@ -507,8 +477,9 @@ class RadioDatabase {
       visibility: isInternal ? 'internal' : 'public'
     };
     this.cache.announcements.unshift(newEntry);
-    this.write('announcements', newEntry.id, newEntry).catch(console.error);
-    return newEntry;
+    const writePromise = this.write('announcements', newEntry.id, newEntry);
+    writePromise.catch(console.error);
+    return this._attachWritePromise(newEntry, writePromise);
   }
 
   updateAnnouncement(id, updatedData) {
@@ -517,13 +488,15 @@ class RadioDatabase {
       const normalized = {
         ...this.cache.announcements[index],
         ...updatedData,
+        updatedAt: Date.now(),
         visibility: updatedData.visibility === 'internal' || updatedData.onAir === true || Boolean(updatedData.broadcastDate)
           ? 'internal'
           : 'public'
       };
       this.cache.announcements[index] = normalized;
-      this.write('announcements', id, normalized).catch(console.error);
-      return this.cache.announcements[index];
+      const writePromise = this.write('announcements', id, normalized);
+      writePromise.catch(console.error);
+      return this._attachWritePromise(this.cache.announcements[index], writePromise);
     }
     return null;
   }
@@ -537,9 +510,17 @@ class RadioDatabase {
     return this.addAnnouncement(rest);
   }
 
+  async saveAnnouncementAsync(announcement) {
+    const saved = this.saveAnnouncement(announcement);
+    if (saved && saved._writePromise) {
+      await saved._writePromise;
+    }
+    return saved;
+  }
+
   deleteAnnouncement(id) {
     this.cache.announcements = this.cache.announcements.filter(announcement => announcement.id !== id);
-    this.remove('announcements', id).catch(console.error);
+    return this.remove('announcements', id).catch(console.error);
   }
 
   // LINKTREE LINKS
@@ -600,7 +581,7 @@ class RadioDatabase {
     this.remove('calendarEvents', id).catch(console.error);
   }
 
-  // UTILIZADORES / ADMINISTRADORES (RBAC - Google Workspace Style)
+  // UTILIZADORES / ADMINISTRADORES (RBAC)
   getAdminUsers() {
     return [...(this.cache.adminUsers || [])].map(user => {
       // Normalize user with RBAC defaults for backwards compatibility
@@ -732,7 +713,7 @@ class RadioDatabase {
     return entry;
   }
 
-  // MURAL DE RECADOS DA EQUIPA (TEAM NOTION MEMOS)
+  // MURAL DE RECADOS DA EQUIPA (RECADOS DA EQUIPA)
   getTeamMemos() {
     return [...(this.cache.teamMemos || [])].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || (b.createdAt || 0) - (a.createdAt || 0));
   }
@@ -882,6 +863,179 @@ class RadioDatabase {
     this.cache.tasks = (this.cache.tasks || []).filter(t => t.id !== id);
     this.remove('tasks', id).catch(console.error);
   }
+
+  // ============================================================
+  // NERD ALERT — DESAFIOS E SUBMISSÕES DOS ALUNOS
+  // ============================================================
+  getNerdChallenges() {
+    return [...(this.cache.nerdChallenges || [])].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  }
+
+  getActiveNerdChallenge() {
+    const activeList = this.getNerdChallenges().filter(c => c.active === true);
+    return activeList.length > 0 ? activeList[0] : null;
+  }
+
+  saveNerdChallenge(challenge) {
+    const id = challenge.id || `nerd-${Date.now()}`;
+    if (!this.cache.nerdChallenges) this.cache.nerdChallenges = [];
+    const existingIndex = this.cache.nerdChallenges.findIndex(item => item.id === id);
+    const existing = existingIndex !== -1 ? this.cache.nerdChallenges[existingIndex] : {};
+
+    const isActive = Boolean(challenge.active);
+    const entry = {
+      ...existing,
+      ...challenge,
+      id,
+      active: isActive,
+      createdAt: existing.createdAt || challenge.createdAt || Date.now(),
+      updatedAt: Date.now()
+    };
+
+    // Se este desafio ficar ativo, desativa outros desafios ativos para manter 1 desafio em destaque no site
+    const otherPromises = [];
+    if (isActive) {
+      this.cache.nerdChallenges.forEach((item, idx) => {
+        if (item.id !== id && item.active) {
+          this.cache.nerdChallenges[idx] = { ...item, active: false, updatedAt: Date.now() };
+          otherPromises.push(this.write('nerdChallenges', item.id, { active: false, updatedAt: Date.now() }).catch(console.error));
+        }
+      });
+    }
+
+    if (existingIndex === -1) {
+      this.cache.nerdChallenges.unshift(entry);
+    } else {
+      this.cache.nerdChallenges[existingIndex] = entry;
+    }
+
+    const writePromise = Promise.all([
+      this.write('nerdChallenges', id, entry),
+      ...otherPromises
+    ]);
+    writePromise.catch(console.error);
+    document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'nerdChallenges' } }));
+    return this._attachWritePromise(entry, writePromise);
+  }
+
+  toggleNerdChallengeActive(id, forceState) {
+    if (!this.cache.nerdChallenges) return null;
+    const target = this.cache.nerdChallenges.find(c => c.id === id);
+    if (!target) return null;
+    const nextActive = typeof forceState === 'boolean' ? forceState : !target.active;
+    return this.saveNerdChallenge({ ...target, active: nextActive });
+  }
+
+  deleteNerdChallenge(id) {
+    this.cache.nerdChallenges = (this.cache.nerdChallenges || []).filter(c => c.id !== id);
+    document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'nerdChallenges' } }));
+    return this.remove('nerdChallenges', id).catch(console.error);
+  }
+
+  getNerdSubmissions(challengeId = null) {
+    const list = [...(this.cache.nerdSubmissions || [])];
+    const filtered = challengeId ? list.filter(s => s.challengeId === challengeId) : list;
+    // Ordenação estrita por hora de entrega (ascendente = mais rápido primeiro)
+    return filtered.sort((a, b) => (a.submittedAt || 0) - (b.submittedAt || 0));
+  }
+
+  addNerdSubmission(submission) {
+    const nowMs = Date.now();
+    const nowIso = new Date(nowMs).toISOString();
+    const firstName = String(submission.firstName || '').trim();
+    const lastName = String(submission.lastName || '').trim();
+    const fullName = `${firstName} ${lastName}`.trim();
+    const newEntry = {
+      id: `nerdsub-${nowMs}-${Math.random().toString(36).slice(2, 7)}`,
+      challengeId: String(submission.challengeId || '').trim(),
+      challengeTitle: String(submission.challengeTitle || '').trim(),
+      firstName,
+      lastName,
+      fullName,
+      studentClass: String(submission.studentClass || '').trim().toUpperCase(),
+      email: String(submission.email || '').trim().toLowerCase(),
+      answer: String(submission.answer || '').trim(),
+      submittedAt: nowMs,
+      submittedAtIso: nowIso,
+      status: 'pending'
+    };
+    if (!this.cache.nerdSubmissions) this.cache.nerdSubmissions = [];
+    this.cache.nerdSubmissions.push(newEntry);
+    const writePromise = this.write('nerdSubmissions', newEntry.id, newEntry);
+    writePromise.catch(console.error);
+    return this._attachWritePromise(newEntry, writePromise);
+  }
+
+  updateNerdSubmissionStatus(id, status) {
+    if (!this.cache.nerdSubmissions) return null;
+    const index = this.cache.nerdSubmissions.findIndex(s => s.id === id);
+    if (index !== -1) {
+      this.cache.nerdSubmissions[index].status = status;
+      this.cache.nerdSubmissions[index].reviewedAt = Date.now();
+      this.write('nerdSubmissions', id, { status, reviewedAt: Date.now() }).catch(console.error);
+      document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'nerdSubmissions' } }));
+      return this.cache.nerdSubmissions[index];
+    }
+    return null;
+  }
+
+  deleteNerdSubmission(id) {
+    this.cache.nerdSubmissions = (this.cache.nerdSubmissions || []).filter(s => s.id !== id);
+    document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'nerdSubmissions' } }));
+    return this.remove('nerdSubmissions', id).catch(console.error);
+  }
+
+  // ============================================================
+  // EQUIPA DA RÁDIO (PÁGINA PÚBLICA DE EQUIPA & GESTÃO NO ADMIN)
+  // ============================================================
+  getTeamMembers() {
+    return [...(this.cache.teamMembers || [])].sort((a, b) => {
+      const orderA = Number.isFinite(Number(a.order)) ? Number(a.order) : 999;
+      const orderB = Number.isFinite(Number(b.order)) ? Number(b.order) : 999;
+      if (orderA !== orderB) return orderA - orderB;
+      return (a.createdAt || 0) - (b.createdAt || 0);
+    });
+  }
+
+  saveTeamMember(member) {
+    const id = member.id || `team-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    if (!this.cache.teamMembers) this.cache.teamMembers = [];
+    const existingIndex = this.cache.teamMembers.findIndex(m => m.id === id);
+    const existing = existingIndex !== -1 ? this.cache.teamMembers[existingIndex] : {};
+
+    const entry = {
+      ...existing,
+      ...member,
+      id,
+      name: String(member.name || '').trim(),
+      role: String(member.role || '').trim(),
+      photo: String(member.photo !== undefined ? member.photo : (existing.photo || '')).trim(),
+      bio: String(member.bio !== undefined ? member.bio : (existing.bio || '')).trim(),
+      socialEnabled: Boolean(member.socialEnabled !== undefined ? member.socialEnabled : existing.socialEnabled),
+      socialUrl: String(member.socialUrl !== undefined ? member.socialUrl : (existing.socialUrl || '')).trim(),
+      order: Number.isFinite(Number(member.order)) ? Number(member.order) : (existing.order ?? (this.cache.teamMembers.length + 1)),
+      active: member.active !== false,
+      createdAt: existing.createdAt || member.createdAt || Date.now(),
+      updatedAt: Date.now()
+    };
+
+    if (existingIndex === -1) {
+      this.cache.teamMembers.push(entry);
+    } else {
+      this.cache.teamMembers[existingIndex] = entry;
+    }
+
+    const writePromise = this.write('teamMembers', id, entry);
+    writePromise.catch(console.error);
+    document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'teamMembers' } }));
+    return this._attachWritePromise(entry, writePromise);
+  }
+
+  deleteTeamMember(id) {
+    this.cache.teamMembers = (this.cache.teamMembers || []).filter(m => m.id !== id);
+    document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'teamMembers' } }));
+    return this.remove('teamMembers', id).catch(console.error);
+  }
 }
 
 // Instância Global da Base de Dados
@@ -952,3 +1106,132 @@ window.firebaseServices.online = function () {
 
 window.firebaseServices.onConnectionChange = window.onConnectionChange;
 window.firebaseServices.getConnectionStatus = window.getConnectionStatus;
+
+/* ==========================================================================
+   CONVERSOR DE IMAGENS (PNG / JPG / WEBP) PARA BASE64 OTIMIZADO (100% GRATUITO)
+   Permite alojar fotografias diretamente nos documentos Firestore sem custos
+   ========================================================================== */
+window.imageFileToBase64 = function (file, options = {}) {
+  return new Promise((resolve, reject) => {
+    if (!file || !(file instanceof Blob)) {
+      reject(new Error('Ficheiro de imagem inválido.'));
+      return;
+    }
+    if (file.type && !file.type.startsWith('image/')) {
+      reject(new Error('Seleciona um ficheiro de imagem válido (PNG, JPG, WebP ou GIF).'));
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      reject(new Error('A imagem é demasiado grande (máximo 15 MB).'));
+      return;
+    }
+
+    const maxWidth = options.maxWidth || 1200;
+    const maxHeight = options.maxHeight || 1200;
+    const initialQuality = options.quality || 0.85;
+    const maxBase64Chars = options.maxBase64Chars || 340000; // ~250 KB binários
+
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Não foi possível ler o ficheiro de imagem.'));
+    reader.onload = (e) => {
+      const rawDataUrl = e.target.result;
+
+      // Se for PNG/JPG/WebP já pequeno (< 140 KB), podemos validar as dimensões e manter direto
+      const img = new Image();
+      img.onerror = () => reject(new Error('Formato de imagem não suportado pelo navegador.'));
+      img.onload = () => {
+        let width = img.naturalWidth || img.width;
+        let height = img.naturalHeight || img.height;
+
+        if (
+          rawDataUrl.length <= maxBase64Chars &&
+          width <= maxWidth &&
+          height <= maxHeight &&
+          (file.type === 'image/png' || file.type === 'image/jpeg' || file.type === 'image/webp' || file.type === 'image/gif')
+        ) {
+          resolve({
+            dataUrl: rawDataUrl,
+            width,
+            height,
+            sizeKB: Math.round((rawDataUrl.length * 0.75) / 1024),
+            originalName: file.name || 'imagem.png'
+          });
+          return;
+        }
+
+        // Redimensionar mantendo a proporção
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = Math.max(1, Math.round(width * ratio));
+          height = Math.max(1, Math.round(height * ratio));
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve({
+            dataUrl: rawDataUrl,
+            width,
+            height,
+            sizeKB: Math.round((rawDataUrl.length * 0.75) / 1024),
+            originalName: file.name || 'imagem.png'
+          });
+          return;
+        }
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Se o ficheiro original for PNG e couber no limite como PNG, preserva PNG nativo
+        let resultDataUrl = '';
+        if (file.type === 'image/png') {
+          const pngTry = canvas.toDataURL('image/png');
+          if (pngTry.length <= maxBase64Chars) {
+            resultDataUrl = pngTry;
+          }
+        }
+
+        // Caso contrário, otimiza com WebP (suporta transparência PNG) ou JPEG progressivamente
+        if (!resultDataUrl) {
+          let quality = initialQuality;
+          resultDataUrl = canvas.toDataURL('image/webp', quality);
+          if (!resultDataUrl.startsWith('data:image/webp')) {
+            // Fallback para JPEG caso o browser não exporte WebP
+            ctx.fillStyle = '#111827';
+            ctx.fillRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+            resultDataUrl = canvas.toDataURL('image/jpeg', quality);
+          }
+
+          while (resultDataUrl.length > maxBase64Chars && quality > 0.45) {
+            quality -= 0.1;
+            const mime = resultDataUrl.startsWith('data:image/webp') ? 'image/webp' : 'image/jpeg';
+            resultDataUrl = canvas.toDataURL(mime, quality);
+          }
+
+          // Se mesmo assim for muito grande, reduz ligeiramente a escala
+          if (resultDataUrl.length > maxBase64Chars) {
+            const scale = 0.75;
+            canvas.width = Math.max(1, Math.round(width * scale));
+            canvas.height = Math.max(1, Math.round(height * scale));
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resultDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+          }
+        }
+
+        resolve({
+          dataUrl: resultDataUrl,
+          width: canvas.width,
+          height: canvas.height,
+          sizeKB: Math.max(1, Math.round((resultDataUrl.length * 0.75) / 1024)),
+          originalName: file.name || 'imagem.png'
+        });
+      };
+      img.src = rawDataUrl;
+    };
+    reader.readAsDataURL(file);
+  });
+};
