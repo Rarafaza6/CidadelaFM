@@ -1,598 +1,558 @@
 <!DOCTYPE html>
-<html lang="pt-PT">
-
+<html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Votação da Comunidade | Wave Rádio • EBS Cidadela</title>
-  <meta name="description"
-    content="Participa nas votações e sondagens oficiais da Wave Rádio da EBS da Cidadela em parceria com a Câmara Municipal de Cascais.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Votações da Comunidade | Wave Rádio • EBS Cidadela</title>
+  <meta name="description" content="Participa nas votações e sondagens oficiais da Wave Rádio da EBS da Cidadela em parceria com a Câmara Municipal de Cascais.">
   <meta name="theme-color" content="#282425">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Votação da Comunidade | Wave Rádio • EBS Cidadela">
+  <meta property="og:title" content="Votações da Comunidade | Wave Rádio • EBS Cidadela">
+  <meta property="og:description" content="Participa nas sondagens da Wave Rádio e escolhe músicas, temas e rubricas das nossas emissões.">
   <meta property="og:image" content="assets/brand/og-image.jpg">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
-  <link rel="stylesheet" href="css/styles.css?v=20261027">
   <link rel="icon" type="image/png" href="assets/brand/favicon-negativa.png">
   <link rel="apple-touch-icon" href="assets/brand/favicon-negativa.png">
-  <script>try{var t=localStorage.getItem('wave_theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
+  <link rel="stylesheet" href="css/wave.css?v=20261027f">
+  <script>
+    document.documentElement.classList.add('js');
+    try {
+      var savedTheme = localStorage.getItem('wave_theme');
+      if (savedTheme === 'dark' || savedTheme === 'light') {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+    } catch (e) {}
+  </script>
+  <script src="js/maintenance-guard.js?v=20261027cidadelafm"></script>
 </head>
-
 <body>
+<a class="skip" href="#main">Saltar para o conteúdo</a>
 
-  <!-- Topo Institucional -->
-  <div class="hv2-topbar">
-    <div class="hv2-topbar-inner">
-      <i class="ri-government-line" aria-hidden="true"></i>
-      <span>
-        <a href="https://aecidadela.pt" target="_blank" rel="noopener noreferrer" class="hv2-topbar-link">Agrupamento de Escolas da Cidadela</a>
-        <span class="hv2-topbar-sep">•</span>
-        <span class="hv2-topbar-muted">Parceria com a</span>
-        <a href="https://www.cascais.pt" target="_blank" rel="noopener noreferrer" class="hv2-topbar-link">Câmara Municipal de Cascais</a>
-      </span>
-    </div>
-  </div>
-
-  <!-- Navegação Principal -->
-  <nav class="hv2-nav" id="mainNav" aria-label="Navegação principal">
-    <div class="hv2-nav-inner">
-      <a href="index.html" class="hv2-brand" aria-label="Wave Rádio — Página Principal">
-        <div class="hv2-logo-wrap">
-          <img src="assets/brand/favicon-negativa-accent.png" alt="Logótipo Wave Rádio">
-          <span class="hv2-live-dot" aria-hidden="true"></span>
-        </div>
-        <div class="hv2-brand-text">
-          <strong>WAVE RÁDIO</strong>
-          <span>A TUA RÁDIO DAS 10:00!</span>
-        </div>
-      </a>
-
-      <ul class="hv2-nav-links" role="list">
+<header class="w-nav">
+  <div class="w-nav-in">
+    <a class="w-logo" href="index.html" aria-label="Wave Rádio — Página principal">
+      <img src="assets/brand/logo-minima-positiva.png" alt="Wave Rádio" width="65" height="38">
+    </a>
+    <nav class="w-navwrap" aria-label="Navegação principal">
+      <ul class="w-links">
         <li><a href="index.html">Início</a></li>
         <li><a href="podcasts.html">Podcasts</a></li>
         <li><a href="noticias.html">Notícias</a></li>
-        <li><a href="mensagem.html" class="message-nav-button"><i class="ri-chat-heart-line" aria-hidden="true"></i> Fala Connosco</a></li>
+        <li><a href="mensagem.html">Fala Connosco</a></li>
+        <li data-poll-nav><a href="vote.html" class="active w-nav-vote" aria-current="page"><i class="ri-bar-chart-2-fill" aria-hidden="true"></i> Votações</a></li>
       </ul>
-
-      <a href="pedir-musica.html" class="hv2-nav-cta" id="navCtaBtn">
-        <i class="ri-music-2-fill" aria-hidden="true"></i>
-        <span>Pedir Música</span>
-      </a>
-
-      <button class="hv2-hamburger" id="navBurger" aria-label="Abrir menu de navegação" aria-expanded="false">
-        <span></span><span></span><span></span>
+    </nav>
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-left: auto;">
+      <button class="w-theme-toggle" id="themeToggleBtn" type="button" aria-label="Alternar entre modo claro e escuro" title="Alternar tema">
+        <i class="ri-moon-clear-line" aria-hidden="true"></i>
       </button>
+      <a class="w-btn w-btn-red w-nav-cta" href="pedir-musica.html" id="navCtaBtn"><i class="ri-music-2-fill" aria-hidden="true"></i> Pedir música</a>
+      <button class="w-burger" id="navBurger" type="button" aria-label="Abrir menu de navegação" aria-expanded="false" aria-controls="mobileMenu"><span></span><span></span><span></span></button>
     </div>
-  </nav>
-
-  <!-- Menu Mobile Drawer -->
-  <div class="hv2-nav-mobile" id="mobileMenu" aria-hidden="true">
-    <button class="hv2-mobile-close" id="mobileClose" aria-label="Fechar menu">
-      <i class="ri-close-line" aria-hidden="true"></i>
-    </button>
-    <a href="index.html">Início</a>
-    <a href="podcasts.html">Podcasts</a>
-    <a href="noticias.html">Notícias</a>
-    <a href="mensagem.html" class="message-nav-button" style="justify-content: center; width: 100%;"><i class="ri-chat-heart-line" aria-hidden="true"></i> Fala Connosco</a>
-    <a href="pedir-musica.html" class="hv2-btn-primary">
-      <i class="ri-music-2-fill" aria-hidden="true"></i> Pedir Música
-    </a>
   </div>
+</header>
 
-  <!-- Cabeçalho da Página -->
-  <header class="hv2-page-header">
-    <div class="hv2-hero-bg" aria-hidden="true">
-      <div class="hv2-orb hv2-orb-2" style="width: 500px; height: 500px; top: -100px; left: -50px;"></div>
-      <div class="hv2-orb hv2-orb-1" style="width: 350px; height: 350px; top: 30%; right: 15%;"></div>
-      <div class="hv2-hero-grid"></div>
+<div class="w-drawer" id="mobileMenu" aria-hidden="true">
+  <div class="w-drawer-top">
+    <img src="assets/brand/logo-minima-negativa.png" alt="Wave Rádio">
+    <button class="w-drawer-close" id="mobileClose" type="button" aria-label="Fechar menu"><i class="ri-close-line" aria-hidden="true"></i></button>
+  </div>
+  <a class="w-d-link" href="index.html">Início <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a>
+  <a class="w-d-link" href="podcasts.html">Podcasts <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a>
+  <a class="w-d-link" href="noticias.html">Notícias <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a>
+  <a class="w-d-link" href="mensagem.html">Fala Connosco <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a>
+  <a class="w-d-link active" href="vote.html" data-poll-nav><i class="ri-bar-chart-2-fill" aria-hidden="true"></i> Votações <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a>
+  <a class="w-btn w-btn-red w-btn-block" href="pedir-musica.html"><i class="ri-music-2-fill" aria-hidden="true"></i> Pedir música</a>
+</div>
+
+<header class="w-page-head">
+  <div class="w-page-head-in">
+    <nav class="w-crumb" aria-label="Localização"><a href="index.html">Início</a><b>/</b><span>Votações</span></nav>
+    <h1 class="w-page-title">Votações da <br><span class="out">Comunidade<span class="dot">.</span></span></h1>
+    <p class="w-page-sub">Participa nas sondagens oficiais da Wave Rádio da EBS da Cidadela e faz ouvir a tua opinião para as emissões do intervalo.</p>
+  </div>
+  <div class="w-tag" aria-hidden="true">SONDAGEM</div>
+</header>
+
+<main class="w-main" id="main">
+  <div class="w-wrap w-poll-wrap">
+
+    <!-- ESTADO 1: A CARREGAR -->
+    <div id="voteLoadingState" class="w-poll-status-card" aria-live="polite">
+      <div class="w-poll-status-inner">
+        <div class="w-poll-status-icon">
+          <i class="ri-loader-4-line ri-spin" aria-hidden="true"></i>
+        </div>
+        <h2>A verificar votações ativas...</h2>
+        <p>Estamos a ligar à base de dados do estúdio da Wave Rádio.</p>
+      </div>
     </div>
 
-    <div class="hv2-page-header-inner hv2-animate">
-      <span class="hv2-kicker" style="color: #c084fc;">
-        <i class="ri-survey-line" aria-hidden="true"></i> Sondagens Oficiais
-      </span>
-      <h1 class="hv2-page-title">
-        Votação da <span class="accent-purple">Comunidade</span>
-      </h1>
-      <p class="hv2-page-sub">
-        Participa nas sondagens da Rádio Escolar da EBS da Cidadela e faz ouvir a tua opinião.
-      </p>
+    <!-- ESTADO 2: SEM VOTAÇÃO ATIVA OU NÃO ENCONTRADA -->
+    <div id="voteErrorState" class="w-poll-status-card" style="display: none;" aria-live="polite">
+      <div class="w-poll-status-inner">
+        <div class="w-poll-status-icon">
+          <i class="ri-bar-chart-2-line" aria-hidden="true"></i>
+        </div>
+        <h2>Nenhuma votação ativa de momento</h2>
+        <p>Esta página só abre para participação quando a equipa da rádio lança uma sondagem. Fica atento às próximas emissões das 10:00 e ao mural de notícias!</p>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; margin-top: 1rem;">
+          <a href="index.html" class="w-btn w-btn-red"><i class="ri-home-5-line" aria-hidden="true"></i> Voltar ao Início</a>
+          <a href="noticias.html" class="w-btn w-btn-outline"><i class="ri-newspaper-line" aria-hidden="true"></i> Ver Notícias</a>
+        </div>
+      </div>
     </div>
-  </header>
 
-  <!-- MAIN CONTAINER -->
-  <main class="hv2-main-content">
-    <div class="vote-wrapper" id="voteWrapper" style="max-width: 680px; margin: 0 auto;">
-
-      <!-- ESTADO: A CARREGAR -->
-      <div id="voteLoadingState" class="hv2-glass-card text-center" style="padding: 3.5rem 1.5rem;">
-        <i class="ri-loader-4-line ri-spin" style="font-size: 2.5rem; color: #a855f7;"></i>
-        <h2 style="margin-top: 1rem; font-size: 1.25rem; font-family: 'Outfit', sans-serif; color: #fff;">A carregar votação...</h2>
-        <p style="color: #64748b; font-size: 0.9rem;">A ligar à base de dados da Rádio EBS Cidadela</p>
+    <!-- ESTADO 3: FORMULÁRIO DE VOTAÇÃO ATIVO -->
+    <article id="voteFormState" class="w-poll-card" style="display: none;">
+      <div class="w-poll-meta-strip">
+        <span class="w-poll-chip active" id="voteAudienceBadge"><i class="ri-group-line" aria-hidden="true"></i> Público</span>
+        <span class="w-poll-chip" id="voteLimitBadge"><i class="ri-user-star-line" aria-hidden="true"></i> 1 voto por pessoa</span>
+        <span class="w-poll-chip" id="voteClosesBadge" style="display: none;"><i class="ri-time-line" aria-hidden="true"></i> <span id="voteClosesText"></span></span>
       </div>
 
-      <!-- ESTADO: ERRO / NÃO ENCONTRADO -->
-      <div id="voteErrorState" class="hv2-empty-state" style="display: none; padding: 3.5rem 1.5rem;">
-        <div class="hv2-empty-icon" style="background: rgba(168, 85, 247, 0.18); border-color: rgba(168, 85, 247, 0.3);">
-          <i class="ri-survey-line" style="color: #c084fc;"></i>
+      <h2 class="w-poll-question" id="voteQuestionTitle">Pergunta da Sondagem</h2>
+      <p class="w-poll-desc" id="voteQuestionDesc"></p>
+
+      <form id="publicVoteForm" onsubmit="submitPublicVote(event)">
+        <!-- Campos de Identificação Conforme o Público-Alvo -->
+        <div id="schoolProcessField" class="w-poll-auth-box" style="display: none;">
+          <div class="w-poll-auth-title"><i class="ri-id-card-line" aria-hidden="true"></i> Identificação de Aluno da Cidadela</div>
+          <div class="w-field" style="margin-bottom: 0;">
+            <label for="voterProcessNumber" class="w-label">N.º de Processo de Aluno <span style="color: var(--red);">*</span></label>
+            <input type="text" id="voterProcessNumber" class="w-input" placeholder="Ex: 12345" autocomplete="off" inputmode="numeric">
+            <small style="font-size: 0.75rem; color: var(--mute); margin-top: 0.35rem; display: block;">Utilizado apenas para garantir 1 voto por aluno de forma anónima (encriptado por hash).</small>
+          </div>
         </div>
-        <h2 style="font-size: 1.4rem; color: #fff; font-family: 'Outfit', sans-serif;">Ainda não foram adicionadas votações ativas</h2>
-        <p style="color: #94a3b8; font-size: 0.92rem; margin-top: 0.5rem; max-width: 420px; margin-left: auto; margin-right: auto; line-height: 1.6;">
-          Acompanha as próximas emissões da Rádio Escolar da EBS Cidadela para participares nas novas sondagens e passatempos.
-        </p>
+
+        <div id="schoolClassField" class="w-poll-auth-box" style="display: none;">
+          <div class="w-poll-auth-title"><i class="ri-team-line" aria-hidden="true"></i> Identificação por Turma</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div class="w-field" style="margin-bottom: 0;">
+              <label for="voterSchoolClass" class="w-label">Turma (ex: 8ºB, 11ºCT1) <span style="color: var(--red);">*</span></label>
+              <input type="text" id="voterSchoolClass" class="w-input" placeholder="Ex: 9ºA" autocomplete="off">
+            </div>
+            <div class="w-field" style="margin-bottom: 0;">
+              <label for="voterClassNumber" class="w-label">N.º de Aluno <span style="color: var(--red);">*</span></label>
+              <input type="number" id="voterClassNumber" class="w-input" placeholder="Ex: 14" min="1" max="50">
+            </div>
+          </div>
+        </div>
+
+        <div id="publicGeneralField" class="w-poll-auth-box" style="display: none;">
+          <div class="w-poll-auth-title"><i class="ri-user-line" aria-hidden="true"></i> Votação Pública Aberta</div>
+          <div class="w-field" style="margin-bottom: 0;">
+            <label for="voterOptionalName" class="w-label">O teu nome ou alcunha (opcional)</label>
+            <input type="text" id="voterOptionalName" class="w-input" placeholder="Ex: Tiago ou Anónimo" autocomplete="off">
+          </div>
+        </div>
+
+        <!-- Lista de Opções -->
+        <div class="w-field" style="margin-top: 1.25rem;">
+          <label class="w-label" style="margin-bottom: 0.75rem;">Escolhe uma das opções:</label>
+          <div id="voteOptionsList" class="w-poll-options-grid" role="radiogroup" aria-labelledby="voteQuestionTitle">
+            <!-- Opções injetadas via JavaScript -->
+          </div>
+        </div>
+
+        <!-- Alerta de Validação / Erro -->
+        <div id="voteFormAlert" class="w-alert" style="display: none; margin-bottom: 1.25rem;" role="alert"></div>
+
         <div style="margin-top: 1.75rem;">
-          <a href="index.html" class="hv2-btn-primary" style="display: inline-flex;">
-            <i class="ri-arrow-left-line"></i> Voltar ao Início
-          </a>
-        </div>
-      </div>
-
-      <!-- ESTADO: FORMULÁRIO DE VOTO -->
-      <div id="voteFormState" class="hv2-glass-card" style="display: none;">
-        <div class="vote-header" style="margin-bottom: 2rem;">
-          <div class="vote-meta-top" style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
-            <span class="poll-badge poll-badge-active" id="voteAudienceBadge" style="background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc; padding: 0.3rem 0.75rem; border-radius: 99px; font-size: 0.78rem; font-weight: 700;">Público</span>
-            <span class="poll-badge" id="voteLimitBadge" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 0.3rem 0.75rem; border-radius: 99px; font-size: 0.78rem; font-weight: 600;">1 voto por aluno</span>
-          </div>
-          <h2 class="vote-question" id="voteQuestionTitle" style="font-family: 'Outfit', sans-serif; font-size: 1.6rem; font-weight: 800; color: #fff; line-height: 1.25; margin-bottom: 0.5rem;">Pergunta da Sondagem</h2>
-          <p class="vote-description" id="voteQuestionDesc" style="color: #94a3b8; font-size: 0.95rem; line-height: 1.6; margin: 0;"></p>
-        </div>
-
-        <form id="publicVoteForm" onsubmit="submitPublicVote(event)">
-          <!-- CAMPOS DE IDENTIFICAÇÃO -->
-          <div id="schoolProcessField" class="vote-id-box" style="display: none; margin-bottom: 1.5rem;">
-            <label class="hv2-form-label" for="voterProcessNumber"><i class="ri-id-card-line"></i> N.º de Processo de Aluno <span style="color:#ef4444;">*</span></label>
-            <input type="text" id="voterProcessNumber" class="hv2-form-input" placeholder="Ex: 12345" inputmode="numeric">
-            <small style="color: #64748b; font-size: 0.78rem; display: block; margin-top: -0.75rem; margin-bottom: 1rem;">Usado exclusivamente para garantir que cada aluno vota apenas uma vez.</small>
-          </div>
-
-          <div id="schoolClassField" class="vote-id-box" style="display: none; margin-bottom: 1.5rem;">
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.75rem;">
-              <div>
-                <label class="hv2-form-label" for="voterSchoolClass"><i class="ri-school-line"></i> Ano e Turma <span style="color:#ef4444;">*</span></label>
-                <input type="text" id="voterSchoolClass" class="hv2-form-input" placeholder="Ex: 8º B ou 11º CT1">
-              </div>
-              <div>
-                <label class="hv2-form-label" for="voterClassNumber"><i class="ri-hashtag"></i> N.º de Aluno <span style="color:#ef4444;">*</span></label>
-                <input type="number" id="voterClassNumber" class="hv2-form-input" placeholder="Ex: 14" min="1" max="50">
-              </div>
-            </div>
-            <small style="color: #64748b; font-size: 0.78rem; display: block; margin-top: -0.75rem; margin-bottom: 1rem;">Identificação da turma para controlo de participação escolar.</small>
-          </div>
-
-          <div id="publicGeneralField" class="vote-id-box" style="display: none; margin-bottom: 1.5rem;">
-            <label class="hv2-form-label" for="voterOptionalName"><i class="ri-user-smile-line"></i> O teu Nome ou Alcunha (opcional)</label>
-            <input type="text" id="voterOptionalName" class="hv2-form-input" placeholder="Ex: Gonçalo ou Anónimo">
-          </div>
-
-          <!-- OPÇÕES DE VOTO -->
-          <div class="vote-options-section" style="margin-bottom: 1.5rem;">
-            <label class="hv2-form-label" style="margin-bottom: 0.85rem; font-size: 1rem;">Escolhe a tua resposta:</label>
-            <div id="voteOptionsList" class="vote-options-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
-              <!-- Opções injetadas via JS -->
-            </div>
-          </div>
-
-          <div id="voteFormAlert" class="vote-alert" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 0.85rem 1rem; border-radius: 12px; margin-bottom: 1.25rem; font-size: 0.9rem;"></div>
-
-          <div class="vote-actions" style="margin-top: 1.75rem;">
-            <button type="submit" id="btnSubmitVote" class="hv2-btn-primary" style="width: 100%; justify-content: center; font-size: 1rem; padding: 0.95rem; background: linear-gradient(135deg, #a855f7, #6366f1); box-shadow: 0 8px 32px rgba(168, 85, 247, 0.4);">
-              <i class="ri-checkbox-circle-fill"></i> Submeter o Meu Voto
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <!-- ESTADO: RESULTADOS / JÁ VOTOU / ENCERRADA -->
-      <div id="voteResultsState" class="hv2-glass-card" style="display: none;">
-        <div class="vote-header text-center" style="margin-bottom: 2rem;">
-          <div class="vote-icon-circle" id="voteResultIcon" style="width: 54px; height: 54px; border-radius: 50%; background: rgba(52, 211, 153, 0.15); color: #34d399; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin: 0 auto 1rem auto;">
-            <i class="ri-check-line"></i>
-          </div>
-          <span class="poll-badge" id="voteResultStatusBadge" style="background: rgba(167, 139, 250, 0.15); border: 1px solid rgba(167, 139, 250, 0.3); color: #c4b5fd; padding: 0.3rem 0.75rem; border-radius: 99px; font-size: 0.78rem; font-weight: 700;">Voto Registado!</span>
-          <h2 class="vote-question" id="voteResultsQuestionTitle" style="font-family: 'Outfit', sans-serif; font-size: 1.45rem; font-weight: 800; color: #fff; margin-top: 0.75rem;">Resultados em Tempo Real</h2>
-          <p id="voteResultsSubtitle" style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.35rem;">Obrigado pela tua participação na Rádio Cidadela!</p>
-        </div>
-
-        <div class="vote-results-box" style="margin-top: 1.5rem; background: rgba(6, 8, 15, 0.6); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 16px; padding: 1.5rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
-            <span style="color: #94a3b8; font-size: 0.88rem;"><i class="ri-user-voice-line"></i> Total de votos registados:</span>
-            <strong id="voteTotalCountLabel" style="font-size: 1.15rem; color: #fff; font-family: 'Outfit', sans-serif;">0</strong>
-          </div>
-
-          <div id="voteLiveBarsContainer" style="display: flex; flex-direction: column; gap: 1rem;">
-            <!-- Barras animadas de progresso injetadas via JS -->
-          </div>
-        </div>
-
-        <div class="vote-footer-actions" style="margin-top: 2rem; display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
-          <button type="button" class="hv2-btn-secondary" onclick="shareCurrentPoll()">
-            <i class="ri-share-forward-line"></i> Partilhar Votação
+          <button type="submit" id="btnSubmitVote" class="w-btn w-btn-red w-btn-block">
+            <i class="ri-checkbox-circle-fill" aria-hidden="true"></i> Submeter o Meu Voto
           </button>
-          <a href="index.html" class="hv2-btn-primary" style="text-decoration: none;">
-            <i class="ri-home-4-line"></i> Voltar à Rádio
-          </a>
+        </div>
+      </form>
+    </article>
+
+    <!-- ESTADO 4: RESULTADOS / JÁ VOTOU / ENCERRADA -->
+    <article id="voteResultsState" class="w-poll-card" style="display: none;">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div class="w-poll-status-icon" id="voteResultIcon" style="margin: 0 auto 0.85rem auto;">
+          <i class="ri-check-line" aria-hidden="true"></i>
+        </div>
+        <span class="w-poll-chip active" id="voteResultStatusBadge">Voto Registado!</span>
+        <h2 class="w-poll-question" id="voteResultsQuestionTitle" style="margin-top: 0.85rem;">Resultados em Tempo Real</h2>
+        <p class="w-poll-desc" id="voteResultsSubtitle" style="margin-bottom: 0;">Obrigado pela tua participação na Wave Rádio!</p>
+      </div>
+
+      <div class="w-poll-results-box">
+        <div class="w-poll-results-top">
+          <span><i class="ri-user-voice-line" aria-hidden="true"></i> Total de votos:</span>
+          <strong id="voteTotalCountLabel">0</strong>
+        </div>
+
+        <div id="voteLiveBarsContainer">
+          <!-- Barras animadas de progresso injetadas via JavaScript -->
         </div>
       </div>
 
+      <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem;">
+        <button type="button" class="w-btn w-btn-outline" onclick="shareCurrentPoll()">
+          <i class="ri-share-forward-line" aria-hidden="true"></i> Partilhar Votação
+        </button>
+        <a href="index.html" class="w-btn w-btn-ink">
+          <i class="ri-home-4-line" aria-hidden="true"></i> Voltar à Rádio
+        </a>
+      </div>
+    </article>
+
+  </div>
+</main>
+
+<footer class="w-foot" role="contentinfo">
+  <div class="w-wrap">
+    <div class="w-foot-grid">
+      <div>
+        <a class="w-foot-logo" href="index.html" aria-label="Wave Rádio — Início">
+          <img src="assets/brand/logo-slogan-negativa.png" alt="Wave Rádio — A tua rádio das 10:00!" width="220" height="128" loading="lazy" decoding="async">
+        </a>
+        <p class="w-foot-blurb">A voz e a música dos alunos da EBS da Cidadela em parceria com a Câmara Municipal de Cascais.</p>
+        <p class="w-foot-email">
+          <a href="mailto:Geral@RadioWave.pt"><i class="ri-mail-send-line" aria-hidden="true"></i> Geral@RadioWave.pt</a>
+        </p>
+      </div>
+      <div>
+        <h4>Navegar</h4>
+        <ul class="w-foot-list" role="list">
+          <li><a href="index.html">Início</a></li>
+          <li><a href="pedir-musica.html">Pedir música</a></li>
+          <li><a href="DT.html">Diretores de Turma</a></li>
+          <li><a href="podcasts.html">Podcasts</a></li>
+          <li><a href="noticias.html">Notícias</a></li>
+          <li><a href="equipa.html">Equipa</a></li>
+          <li><a href="mensagem.html">Fala Connosco</a></li>
+          <li><a href="links.html">Links rápidos</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Entidades &amp; Parcerias</h4>
+        <div class="w-partners">
+          <a class="w-partner" href="https://www.cascais.pt" target="_blank" rel="noopener noreferrer" aria-label="Câmara Municipal de Cascais">
+            <span>Parceria</span>
+            <img src="assets/logo-cmc.jpg" alt="Câmara Municipal de Cascais" loading="lazy" decoding="async">
+          </a>
+          <a class="w-partner" href="https://criativa.org" target="_blank" rel="noopener noreferrer" aria-label="Criativa.org">
+            <span>Produção</span>
+            <img src="assets/logo-criativa.jpg" alt="Criativa.org" loading="lazy" decoding="async">
+          </a>
+          <a class="w-partner" href="https://aecidadela.pt" target="_blank" rel="noopener noreferrer" aria-label="Agrupamento de Escolas da Cidadela">
+            <span>Escola</span>
+            <img src="assets/logo-cidadela.png" alt="Agrupamento de Escolas da Cidadela" loading="lazy" decoding="async">
+          </a>
+        </div>
+      </div>
     </div>
-  </main>
-
-  <!-- Rodapé Institucional -->
-  <footer class="hv2-footer" role="contentinfo">
-    <div class="hv2-footer-inner">
-
-      <!-- Grelha Principal do Rodapé -->
-      <div class="hv2-footer-main">
-
-        <!-- Coluna 1: Identidade da Wave Rádio -->
-        <div class="hv2-footer-col hv2-footer-col-brand">
-          <a href="index.html" class="hv2-footer-brand-link" aria-label="Wave Rádio - Início">
-            <img src="assets/brand/logo-slogan-negativa.png" alt="Logótipo Wave Rádio" class="hv2-footer-radio-logo">
-          </a>
-          <p class="hv2-footer-desc" style="margin-top: 0.85rem; color: #a89f9f; font-size: 0.88rem; line-height: 1.5;">
-            A voz e a música dos alunos da EBS da Cidadela em parceria com a Câmara Municipal de Cascais.
-          </p>
-          <p style="margin-top: 0.65rem; font-size: 0.88rem;">
-            <a href="mailto:Geral@RadioWave.pt" style="color: #ff3a41; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;"><i class="ri-mail-send-line" aria-hidden="true"></i> Geral@RadioWave.pt</a>
-          </p>
-        </div>
-
-        <!-- Coluna 2: Navegação Rápida -->
-        <div class="hv2-footer-col hv2-footer-col-nav">
-          <h4 class="hv2-footer-heading">Navegação</h4>
-          <ul class="hv2-footer-list" role="list">
-            <li><a href="index.html"><i class="ri-home-4-line" aria-hidden="true"></i> Início</a></li>
-            <li><a href="pedir-musica.html"><i class="ri-music-2-line" aria-hidden="true"></i> Pedir Música</a></li>
-            <li><a href="podcasts.html"><i class="ri-mic-line" aria-hidden="true"></i> Podcasts</a></li>
-            <li><a href="noticias.html"><i class="ri-newspaper-line" aria-hidden="true"></i> Notícias</a></li>
-            <li><a href="mensagem.html"><i class="ri-chat-heart-line" aria-hidden="true"></i> Fala Connosco</a></li>
-            <li><a href="links.html"><i class="ri-links-line" aria-hidden="true"></i> Links Rápidos</a></li>
-          </ul>
-        </div>
-
-        <!-- Coluna 3: Entidades & Parcerias -->
-        <div class="hv2-footer-col hv2-footer-col-partners">
-          <h4 class="hv2-footer-heading">Entidades & Parcerias</h4>
-          <div class="hv2-partner-cards">
-            <!-- Parceria: Cascais -->
-            <div class="hv2-partner-item">
-              <span class="hv2-partner-tag">Parceria</span>
-              <a href="https://www.cascais.pt" target="_blank" rel="noopener noreferrer" class="hv2-partner-link" title="Câmara Municipal de Cascais" aria-label="Câmara Municipal de Cascais">
-                <img src="assets/logo-cmc.jpg" alt="Câmara Municipal de Cascais" class="hv2-partner-img hv2-img-cmc">
-              </a>
-            </div>
-
-            <!-- Produção: Criativa -->
-            <div class="hv2-partner-item">
-              <span class="hv2-partner-tag">Produção</span>
-              <a href="https://criativa.org" target="_blank" rel="noopener noreferrer" class="hv2-partner-link" title="Criativa.org" aria-label="Criativa.org">
-                <img src="assets/logo-criativa.jpg" alt="Criativa.org" class="hv2-partner-img hv2-img-criativa">
-              </a>
-            </div>
-
-            <!-- Escola: AE Cidadela -->
-            <div class="hv2-partner-item">
-              <span class="hv2-partner-tag">Escola</span>
-              <a href="https://aecidadela.pt" target="_blank" rel="noopener noreferrer" class="hv2-partner-link" title="Agrupamento de Escolas da Cidadela" aria-label="Agrupamento de Escolas da Cidadela">
-                <img src="assets/logo-cidadela.png" alt="Agrupamento de Escolas da Cidadela" class="hv2-partner-img hv2-img-cidadela">
-              </a>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Barra Inferior (Direitos e Acesso) -->
-      <div class="hv2-footer-bottom">
-        <div class="hv2-footer-copy">
-          &copy; 2026 <strong>Wave Rádio • EBS Cidadela</strong> · <a href="mailto:Geral@RadioWave.pt" style="color: inherit;">Geral@RadioWave.pt</a> <span>• Desenvolvido por Rafael Diogo</span>
-        </div>
-
-        <div>
-          <a href="admin.html" class="hv2-footer-admin-link">
-            <i class="ri-lock-2-line" aria-hidden="true"></i> Área Reservada
-          </a>
-        </div>
-      </div>
-
+    <div class="w-foot-bottom">
+      <span>&copy; 2026 <b>Wave Rádio</b> · EBS Cidadela · <a href="mailto:Geral@RadioWave.pt">Geral@RadioWave.pt</a> · Desenvolvido por Rafael Diogo</span>
+      <a href="admin.html"><i class="ri-lock-2-line" aria-hidden="true"></i> Área reservada</a>
     </div>
-  </footer>
+  </div>
+</footer>
 
-  <!-- SCRIPTS -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="js/firebase-config.js"></script>
-  <script>
-    let currentPoll = null;
-    let selectedOptionIndex = null;
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js?v=20261027cidadelafm"></script>
+<script src="js/site-ui.js?v=20261027cidadelafm"></script>
 
-    document.addEventListener('DOMContentLoaded', async () => {
-      // Mobile Drawer Toggle
-      var burger = document.getElementById('navBurger');
-      var menu = document.getElementById('mobileMenu');
-      var close = document.getElementById('mobileClose');
+<script>
+  let currentPoll = null;
+  let selectedOptionIndex = null;
 
-      function openMenu() {
-        menu.classList.add('open');
-        burger.setAttribute('aria-expanded', 'true');
-        menu.removeAttribute('aria-hidden');
-        document.body.style.overflow = 'hidden';
-      }
+  document.addEventListener('DOMContentLoaded', async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    let pollId = urlParams.get('id');
 
-      function closeMenu() {
-        menu.classList.remove('open');
-        burger.setAttribute('aria-expanded', 'false');
-        menu.setAttribute('aria-hidden', 'true');
-        document.body.style.overflow = '';
-      }
+    if (!window.db || typeof window.db.ready !== 'function') {
+      showState('voteErrorState');
+      return;
+    }
 
-      if (burger) burger.addEventListener('click', openMenu);
-      if (close) close.addEventListener('click', closeMenu);
-      if (menu) menu.addEventListener('click', function (e) { if (e.target === menu) closeMenu(); });
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && menu && menu.classList.contains('open')) closeMenu();
-      });
-
-      const urlParams = new URLSearchParams(window.location.search);
-      let pollId = urlParams.get('id');
-
-      if (!window.db || typeof window.db.ready !== 'function') {
-        showState('voteErrorState');
-        return;
-      }
-
+    try {
       await window.db.ready();
-      if (!pollId) {
-        try {
-          const snapshot = await window.firebaseServices.firestore.collection('polls').get();
-          const activePolls = snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() }))
-            .filter(p => !p.closed)
-            .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-          if (activePolls.length > 0) pollId = activePolls[0].id;
-        } catch (e) {
-          console.warn('Erro ao listar votações:', e);
-        }
-      }
-
-      if (!pollId) {
-        showState('voteErrorState');
-        return;
-      }
-
-      loadPoll(pollId);
-    });
-
-    async function loadPoll(pollId) {
-      const polls = window.db.getPolls ? window.db.getPolls() : [];
-      let poll = polls.find(p => p.id === pollId);
-
-      if (!poll) {
-        try {
-          const doc = await window.firebaseServices.firestore.collection('polls').doc(pollId).get();
-          if (doc.exists) {
-            poll = { id: doc.id, ...doc.data() };
-          }
-        } catch (e) {
-          console.warn('Erro ao carregar poll do Firestore:', e);
-        }
-      }
-
-      if (!poll) {
-        showState('voteErrorState');
-        return;
-      }
-
-      currentPoll = poll;
-      document.title = `${poll.question} — Votação Rádio Cidadela`;
-
-      const isClosed = poll.closed || (poll.closingDate && new Date(poll.closingDate).setHours(23,59,59,999) < Date.now());
-      const localVoted = localStorage.getItem(`voted_poll_${poll.id}`);
-
-      if (isClosed) {
-        showResults(poll, 'Esta votação foi encerrada.');
-        return;
-      }
-
-      if (localVoted && poll.voteLimit === 'single') {
-        showResults(poll, 'Já participaste nesta votação. Vê aqui os resultados parciais!');
-        return;
-      }
-
-      renderVoteForm(poll);
+    } catch (e) {
+      console.warn('Erro ao aguardar inicialização do Firestore:', e);
     }
 
-    function renderVoteForm(poll) {
-      document.getElementById('voteQuestionTitle').textContent = poll.question;
-      document.getElementById('voteQuestionDesc').textContent = poll.description || '';
-
-      const audienceLabels = {
-        all: 'Aberto a Todos',
-        school_process: 'Alunos Cidadela (N.º Processo)',
-        school_class: 'Alunos Cidadela (Turma)'
-      };
-      document.getElementById('voteAudienceBadge').textContent = audienceLabels[poll.audience] || 'Público';
-      document.getElementById('voteLimitBadge').textContent = poll.voteLimit === 'single' ? '1 voto por pessoa' : 'Votos múltiplos';
-
-      document.getElementById('schoolProcessField').style.display = poll.audience === 'school_process' ? 'block' : 'none';
-      document.getElementById('schoolClassField').style.display = poll.audience === 'school_class' ? 'block' : 'none';
-      document.getElementById('publicGeneralField').style.display = poll.audience === 'all' ? 'block' : 'none';
-
-      const list = document.getElementById('voteOptionsList');
-      list.innerHTML = (poll.options || []).map((opt, idx) => `
-        <label class="vote-option-card" id="opt-label-${idx}" style="display: flex; align-items: center; gap: 0.85rem; padding: 1rem 1.25rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; cursor: pointer; transition: all 0.2s ease;">
-          <input type="radio" name="pollOption" value="${idx}" onchange="onOptionSelect(${idx})" required style="accent-color: #a855f7;">
-          <span class="vote-option-text" style="font-family: 'Outfit', sans-serif; font-weight: 700; color: #fff; font-size: 1rem;">${escapeHtml(opt)}</span>
-        </label>
-      `).join('');
-
-      showState('voteFormState');
-    }
-
-    function onOptionSelect(idx) {
-      selectedOptionIndex = idx;
-      document.querySelectorAll('.vote-option-card').forEach((card, i) => {
-        if (i === idx) {
-          card.style.borderColor = 'rgba(168, 85, 247, 0.5)';
-          card.style.background = 'rgba(168, 85, 247, 0.12)';
-        } else {
-          card.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-          card.style.background = 'rgba(255, 255, 255, 0.04)';
-        }
-      });
-    }
-
-    async function submitPublicVote(event) {
-      event.preventDefault();
-      if (!currentPoll || selectedOptionIndex === null) {
-        showAlert('Por favor seleciona uma das opções de resposta.');
-        return;
-      }
-
-      let voterIdentifier = '';
-      if (currentPoll.audience === 'school_process') {
-        const proc = document.getElementById('voterProcessNumber').value.trim();
-        if (!proc) {
-          showAlert('Por favor introduz o teu N.º de Processo de Aluno.');
-          return;
-        }
-        voterIdentifier = `process_${proc.toLowerCase()}`;
-      } else if (currentPoll.audience === 'school_class') {
-        const sClass = document.getElementById('voterSchoolClass').value.trim();
-        const sNum = document.getElementById('voterClassNumber').value.trim();
-        if (!sClass || !sNum) {
-          showAlert('Por favor indica a tua Turma e N.º de Aluno.');
-          return;
-        }
-        voterIdentifier = `class_${sClass.toLowerCase().replace(/\s+/g, '')}_${sNum}`;
+    if (!pollId) {
+      const activePoll = (window.db.getActivePoll ? window.db.getActivePoll() : null);
+      if (activePoll) {
+        pollId = activePoll.id;
       } else {
-        const name = document.getElementById('voterOptionalName').value.trim();
-        let localUid = localStorage.getItem('radio_voter_token');
-        if (!localUid) {
-          localUid = 'anon_' + Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
-          localStorage.setItem('radio_voter_token', localUid);
+        const activePolls = (window.db.getActivePolls ? window.db.getActivePolls() : []);
+        if (activePolls.length > 0) {
+          pollId = activePolls[0].id;
         }
-        voterIdentifier = name ? `pub_${name}_${localUid}` : `pub_${localUid}`;
       }
+    }
 
-      const btn = document.getElementById('btnSubmitVote');
-      btn.disabled = true;
-      btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> A registar o teu voto...';
+    if (!pollId) {
+      showState('voteErrorState');
+      return;
+    }
 
+    loadPoll(pollId);
+  });
+
+  async function loadPoll(pollId) {
+    const polls = window.db && window.db.getPolls ? window.db.getPolls() : [];
+    let poll = polls.find(p => p.id === pollId);
+
+    if (!poll) {
       try {
-        if (currentPoll.voteLimit === 'single') {
-          const alreadyVoted = await window.db.checkAlreadyVoted(currentPoll.id, voterIdentifier);
-          if (alreadyVoted) {
-            showAlert('Este número / utilizador já registou um voto nesta sondagem!');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="ri-checkbox-circle-line"></i> Submeter o Meu Voto';
-            return;
-          }
+        const doc = await window.firebaseServices.firestore.collection('polls').doc(pollId).get();
+        if (doc.exists) {
+          poll = { id: doc.id, ...doc.data() };
         }
-
-        await window.db.addVote(currentPoll.id, selectedOptionIndex, voterIdentifier);
-        localStorage.setItem(`voted_poll_${currentPoll.id}`, 'true');
-
-        showResults(currentPoll, 'O teu voto foi submetido com sucesso. Obrigado!');
-      } catch (err) {
-        console.error('Erro ao submeter voto:', err);
-        showAlert('Ocorreu um erro ao registar o voto. Tenta novamente.');
-        btn.disabled = false;
-        btn.innerHTML = '<i class="ri-checkbox-circle-line"></i> Submeter o Meu Voto';
+      } catch (e) {
+        console.warn('Erro ao carregar poll do Firestore:', e);
       }
     }
 
-    async function showResults(poll, subtitleText) {
-      document.getElementById('voteResultsQuestionTitle').textContent = poll.question;
-      document.getElementById('voteResultsSubtitle').textContent = subtitleText || '';
+    if (!poll) {
+      showState('voteErrorState');
+      return;
+    }
 
-      const isClosed = poll.closed || (poll.closingDate && new Date(poll.closingDate).setHours(23,59,59,999) < Date.now());
-      const badge = document.getElementById('voteResultStatusBadge');
-      badge.textContent = isClosed ? 'Votação Encerrada' : 'Resultados em Direto';
-      badge.style.background = isClosed ? 'rgba(239, 68, 68, 0.15)' : 'rgba(52, 211, 153, 0.15)';
-      badge.style.color = isClosed ? '#fca5a5' : '#6ee7b7';
+    currentPoll = poll;
+    document.title = `${poll.question} — Votações Wave Rádio`;
 
-      const icon = document.getElementById('voteResultIcon');
-      if (isClosed) {
-        icon.style.background = 'rgba(239, 68, 68, 0.15)';
-        icon.style.color = '#ef4444';
-        icon.innerHTML = '<i class="ri-lock-line"></i>';
+    let isClosed = Boolean(poll.closed);
+    if (poll.closingDate) {
+      let closeTs = NaN;
+      if (typeof poll.closingDate === 'number') {
+        closeTs = poll.closingDate;
+      } else if (typeof poll.closingDate === 'string' && poll.closingDate.trim()) {
+        const parsed = new Date(poll.closingDate);
+        if (!isNaN(parsed.getTime())) {
+          closeTs = parsed.setHours(23, 59, 59, 999);
+        }
+      }
+      if (!isNaN(closeTs) && closeTs < Date.now()) {
+        isClosed = true;
+      }
+    }
+
+    const localVoted = localStorage.getItem(`voted_poll_${poll.id}`);
+
+    if (isClosed) {
+      showResults(poll, 'Esta votação foi encerrada.');
+      return;
+    }
+
+    if (localVoted && poll.voteLimit === 'single') {
+      showResults(poll, 'Já participaste nesta votação. Vê aqui os resultados em tempo real!');
+      return;
+    }
+
+    renderVoteForm(poll);
+  }
+
+  function renderVoteForm(poll) {
+    document.getElementById('voteQuestionTitle').textContent = poll.question;
+    document.getElementById('voteQuestionDesc').textContent = poll.description || '';
+
+    const audienceLabels = {
+      all: 'Aberto a Todos',
+      school_process: 'Alunos Cidadela (N.º Processo)',
+      school_class: 'Alunos Cidadela (Turma)'
+    };
+    document.getElementById('voteAudienceBadge').innerHTML = `<i class="ri-group-line" aria-hidden="true"></i> ${audienceLabels[poll.audience] || 'Público'}`;
+    document.getElementById('voteLimitBadge').innerHTML = `<i class="ri-user-star-line" aria-hidden="true"></i> ${poll.voteLimit === 'single' ? '1 voto por pessoa' : 'Votos múltiplos permitidos'}`;
+
+    const closesBadge = document.getElementById('voteClosesBadge');
+    const closesText = document.getElementById('voteClosesText');
+    if (closesBadge && closesText && poll.closingDate) {
+      closesText.textContent = `Encerra a ${poll.closingDate}`;
+      closesBadge.style.display = 'inline-flex';
+    } else if (closesBadge) {
+      closesBadge.style.display = 'none';
+    }
+
+    document.getElementById('schoolProcessField').style.display = poll.audience === 'school_process' ? 'block' : 'none';
+    document.getElementById('schoolClassField').style.display = poll.audience === 'school_class' ? 'block' : 'none';
+    document.getElementById('publicGeneralField').style.display = poll.audience === 'all' ? 'block' : 'none';
+
+    const list = document.getElementById('voteOptionsList');
+    list.innerHTML = (poll.options || []).map((opt, idx) => `
+      <label class="w-poll-option-label" id="opt-label-${idx}">
+        <input type="radio" class="w-poll-option-radio" name="pollOption" value="${idx}" onchange="onOptionSelect(${idx})" required>
+        <span class="w-poll-option-text">${escapeHtml(opt)}</span>
+      </label>
+    `).join('');
+
+    showState('voteFormState');
+  }
+
+  function onOptionSelect(idx) {
+    selectedOptionIndex = idx;
+    document.querySelectorAll('.w-poll-option-label').forEach((card, i) => {
+      if (i === idx) {
+        card.classList.add('selected');
       } else {
-        icon.style.background = 'rgba(52, 211, 153, 0.15)';
-        icon.style.color = '#34d399';
-        icon.innerHTML = '<i class="ri-check-line"></i>';
+        card.classList.remove('selected');
+      }
+    });
+  }
+
+  async function submitPublicVote(event) {
+    event.preventDefault();
+    if (!currentPoll || selectedOptionIndex === null) {
+      showAlert('Por favor seleciona uma das opções de resposta.');
+      return;
+    }
+
+    let voterIdentifier = '';
+    if (currentPoll.audience === 'school_process') {
+      const proc = document.getElementById('voterProcessNumber').value.trim();
+      if (!proc) {
+        showAlert('Por favor introduz o teu N.º de Processo de Aluno.');
+        return;
+      }
+      voterIdentifier = `process_${proc.toLowerCase()}`;
+    } else if (currentPoll.audience === 'school_class') {
+      const sClass = document.getElementById('voterSchoolClass').value.trim();
+      const sNum = document.getElementById('voterClassNumber').value.trim();
+      if (!sClass || !sNum) {
+        showAlert('Por favor indica a tua Turma e N.º de Aluno.');
+        return;
+      }
+      voterIdentifier = `class_${sClass.toLowerCase().replace(/\s+/g, '')}_${sNum}`;
+    } else {
+      const name = document.getElementById('voterOptionalName').value.trim();
+      let localUid = localStorage.getItem('radio_voter_token');
+      if (!localUid) {
+        localUid = 'anon_' + Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
+        localStorage.setItem('radio_voter_token', localUid);
+      }
+      voterIdentifier = name ? `pub_${name}_${localUid}` : `pub_${localUid}`;
+    }
+
+    const btn = document.getElementById('btnSubmitVote');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ri-loader-4-line ri-spin" aria-hidden="true"></i> A registar o teu voto...';
+
+    try {
+      if (currentPoll.voteLimit === 'single') {
+        const alreadyVoted = await window.db.checkAlreadyVoted(currentPoll.id, voterIdentifier);
+        if (alreadyVoted) {
+          showAlert('Este número / aluno já registou um voto nesta sondagem!');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="ri-checkbox-circle-fill" aria-hidden="true"></i> Submeter o Meu Voto';
+          return;
+        }
       }
 
-      showState('voteResultsState');
+      await window.db.addVote(currentPoll.id, selectedOptionIndex, voterIdentifier);
+      localStorage.setItem(`voted_poll_${currentPoll.id}`, 'true');
 
-      const container = document.getElementById('voteLiveBarsContainer');
-      container.innerHTML = '<div style="padding: 1rem; color: #64748b; text-align: center;"><i class="ri-loader-4-line ri-spin"></i> A atualizar contagem...</div>';
+      showResults(currentPoll, 'O teu voto foi submetido com sucesso. Obrigado!');
+    } catch (err) {
+      console.error('Erro ao submeter voto:', err);
+      showAlert('Ocorreu um erro ao registar o voto. Tenta novamente.');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ri-checkbox-circle-fill" aria-hidden="true"></i> Submeter o Meu Voto';
+    }
+  }
 
-      const voteCounts = await window.db.getPollVoteCounts(poll.id);
-      const totalVotes = Object.values(voteCounts).reduce((acc, c) => acc + c, 0);
+  async function showResults(poll, subtitleText) {
+    document.getElementById('voteResultsQuestionTitle').textContent = poll.question;
+    document.getElementById('voteResultsSubtitle').textContent = subtitleText || '';
 
-      document.getElementById('voteTotalCountLabel').textContent = `${totalVotes} ${totalVotes === 1 ? 'voto' : 'votos'}`;
+    let isClosed = Boolean(poll.closed);
+    if (poll.closingDate) {
+      let closeTs = NaN;
+      if (typeof poll.closingDate === 'number') {
+        closeTs = poll.closingDate;
+      } else if (typeof poll.closingDate === 'string' && poll.closingDate.trim()) {
+        const parsed = new Date(poll.closingDate);
+        if (!isNaN(parsed.getTime())) {
+          closeTs = parsed.setHours(23, 59, 59, 999);
+        }
+      }
+      if (!isNaN(closeTs) && closeTs < Date.now()) isClosed = true;
+    }
 
-      container.innerHTML = (poll.options || []).map((opt, idx) => {
-        const count = voteCounts[idx] || 0;
-        const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
-        return `
-          <div class="vote-result-row">
-            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem; font-size: 0.92rem;">
-              <span style="font-weight: 600; color: #fff;">${escapeHtml(opt)}</span>
-              <span style="font-weight: 700; color: #a78bfa;">${count} (${pct}%)</span>
-            </div>
-            <div class="poll-opt-progress-track" style="height: 10px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden;">
-              <div class="poll-opt-progress-fill" style="width: ${pct}%; height: 100%; background: linear-gradient(90deg, #a855f7, #6366f1); border-radius: 99px; transition: width 0.6s ease;"></div>
-            </div>
+    const badge = document.getElementById('voteResultStatusBadge');
+    badge.textContent = isClosed ? 'Votação Encerrada' : 'Resultados em Tempo Real';
+
+    const icon = document.getElementById('voteResultIcon');
+    if (isClosed) {
+      icon.innerHTML = '<i class="ri-lock-line" aria-hidden="true"></i>';
+      icon.style.color = 'var(--mute)';
+    } else {
+      icon.innerHTML = '<i class="ri-check-line" aria-hidden="true"></i>';
+      icon.style.color = 'var(--red)';
+    }
+
+    showState('voteResultsState');
+
+    const container = document.getElementById('voteLiveBarsContainer');
+    container.innerHTML = '<div style="padding: 1.25rem; color: var(--mute); text-align: center;"><i class="ri-loader-4-line ri-spin" aria-hidden="true"></i> A contabilizar os votos...</div>';
+
+    const voteCounts = await window.db.getPollVoteCounts(poll.id);
+    const totalVotes = Object.values(voteCounts).reduce((acc, c) => acc + c, 0);
+
+    document.getElementById('voteTotalCountLabel').textContent = `${totalVotes} ${totalVotes === 1 ? 'voto' : 'votos'}`;
+
+    container.innerHTML = (poll.options || []).map((opt, idx) => {
+      const count = voteCounts[idx] || 0;
+      const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
+      return `
+        <div class="w-poll-result-row">
+          <div class="w-poll-result-head">
+            <span>${escapeHtml(opt)}</span>
+            <span class="w-poll-result-counts">${count} (${pct}%)</span>
           </div>
-        `;
-      }).join('');
-    }
+          <div class="w-poll-progress-track">
+            <div class="w-poll-progress-fill" style="width: ${pct}%;"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 
-    function showState(id) {
-      ['voteLoadingState', 'voteErrorState', 'voteFormState', 'voteResultsState'].forEach(s => {
-        const el = document.getElementById(s);
-        if (el) el.style.display = el.id === id ? 'block' : 'none';
-      });
-    }
+  function showState(id) {
+    ['voteLoadingState', 'voteErrorState', 'voteFormState', 'voteResultsState'].forEach(s => {
+      const el = document.getElementById(s);
+      if (el) el.style.display = el.id === id ? 'block' : 'none';
+    });
+  }
 
-    function showAlert(msg) {
-      const el = document.getElementById('voteFormAlert');
-      if (!el) return;
-      el.textContent = msg;
-      el.style.display = 'block';
-    }
+  function showAlert(msg) {
+    const el = document.getElementById('voteFormAlert');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
 
-    function shareCurrentPoll() {
-      const shareUrl = window.location.href;
-      if (navigator.share) {
-        navigator.share({
-          title: currentPoll ? currentPoll.question : 'Votação Rádio Cidadela',
-          text: 'Vota na sondagem oficial da Rádio EBS Cidadela!',
-          url: shareUrl
-        }).catch(() => {});
-      } else if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(shareUrl).then(() => {
-          alert('Link da votação copiado para a tua área de transferência!\n\n' + shareUrl);
-        }).catch(() => {
-          prompt('Copia o link:', shareUrl);
-        });
-      } else {
+  function shareCurrentPoll() {
+    const shareUrl = window.location.href;
+    if (navigator.share) {
+      navigator.share({
+        title: currentPoll ? currentPoll.question : 'Votações Wave Rádio',
+        text: 'Participa na sondagem oficial da Wave Rádio da EBS Cidadela!',
+        url: shareUrl
+      }).catch(() => {});
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        alert('Link da votação copiado com sucesso!\n\n' + shareUrl);
+      }).catch(() => {
         prompt('Copia o link:', shareUrl);
-      }
+      });
+    } else {
+      prompt('Copia o link:', shareUrl);
     }
+  }
 
-    function escapeHtml(text) {
-      if (!text) return '';
-      return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-    }
-  </script>
+  function escapeHtml(text) {
+    if (!text) return '';
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+  }
+</script>
 </body>
-
 </html>

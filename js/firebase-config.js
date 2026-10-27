@@ -142,10 +142,11 @@ class RadioDatabase {
         this.loadCollection('announcements', DEFAULT_ANNOUNCEMENTS),
         this.loadCollection('links', DEFAULT_LINKS),
         this.loadCollection('nerdChallenges', []),
-        this.loadCollection('teamMembers', [])
+        this.loadCollection('teamMembers', []),
+        this.loadCollection('polls', [])
       ]);
       this.syncMaintenanceState();
-      this.watchCollections(['podcasts', 'announcements', 'links', 'nerdChallenges', 'teamMembers']);
+      this.watchCollections(['podcasts', 'announcements', 'links', 'nerdChallenges', 'teamMembers', 'polls']);
       this.clearLegacyStorage(['radio_podcasts', 'radio_announcements', 'radio_links']);
     } catch (error) {
       this.error = error;
@@ -165,11 +166,10 @@ class RadioDatabase {
       this.loadCollection('teamMemos', DEFAULT_TEAM_MEMOS),
       this.loadCollection('calendarEvents', []),
       this.loadCollection('adminUsers', []),
-      this.loadCollection('polls', []),
       this.loadCollection('tasks', []),
       this.loadCollection('nerdSubmissions', [])
     ]);
-    this.watchCollections(['suggestions', 'messages', 'rundowns', 'teamMemos', 'calendarEvents', 'adminUsers', 'polls', 'tasks', 'nerdSubmissions']);
+    this.watchCollections(['suggestions', 'messages', 'rundowns', 'teamMemos', 'calendarEvents', 'adminUsers', 'tasks', 'nerdSubmissions']);
     this.clearLegacyStorage(['radio_suggestions', 'radio_messages', 'radio_rundowns', 'radio_team_memos', 'radio_calendar_events', 'radio_admin_users']);
   }
 
@@ -739,6 +739,32 @@ class RadioDatabase {
   // ============================================================
   getPolls() {
     return [...(this.cache.polls || [])].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  }
+
+  getActivePolls() {
+    const now = Date.now();
+    return this.getPolls().filter(p => {
+      if (!p) return false;
+      if (p.closed === true || p.closed === 'true' || p.status === 'closed') return false;
+      if (p.closingDate) {
+        let closeTs = NaN;
+        if (typeof p.closingDate === 'number') {
+          closeTs = p.closingDate;
+        } else if (typeof p.closingDate === 'string' && p.closingDate.trim()) {
+          const parsed = new Date(p.closingDate);
+          if (!isNaN(parsed.getTime())) {
+            closeTs = parsed.setHours(23, 59, 59, 999);
+          }
+        }
+        if (!isNaN(closeTs) && closeTs < now) return false;
+      }
+      return true;
+    });
+  }
+
+  getActivePoll() {
+    const active = this.getActivePolls();
+    return active.length > 0 ? active[0] : null;
   }
 
   savePoll(poll) {

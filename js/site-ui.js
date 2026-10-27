@@ -270,6 +270,129 @@
     }
   }
 
+  /* ---------- 2.1 VOTAÇÕES / SONDAGENS DINÂMICAS (SÓ MOSTRA SE HOUVER VOTAÇÃO ATIVA) ---------- */
+  function syncPollsNavigation() {
+    const activePoll = (window.db && typeof window.db.getActivePoll === 'function')
+      ? window.db.getActivePoll()
+      : null;
+    const isActive = Boolean(activePoll);
+    const isCurrentPageVote = window.location.pathname.toLowerCase().includes('vote');
+
+    // 1. Desktop navbar (ul.w-links)
+    const desktopLinks = document.querySelector('.w-nav .w-links');
+    if (desktopLinks) {
+      let pollLi = desktopLinks.querySelector('[data-poll-nav]');
+      if (isActive) {
+        if (!pollLi) {
+          pollLi = document.createElement('li');
+          pollLi.setAttribute('data-poll-nav', 'true');
+          pollLi.innerHTML = `<a href="vote.html" class="w-nav-vote${isCurrentPageVote ? ' active' : ''}"${isCurrentPageVote ? ' aria-current="page"' : ''}><i class="ri-bar-chart-2-fill" aria-hidden="true"></i> Votações</a>`;
+          desktopLinks.appendChild(pollLi);
+        }
+        pollLi.style.display = '';
+      } else if (pollLi) {
+        pollLi.style.display = 'none';
+      }
+    }
+
+    // 2. Mobile drawer (#mobileMenu)
+    const drawer = document.getElementById('mobileMenu');
+    if (drawer) {
+      let pollDrawerLink = drawer.querySelector('a[data-poll-nav]');
+      if (isActive) {
+        if (!pollDrawerLink) {
+          pollDrawerLink = document.createElement('a');
+          pollDrawerLink.className = `w-d-link w-d-link-vote${isCurrentPageVote ? ' active' : ''}`;
+          pollDrawerLink.href = 'vote.html';
+          pollDrawerLink.setAttribute('data-poll-nav', 'true');
+          pollDrawerLink.innerHTML = '<span><i class="ri-bar-chart-2-fill" aria-hidden="true"></i> Votações</span> <i class="ri-arrow-right-up-line" aria-hidden="true"></i>';
+          const ctaBtn = drawer.querySelector('.w-btn-block');
+          if (ctaBtn) {
+            drawer.insertBefore(pollDrawerLink, ctaBtn);
+          } else {
+            drawer.appendChild(pollDrawerLink);
+          }
+        }
+        pollDrawerLink.style.display = '';
+      } else if (pollDrawerLink) {
+        pollDrawerLink.style.display = 'none';
+      }
+    }
+
+    // 3. Footer list (.w-foot-list)
+    const footList = document.querySelector('.w-foot-list');
+    if (footList) {
+      let pollFootLi = footList.querySelector('[data-poll-nav]');
+      if (isActive) {
+        if (!pollFootLi) {
+          pollFootLi = document.createElement('li');
+          pollFootLi.setAttribute('data-poll-nav', 'true');
+          pollFootLi.innerHTML = '<a href="vote.html"><i class="ri-bar-chart-2-fill" aria-hidden="true"></i> Votações</a>';
+          footList.appendChild(pollFootLi);
+        }
+        pollFootLi.style.display = '';
+      } else if (pollFootLi) {
+        pollFootLi.style.display = 'none';
+      }
+    }
+
+    // 4. Banner superior de aviso de votação aberta (#activePollBanner)
+    let topBanner = document.getElementById('activePollBanner');
+    if (!topBanner && isActive) {
+      const navHeader = document.querySelector('.w-nav');
+      if (navHeader && !isCurrentPageVote) {
+        topBanner = document.createElement('div');
+        topBanner.id = 'activePollBanner';
+        topBanner.className = 'w-poll-banner';
+        navHeader.insertAdjacentElement('afterend', topBanner);
+      }
+    }
+
+    if (topBanner) {
+      if (isActive && !isCurrentPageVote) {
+        const questionText = (activePoll && activePoll.question) ? activePoll.question : 'Participa na sondagem oficial da rádio!';
+        const pollUrl = `vote.html?id=${encodeURIComponent(activePoll.id)}`;
+        topBanner.innerHTML = `
+          <div class="w-poll-banner-in">
+            <div class="w-poll-banner-left">
+              <span class="w-poll-banner-badge"><span class="w-live" style="background:#fff;"></span> Votação Aberta</span>
+              <span class="w-poll-banner-text" id="activePollBannerQuestion">${String(questionText).replace(/</g, '&lt;')}</span>
+            </div>
+            <a href="${pollUrl}" class="w-poll-banner-link" id="activePollBannerLink">
+              Votar Agora <i class="ri-arrow-right-line" aria-hidden="true"></i>
+            </a>
+          </div>
+        `;
+        topBanner.style.display = 'block';
+      } else {
+        topBanner.style.display = 'none';
+      }
+    }
+
+    // 5. Secção de destaque na Página Inicial (index.html)
+    const homePollSec = document.getElementById('activePollSection');
+    if (homePollSec) {
+      if (isActive && activePoll) {
+        const qEl = document.getElementById('activePollQuestion');
+        const descEl = document.getElementById('activePollDesc');
+        const btnEl = document.getElementById('activePollVoteBtn');
+        const closesEl = document.getElementById('activePollClosesAt');
+
+        if (qEl) qEl.textContent = activePoll.question || 'Nova Votação da Rádio';
+        if (descEl) descEl.textContent = activePoll.description || 'Participa na sondagem oficial da rádio e dá a tua opinião!';
+        if (btnEl) btnEl.href = `vote.html?id=${encodeURIComponent(activePoll.id)}`;
+        if (closesEl && activePoll.closingDate) {
+          closesEl.textContent = `Encerra a ${activePoll.closingDate}`;
+        } else if (closesEl) {
+          closesEl.textContent = 'Em aberto';
+        }
+        homePollSec.style.display = 'block';
+      } else {
+        homePollSec.style.display = 'none';
+      }
+    }
+  }
+
   /* ---------- 3. INICIALIZAÇÃO DO DOM ---------- */
   applyTheme(getInitialTheme());
 
@@ -277,15 +400,22 @@
     ensureThemeButtons();
     ensureTeamNavigation();
     syncNerdAlertNavigation();
+    syncPollsNavigation();
 
     document.addEventListener('radio-db-updated', (e) => {
       if (!e.detail || e.detail.collection === 'nerdChallenges') {
         syncNerdAlertNavigation();
       }
+      if (!e.detail || e.detail.collection === 'polls') {
+        syncPollsNavigation();
+      }
     });
 
     if (window.db && typeof window.db.ready === 'function') {
-      window.db.ready().then(syncNerdAlertNavigation).catch(() => {});
+      window.db.ready().then(() => {
+        syncNerdAlertNavigation();
+        syncPollsNavigation();
+      }).catch(() => {});
     }
 
     /* Menu móvel (gaveta lateral) */

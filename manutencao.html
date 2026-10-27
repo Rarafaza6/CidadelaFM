@@ -22,8 +22,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
-  <link rel="stylesheet" href="css/wave.css?v=20261027d">
-  <script src="js/maintenance-guard.js?v=20261027d"></script>
+  <link rel="stylesheet" href="css/wave.css?v=20261027g">
+  <script src="js/maintenance-guard.js?v=20261027cidadelafm"></script>
 </head>
 <body>
 <a class="skip" href="#main">Saltar para o conteúdo</a>
@@ -34,9 +34,6 @@
       <img src="assets/brand/logo-minima-positiva.png" alt="Wave Rádio" width="65" height="38">
     </a>
     <div style="display: flex; align-items: center; gap: 0.75rem; margin-left: auto;">
-      <div style="display: inline-flex; align-items: center; gap: 0.5rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.35rem 0.75rem; border: 1.5px solid var(--ink); background: var(--paper-2); font-weight: 600;">
-        <span class="w-live" style="background: var(--red);"></span> Modo Manutenção
-      </div>
       <button class="w-theme-toggle" id="themeToggleBtn" type="button" aria-label="Alternar entre modo claro e escuro" title="Alternar tema">
         <i class="ri-moon-clear-line" aria-hidden="true"></i>
       </button>
@@ -45,126 +42,47 @@
 </header>
 
 <main class="w-maint-wrap" id="main">
-  <section class="w-maint-card" aria-labelledby="maintTitle">
-    <div class="w-maint-top">
-      <span class="w-maint-status"><span class="w-live" style="background: var(--red);"></span> EMISSÃO TEMPORARIAMENTE FORA DO AR</span>
-      <span>WAVE RÁDIO · EBS CIDADELA</span>
+  <div class="w-maint-simple-card">
+    <div class="w-maint-simple-badge">
+      <span class="w-live" style="background: var(--red);"></span> Modo Manutenção
     </div>
 
-    <div class="w-maint-body">
-      <div>
-        <div class="w-maint-kicker">
-          <i class="ri-broadcast-line" aria-hidden="true"></i>
-          <span>Afinar as Antenas // Pausa Técnica</span>
-        </div>
-        <h1 class="w-maint-title" id="maintTitle">Estamos em <span class="out">Manutenção</span></h1>
+    <h1 class="w-maint-simple-title">Estamos em <span class="out">Manutenção</span></h1>
 
-        <div class="w-maint-notice-box">
-          <div class="w-maint-notice-head">
-            <span><i class="ri-information-line" aria-hidden="true"></i> Comunicado da Emissão</span>
-            <span>// TRANSMISSÃO AO VIVO</span>
-          </div>
-          <p class="w-maint-desc" id="maintCustomMessageText">Estamos a afinar as antenas e a preparar novidades para ti. A rádio volta ao ar dentro de instantes!</p>
-        </div>
+    <p class="w-maint-simple-msg" id="maintCustomMessageText">Volta no dia 2 de novembro!</p>
 
-        <!-- Banner de desbloqueio ativo (quando o utilizador tem a chave correta) -->
-        <div class="w-maint-unlocked" id="unlockedBanner">
-          <div class="w-maint-unlocked-head">
-            <i class="ri-shield-check-fill" style="color: #34d399; font-size: 1.15rem;" aria-hidden="true"></i>
-            <span>Modo de Pré-visualização Ativo (Desbloqueado para ti)</span>
-          </div>
-          <p style="font-size: 0.88rem; line-height: 1.45; margin-bottom: 0.85rem; color: #d1fae5;">Tens permissão ativa para consultar e testar as páginas do website durante o período de manutenção.</p>
-          <div class="w-maint-unlocked-actions">
-            <a id="btnContinueSite" class="w-btn w-btn-red" href="index.html">
-              <i class="ri-arrow-right-line" aria-hidden="true"></i> Entrar no site público
-            </a>
-            <button id="btnLockAgain" class="w-btn w-btn-ghost" type="button" style="color: #ffffff; border-color: rgba(255,255,255,0.4);">
-              <i class="ri-lock-line" aria-hidden="true"></i> Voltar a trancar
-            </button>
-          </div>
-        </div>
-
-        <!-- Gaveta de Desbloqueio Reservado para Equipa / Admin -->
-        <div class="w-maint-unlock-accordion" id="unlockCard">
-          <button class="w-maint-unlock-toggle" id="unlockToggleHeader" type="button" aria-expanded="false" aria-controls="unlockDrawerContent">
-            <span class="left">
-              <i class="ri-shield-keyhole-line" style="color: var(--red);" aria-hidden="true"></i>
-              <span>Acesso Reservado / Equipa Wave</span>
-            </span>
-            <i class="ri-arrow-down-s-line chev" aria-hidden="true"></i>
-          </button>
-          <div class="w-maint-unlock-body" id="unlockDrawerContent">
-            <p style="font-size: 0.88rem; color: var(--mute); margin-bottom: 0.75rem;">Membros da equipa e administradores podem desbloquear a navegação inserindo a chave de acesso:</p>
-            <form id="unlockForm" class="w-maint-unlock-form">
-              <div style="position: relative; flex: 1;">
-                <input type="password" id="unlockPassInput" class="w-input" placeholder="Chave de acesso da equipa..." autocomplete="current-password" style="width: 100%; padding-right: 2.5rem;">
-                <button type="button" id="togglePassBtn" aria-label="Mostrar ou ocultar palavra-passe" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--mute); cursor: pointer; font-size: 1.1rem;">
-                  <i id="togglePassIcon" class="ri-eye-line" aria-hidden="true"></i>
-                </button>
-              </div>
-              <button type="submit" class="w-btn w-btn-red">
-                <i class="ri-key-2-line" aria-hidden="true"></i> Desbloquear
-              </button>
-            </form>
-            <div id="unlockFeedback" class="w-maint-feedback" role="alert"></div>
-            <div style="margin-top: 0.85rem; padding-top: 0.85rem; border-top: 1px dashed rgba(40,36,37,0.2);">
-              <a href="admin.html" class="w-maint-admin-link">
-                <i class="ri-settings-4-line" aria-hidden="true"></i> Ir para o Painel de Gestão (Gerir Manutenção) &rarr;
-              </a>
-            </div>
-          </div>
-        </div>
+    <!-- Formulário simples para destrancar o website -->
+    <form id="unlockForm" class="w-maint-simple-form" aria-label="Destrancar website">
+      <div class="w-maint-input-wrap">
+        <i class="ri-lock-line w-maint-input-icon" aria-hidden="true"></i>
+        <input type="password" id="unlockPassInput" class="w-input" placeholder="Chave de acesso para destrancar..." autocomplete="current-password" required>
+        <button type="button" id="togglePassBtn" aria-label="Mostrar ou ocultar palavra-passe" class="w-maint-eye-btn">
+          <i id="togglePassIcon" class="ri-eye-line" aria-hidden="true"></i>
+        </button>
       </div>
+      <button type="submit" class="w-btn w-btn-red">
+        <i class="ri-key-2-line" aria-hidden="true"></i> Destrancar
+      </button>
+    </form>
+    <div id="unlockFeedback" class="w-maint-feedback" role="alert" style="width: 100%; max-width: 460px; justify-content: center;"></div>
 
-      <!-- Lado direito: Tuner Box Brutalista Oficial Wave -->
-      <aside aria-label="Informações de emissão">
-        <div class="w-404-tuner-box">
-          <div class="w-404-tuner-head">
-            <span><i class="ri-radio-2-fill" aria-hidden="true"></i> STATUS DO SERVIÇO</span>
-            <span>ESTÚDIO WAVE</span>
-          </div>
-
-          <div class="w-404-freq">
-            PAUSE<small>10:00</small>
-          </div>
-
-          <div class="w-maint-meta-list">
-            <div class="w-maint-meta-row">
-              <span>Emissora</span>
-              <span>Wave Rádio</span>
-            </div>
-            <div class="w-maint-meta-row">
-              <span>Escola</span>
-              <span>EBS Cidadela</span>
-            </div>
-            <div class="w-maint-meta-row">
-              <span>Horário habitual</span>
-              <span>10:00 · Intervalos</span>
-            </div>
-            <div class="w-maint-meta-row">
-              <span>Parcerias</span>
-              <span>CMC · Criativa</span>
-            </div>
-            <div class="w-maint-meta-row">
-              <span>Suporte Geral</span>
-              <a href="mailto:Geral@RadioWave.pt" style="color: #ffffff; text-decoration: underline;">Geral@RadioWave.pt</a>
-            </div>
-          </div>
-
-          <div class="w-404-quick-list">
-            <a class="w-404-quick-link" href="podcasts.html">
-              <span><i class="ri-headphones-fill" aria-hidden="true"></i> Ouvir podcasts</span>
-              <i class="ri-arrow-right-line" aria-hidden="true"></i>
-            </a>
-            <a class="w-404-quick-link" href="mailto:Geral@RadioWave.pt">
-              <span><i class="ri-mail-send-fill" aria-hidden="true"></i> Contactar a equipa</span>
-              <i class="ri-arrow-right-line" aria-hidden="true"></i>
-            </a>
-          </div>
-        </div>
-      </aside>
+    <!-- Banner de desbloqueio ativo (quando o utilizador tem a chave correta) -->
+    <div class="w-maint-unlocked" id="unlockedBanner" style="width: 100%; margin-top: 1rem;">
+      <div class="w-maint-unlocked-head">
+        <i class="ri-shield-check-fill" style="color: #34d399; font-size: 1.15rem;" aria-hidden="true"></i>
+        <span>Modo de Pré-visualização Ativo (Desbloqueado para ti)</span>
+      </div>
+      <p style="font-size: 0.88rem; line-height: 1.45; margin-bottom: 0.85rem; color: #d1fae5;">Tens permissão ativa para consultar e testar as páginas do website durante a manutenção.</p>
+      <div class="w-maint-unlocked-actions" style="justify-content: center;">
+        <a id="btnContinueSite" class="w-btn w-btn-red" href="index.html">
+          <i class="ri-arrow-right-line" aria-hidden="true"></i> Entrar no site público
+        </a>
+        <button id="btnLockAgain" class="w-btn w-btn-outline" type="button" style="color: #ffffff; border-color: rgba(255,255,255,0.4);">
+          <i class="ri-lock-line" aria-hidden="true"></i> Voltar a trancar
+        </button>
+      </div>
     </div>
-  </section>
+  </div>
 </main>
 
 <footer class="w-foot">
@@ -217,27 +135,22 @@
   </div>
 </footer>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js"></script>
-<script src="js/site-ui.js?v=20261027"></script>
+<script src="js/site-ui.js?v=20261027cidadelafm"></script>
 
 <script>
   (function () {
-    var unlockCard = document.getElementById('unlockCard');
-    var toggleHeader = document.getElementById('unlockToggleHeader');
+    var descEl = document.getElementById('maintCustomMessageText');
+    var unlockedBanner = document.getElementById('unlockedBanner');
+    var btnContinueSite = document.getElementById('btnContinueSite');
+    var btnLockAgain = document.getElementById('btnLockAgain');
     var unlockForm = document.getElementById('unlockForm');
     var passInput = document.getElementById('unlockPassInput');
     var feedback = document.getElementById('unlockFeedback');
     var togglePassBtn = document.getElementById('togglePassBtn');
     var togglePassIcon = document.getElementById('togglePassIcon');
-    var unlockedBanner = document.getElementById('unlockedBanner');
-    var btnContinueSite = document.getElementById('btnContinueSite');
-    var btnLockAgain = document.getElementById('btnLockAgain');
 
     var params = new URLSearchParams(window.location.search);
     var redirectTarget = params.get('redirect') || 'index.html';
-    // Evita loop se o redirect apontar para a própria página de manutenção
     if (redirectTarget.toLowerCase().indexOf('manutencao') !== -1 || redirectTarget.toLowerCase().indexOf('manutenção') !== -1) {
       redirectTarget = 'index.html';
     }
@@ -246,53 +159,35 @@
       btnContinueSite.setAttribute('href', redirectTarget);
     }
 
-    function syncUnlockedUI() {
-      var unlocked = window.RadioMaintenance && window.RadioMaintenance.isUnlocked && window.RadioMaintenance.isUnlocked();
-      var customMsg = window.RadioMaintenance && window.RadioMaintenance.getCustomMessage && window.RadioMaintenance.getCustomMessage();
-      var descEl = document.getElementById('maintCustomMessageText');
+    function syncUI() {
+      var customMsg = (window.RadioMaintenance && window.RadioMaintenance.getCustomMessage)
+        ? window.RadioMaintenance.getCustomMessage()
+        : '';
+      if (!customMsg) {
+        try {
+          customMsg = localStorage.getItem('radio_cloud_maintenance_msg') || '';
+        } catch (e) {}
+      }
+
       if (descEl && customMsg) {
         descEl.textContent = customMsg;
       }
-      if (unlocked) {
-        if (unlockedBanner) unlockedBanner.classList.add('active');
-      } else {
-        if (unlockedBanner) unlockedBanner.classList.remove('active');
-      }
-    }
 
-    syncUnlockedUI();
-
-    document.addEventListener('radio-maintenance-cloud-checked', function (e) {
-      var detail = (e && e.detail) || {};
-      syncUnlockedUI();
-      if (detail.enabled === false && localStorage.getItem('radio_maintenance_force_lock') !== '1') {
-        window.location.replace(redirectTarget);
-      }
-    });
-
-    // Abrir/fechar gaveta de password
-    function toggleDrawer() {
-      if (!unlockCard) return;
-      var isOpen = unlockCard.classList.toggle('open');
-      if (toggleHeader) {
-        toggleHeader.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-      }
-      if (isOpen && passInput) {
-        setTimeout(function () { passInput.focus(); }, 80);
-      }
-    }
-
-    if (toggleHeader) {
-      toggleHeader.addEventListener('click', toggleDrawer);
-      toggleHeader.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          toggleDrawer();
+      var isUnlocked = window.RadioMaintenance && window.RadioMaintenance.isUnlocked && window.RadioMaintenance.isUnlocked();
+      if (unlockedBanner) {
+        if (isUnlocked) {
+          unlockedBanner.classList.add('active');
+          if (unlockForm) unlockForm.style.display = 'none';
+        } else {
+          unlockedBanner.classList.remove('active');
+          if (unlockForm) unlockForm.style.display = 'flex';
         }
-      });
+      }
     }
 
-    // Mostrar/ocultar password
+    syncUI();
+
+    // Mostrar/ocultar palavra-passe
     if (togglePassBtn && passInput) {
       togglePassBtn.addEventListener('click', function () {
         var isPass = passInput.type === 'password';
@@ -303,33 +198,74 @@
       });
     }
 
-    // Submeter chave de acesso à rádio
-    if (unlockForm) {
+    // Submissão da chave para destrancar
+    if (unlockForm && passInput) {
       unlockForm.addEventListener('submit', function (e) {
         e.preventDefault();
         var val = (passInput.value || '').trim();
         if (window.RadioMaintenance && window.RadioMaintenance.unlock(val)) {
-          feedback.className = 'w-maint-feedback success';
-          feedback.innerHTML = '<i class="ri-checkbox-circle-fill" aria-hidden="true"></i> Acesso desbloqueado com sucesso! A entrar no site...';
-          syncUnlockedUI();
+          if (feedback) {
+            feedback.className = 'w-maint-feedback success';
+            feedback.innerHTML = '<i class="ri-checkbox-circle-fill" aria-hidden="true"></i> Acesso destrancado com sucesso! A entrar no site...';
+          }
+          syncUI();
           setTimeout(function () {
             window.location.replace(redirectTarget);
           }, 600);
         } else {
-          feedback.className = 'w-maint-feedback error';
-          feedback.innerHTML = '<i class="ri-error-warning-fill" aria-hidden="true"></i> Chave incorreta. Tenta novamente.';
+          if (feedback) {
+            feedback.className = 'w-maint-feedback error';
+            feedback.innerHTML = '<i class="ri-error-warning-fill" aria-hidden="true"></i> Chave incorreta. Tenta novamente.';
+          }
           passInput.select();
         }
       });
     }
 
-    // Botão para trancar novamente
+    document.addEventListener('radio-maintenance-cloud-checked', function (e) {
+      var detail = (e && e.detail) || {};
+      syncUI();
+      if (detail.enabled === false && localStorage.getItem('radio_maintenance_force_lock') !== '1') {
+        window.location.replace(redirectTarget);
+      }
+    });
+
+    // Auto-verificação suave em segundo plano a cada 15 segundos
+    var restUrl = 'https://firestore.googleapis.com/v1/projects/cidadelafm/databases/(default)/documents/announcements/system_maintenance';
+    setInterval(function () {
+      if (typeof window.fetch === 'function') {
+        window.fetch(restUrl, { cache: 'no-store' })
+          .then(function (res) {
+            if (res.status === 404) return { enabled: false, message: '' };
+            return res.ok ? res.json() : null;
+          })
+          .then(function (data) {
+            if (!data) return;
+            var enabled = false;
+            var msg = '';
+            if (data.fields) {
+              enabled = Boolean(data.fields.maintenanceEnabled && data.fields.maintenanceEnabled.booleanValue === true);
+              msg = (data.fields.maintenanceMessage && data.fields.maintenanceMessage.stringValue) || '';
+            } else if (data.enabled === false) {
+              enabled = false;
+            }
+
+            if (msg && descEl) descEl.textContent = msg;
+
+            if (!enabled && localStorage.getItem('radio_maintenance_force_lock') !== '1') {
+              window.location.replace(redirectTarget);
+            }
+          })
+          .catch(function () {});
+      }
+    }, 15000);
+
     if (btnLockAgain) {
       btnLockAgain.addEventListener('click', function () {
         if (window.RadioMaintenance) {
           window.RadioMaintenance.lock();
         }
-        syncUnlockedUI();
+        syncUI();
         if (feedback) {
           feedback.className = 'w-maint-feedback';
           feedback.innerHTML = '';
