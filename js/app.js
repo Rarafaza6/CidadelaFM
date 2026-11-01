@@ -289,11 +289,13 @@ function initSuggestionForm() {
     }
 
     const newSug = window.db.addSuggestion({
+      title: finalSongTitle,
       songTitle: finalSongTitle,
       artist: finalArtist,
+      cover: artwork,
       artwork: artwork,
       previewUrl: previewUrl || '',
-      studentName: 'Aluno Anónimo'
+      source: 'web'
     });
 
     if (newSug && newSug.id) {
@@ -351,7 +353,15 @@ function initMessageForm() {
       return;
     }
 
-    window.db.addMessage({ message, name, email, studentClass });
+    window.db.addMessage({
+      name,
+      senderName: name,
+      studentClass,
+      senderGroup: studentClass,
+      email,
+      subject: `Mensagem de ${name} (${studentClass})`,
+      message
+    });
     localStorage.setItem(limitKey, count + 1);
     form.reset();
     feedback.innerHTML = '<div class="form-feedback success"><i class="ri-checkbox-circle-line"></i> Mensagem enviada. Obrigado por participares na rádio!</div>';

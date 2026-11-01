@@ -594,8 +594,10 @@ function initDtStep2Form() {
 
       const createdEntries = songsToSubmit.map(song => {
         return window.db.addSuggestion({
+          title: song.songTitle,
           songTitle: song.songTitle,
           artist: song.artist,
+          cover: song.artwork || 'assets/logo-radio.jpg',
           artwork: song.artwork || 'assets/logo-radio.jpg',
           previewUrl: song.previewUrl || '',
           source: 'dt',

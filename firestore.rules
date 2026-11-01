@@ -96,8 +96,10 @@ service cloud.firestore {
       allow create: if request.resource.data.keys().hasOnly([
           'id',
           'title',
+          'songTitle',
           'artist',
           'cover',
+          'artwork',
           'previewUrl',
           'studentClass',
           'teacherName',
@@ -107,9 +109,13 @@ service cloud.firestore {
           'timestamp'
         ])
         && request.resource.data.id == suggestionId
-        && isStringBetween(request.resource.data.title, 1, 180)
+        && (
+          ('title' in request.resource.data && isStringBetween(request.resource.data.title, 1, 180)) ||
+          ('songTitle' in request.resource.data && isStringBetween(request.resource.data.songTitle, 1, 180))
+        )
         && isStringBetween(request.resource.data.artist, 1, 180)
         && isOptionalString(request.resource.data, 'cover', 600)
+        && isOptionalString(request.resource.data, 'artwork', 600)
         && isOptionalString(request.resource.data, 'previewUrl', 600)
         && isOptionalString(request.resource.data, 'studentClass', 40)
         && isOptionalString(request.resource.data, 'teacherName', 120)
@@ -125,17 +131,25 @@ service cloud.firestore {
     match /messages/{messageId} {
       allow create: if request.resource.data.keys().hasOnly([
           'id',
+          'name',
           'senderName',
+          'studentClass',
           'senderGroup',
           'subject',
           'message',
+          'email',
           'createdAt',
           'status'
         ])
         && request.resource.data.id == messageId
-        && isStringBetween(request.resource.data.senderName, 1, 80)
+        && (
+          ('name' in request.resource.data && isStringBetween(request.resource.data.name, 1, 80)) ||
+          ('senderName' in request.resource.data && isStringBetween(request.resource.data.senderName, 1, 80))
+        )
+        && isOptionalString(request.resource.data, 'studentClass', 80)
         && isOptionalString(request.resource.data, 'senderGroup', 80)
-        && isStringBetween(request.resource.data.subject, 1, 120)
+        && isOptionalString(request.resource.data, 'subject', 120)
+        && isOptionalString(request.resource.data, 'email', 140)
         && isStringBetween(request.resource.data.message, 1, 1200)
         && request.resource.data.status == 'unread'
         && isOptionalTimestamp(request.resource.data, 'createdAt');

@@ -317,27 +317,29 @@ function initAdminTabs() {
 
 function loadAdminDashboard() {
   adminDashboardReady = true;
-  updateKPIs();
-  renderSongRankingTable();
-  renderAdminLinksTable();
-  renderAdminPodcastsTable();
-  renderAdminAnnouncementsTable();
-  renderAdminMessagesTable();
+  try { updateKPIs(); } catch (e) { console.error('Erro em updateKPIs:', e); }
+  try { renderSongRankingTable(); } catch (e) { console.error('Erro em renderSongRankingTable:', e); }
+  try { renderAdminLinksTable(); } catch (e) { console.error('Erro em renderAdminLinksTable:', e); }
+  try { renderAdminPodcastsTable(); } catch (e) { console.error('Erro em renderAdminPodcastsTable:', e); }
+  try { renderAdminAnnouncementsTable(); } catch (e) { console.error('Erro em renderAdminAnnouncementsTable:', e); }
+  try { renderAdminMessagesTable(); } catch (e) { console.error('Erro em renderAdminMessagesTable:', e); }
   // Initialize Google Calendar (replaces old renderSharedCalendar)
-  if (typeof GCal !== 'undefined') {
-    window.CALENDAR_CATEGORY_COLORS = CALENDAR_CATEGORY_COLORS;
-    GCal.init();
-  }
-  renderAdminUsersTable();
-  renderRundownsList();
-  renderTeamMemos();
-  renderTasksView();
-  renderAdminPollsTable();
-  if (typeof renderAdminNerdAlert === 'function') renderAdminNerdAlert();
-  if (typeof renderAdminTeamMembers === 'function') renderAdminTeamMembers();
-  renderAdminOverview();
-  renderAoVivo();
-  initIntervalBellTimer();
+  try {
+    if (typeof GCal !== 'undefined') {
+      window.CALENDAR_CATEGORY_COLORS = CALENDAR_CATEGORY_COLORS;
+      GCal.init();
+    }
+  } catch (e) { console.error('Erro em GCal.init:', e); }
+  try { renderAdminUsersTable(); } catch (e) { console.error('Erro em renderAdminUsersTable:', e); }
+  try { renderRundownsList(); } catch (e) { console.error('Erro em renderRundownsList:', e); }
+  try { renderTeamMemos(); } catch (e) { console.error('Erro em renderTeamMemos:', e); }
+  try { renderTasksView(); } catch (e) { console.error('Erro em renderTasksView:', e); }
+  try { renderAdminPollsTable(); } catch (e) { console.error('Erro em renderAdminPollsTable:', e); }
+  try { if (typeof renderAdminNerdAlert === 'function') renderAdminNerdAlert(); } catch (e) { console.error('Erro em renderAdminNerdAlert:', e); }
+  try { if (typeof renderAdminTeamMembers === 'function') renderAdminTeamMembers(); } catch (e) { console.error('Erro em renderAdminTeamMembers:', e); }
+  try { renderAdminOverview(); } catch (e) { console.error('Erro em renderAdminOverview:', e); }
+  try { renderAoVivo(); } catch (e) { console.error('Erro em renderAoVivo:', e); }
+  try { initIntervalBellTimer(); } catch (e) { console.error('Erro em initIntervalBellTimer:', e); }
 }
 
 
@@ -388,7 +390,7 @@ function renderSongRankingTable(filterStatus = 'all') {
 
   const suggestions = window.db.getSuggestions();
 
-  if (suggestions.length === 0) {
+  if (!suggestions || suggestions.length === 0) {
     tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">Nenhuma sugestão de música recebida.</td></tr>';
     return;
   }
@@ -396,25 +398,37 @@ function renderSongRankingTable(filterStatus = 'all') {
   const map = new Map();
 
   suggestions.forEach(item => {
+    if (!item) return;
     if (filterStatus !== 'all' && item.status !== filterStatus) return;
 
-    const key = `${item.songTitle.toLowerCase().trim()}___${item.artist.toLowerCase().trim()}`;
+    const rawTitle = String(item.songTitle || item.title || '').trim();
+    const rawArtist = String(item.artist || '').trim();
+    if (!rawTitle && !rawArtist) return;
+
+    const displayTitle = rawTitle || 'Música sem título';
+    const displayArtist = rawArtist || 'Artista não especificado';
+    const artwork = item.artwork || item.cover || 'assets/logo-radio.jpg';
+    const previewUrl = item.previewUrl || '';
+
+    const key = `${displayTitle.toLowerCase()}___${displayArtist.toLowerCase()}`;
     if (!map.has(key)) {
       map.set(key, {
-        songTitle: item.songTitle,
-        artist: item.artist,
-        artwork: item.artwork,
-        previewUrl: item.previewUrl,
+        songTitle: displayTitle,
+        title: displayTitle,
+        artist: displayArtist,
+        artwork: artwork,
+        cover: artwork,
+        previewUrl: previewUrl,
         count: 0,
         ids: [],
         dtClasses: [],
-        status: item.status
+        status: item.status || 'pending'
       });
     }
 
     const group = map.get(key);
     group.count += 1;
-    group.ids.push(item.id);
+    if (item.id) group.ids.push(item.id);
     if (item.studentClass) {
       const dtLabel = item.teacherName ? `${item.studentClass} (${item.teacherName})` : item.studentClass;
       if (!group.dtClasses.includes(dtLabel)) group.dtClasses.push(dtLabel);
@@ -443,7 +457,7 @@ function renderSongRankingTable(filterStatus = 'all') {
       <td style="font-weight: 800; color: var(--cascais-blue); font-size: 1.1rem;">#${idx + 1}</td>
       <td>
         <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <img src="${song.artwork}" alt="${escapeHtml(song.songTitle)}" style="width: 44px; height: 44px; border-radius: 6px;">
+          <img src="${escapeHtml(song.artwork)}" alt="${escapeHtml(song.songTitle)}" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;" onerror="this.onerror=null;this.src='assets/logo-radio.jpg';">
           <div>
             <strong style="display: block; color: white;">${escapeHtml(song.songTitle)}</strong>
             <span style="font-size: 0.8rem; color: var(--text-muted);">${escapeHtml(song.artist)}</span>
@@ -458,7 +472,7 @@ function renderSongRankingTable(filterStatus = 'all') {
         <span class="status-badge ${statusBadgeClass}">${statusLabel}</span>
       </td>
       <td>
-        ${song.previewUrl ? `<button class="btn-action" title="Ouvir Prévia" onclick="playAudioPreview('${song.previewUrl}')"><i class="ri-play-line"></i></button>` : ''}
+        ${song.previewUrl ? `<button class="btn-action" title="Ouvir Prévia" onclick="playAudioPreview('${escapeHtml(song.previewUrl)}')"><i class="ri-play-line"></i></button>` : ''}
         <button class="btn-action" title="Marcar como Tocado" onclick="changeGroupStatus(['${song.ids.join("','")}'], 'played')"><i class="ri-checkbox-circle-line" style="color: #34d399;"></i> Tocado</button>
         <button class="btn-action" title="Arquivar" onclick="changeGroupStatus(['${song.ids.join("','")}'], 'archived')"><i class="ri-archive-line"></i></button>
       </td>
@@ -1022,7 +1036,8 @@ function renderAdminMessagesTable() {
   sidebar.innerHTML = messages.map(message => {
     const isUnread = message.status === 'unread';
     const isSelected = selectedMessage && selectedMessage.id === message.id;
-    const author = message.name || 'Sem nome';
+    const author = message.name || message.senderName || 'Sem nome';
+    const group = message.studentClass || message.senderGroup || 'Sem turma';
     const shortText = String(message.message || '').replace(/\s+/g, ' ').trim();
     return `
       <button class="message-list-item ${isSelected ? 'active' : ''} ${isUnread ? 'unread' : ''}" type="button" data-message-id="${message.id}" onclick="selectMessage('${message.id}')">
@@ -1030,7 +1045,7 @@ function renderAdminMessagesTable() {
           <strong>${escapeHtml(author)}</strong>
           <span>${new Date(message.createdAt || Date.now()).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit' })}</span>
         </div>
-        <span class="message-list-subject">${escapeHtml(message.studentClass || 'Sem turma')}</span>
+        <span class="message-list-subject">${escapeHtml(group)}</span>
         <p>${escapeHtml(shortText.length > 110 ? `${shortText.slice(0, 107)}...` : shortText)}</p>
       </button>
     `;
@@ -1039,11 +1054,13 @@ function renderAdminMessagesTable() {
   detail.dataset.selectedId = selectedMessage.id;
   const received = new Date(selectedMessage.createdAt || Date.now()).toLocaleString('pt-PT', { dateStyle: 'long', timeStyle: 'short' });
   const canMarkRead = selectedMessage.status === 'unread';
+  const detailAuthor = selectedMessage.name || selectedMessage.senderName || 'Sem nome';
+  const detailGroup = selectedMessage.studentClass || selectedMessage.senderGroup || 'Sem turma';
   detail.innerHTML = `
     <div class="message-detail-header">
       <div>
         <span class="message-detail-label">De</span>
-        <h3>${escapeHtml(selectedMessage.name || 'Sem nome')}</h3>
+        <h3>${escapeHtml(detailAuthor)}</h3>
       </div>
       <div class="message-detail-actions">
         ${canMarkRead ? `<button class="btn-action" onclick="markMessageRead('${selectedMessage.id}')"><i class="ri-check-line"></i> Marcar como lida</button>` : ''}
@@ -1052,7 +1069,7 @@ function renderAdminMessagesTable() {
     </div>
     <div class="message-detail-meta">
       <span><i class="ri-mail-line"></i> ${escapeHtml(selectedMessage.email || 'Sem email')}</span>
-      <span><i class="ri-graduation-cap-line"></i> ${escapeHtml(selectedMessage.studentClass || 'Sem turma')}</span>
+      <span><i class="ri-graduation-cap-line"></i> ${escapeHtml(detailGroup)}</span>
       <span><i class="ri-calendar-line"></i> ${escapeHtml(received)}</span>
     </div>
     <div class="message-detail-body">
@@ -2959,28 +2976,41 @@ function renderAoVivoSongs(filterStatus = 'pending') {
   const countEl = document.getElementById('aoVivoSongsCount');
   if (!listEl) return;
 
-  const suggestions = window.db.getSuggestions();
+  const suggestions = window.db.getSuggestions() || [];
   const map = new Map();
 
   suggestions.forEach(item => {
+    if (!item) return;
     if (filterStatus !== 'all' && item.status !== filterStatus) return;
 
-    const key = `${item.songTitle.toLowerCase().trim()}___${item.artist.toLowerCase().trim()}`;
+    const rawTitle = String(item.songTitle || item.title || '').trim();
+    const rawArtist = String(item.artist || '').trim();
+    if (!rawTitle && !rawArtist) return;
+
+    const displayTitle = rawTitle || 'Música sem título';
+    const displayArtist = rawArtist || 'Artista não especificado';
+    const artwork = item.artwork || item.cover || 'assets/logo-radio.jpg';
+    const previewUrl = item.previewUrl || '';
+
+    const key = `${displayTitle.toLowerCase()}___${displayArtist.toLowerCase()}`;
     if (!map.has(key)) {
       map.set(key, {
-        songTitle: item.songTitle,
-        artist: item.artist,
-        artwork: item.artwork,
+        songTitle: displayTitle,
+        title: displayTitle,
+        artist: displayArtist,
+        artwork: artwork,
+        cover: artwork,
+        previewUrl: previewUrl,
         count: 0,
         ids: [],
         dtClasses: [],
-        status: item.status
+        status: item.status || 'pending'
       });
     }
 
     const group = map.get(key);
     group.count += 1;
-    group.ids.push(item.id);
+    if (item.id) group.ids.push(item.id);
     if (item.studentClass && !group.dtClasses.includes(item.studentClass)) {
       group.dtClasses.push(item.studentClass);
     }
@@ -2989,7 +3019,7 @@ function renderAoVivoSongs(filterStatus = 'pending') {
   const rankedList = Array.from(map.values()).sort((a, b) => b.count - a.count);
 
   if (countEl) {
-    const pendingTotal = suggestions.filter(s => s.status === 'pending').length;
+    const pendingTotal = suggestions.filter(s => s && s.status === 'pending').length;
     countEl.textContent = filterStatus === 'pending' ? pendingTotal : rankedList.length;
   }
 
@@ -3005,7 +3035,7 @@ function renderAoVivoSongs(filterStatus = 'pending') {
       <div class="musica-live-card ${isPlayed ? 'is-played' : ''}">
         <div class="musica-live-rank">#${idx + 1}</div>
         <div class="musica-live-thumb">
-          ${song.artwork ? `<img src="${escapeHtml(song.artwork)}" alt="${escapeHtml(song.songTitle)}" style="width:100%; height:100%; border-radius:6px; object-fit:cover;" loading="lazy">` : '<i class="ri-music-2-line" style="color: #64748b;"></i>'}
+          ${song.artwork ? `<img src="${escapeHtml(song.artwork)}" alt="${escapeHtml(song.songTitle)}" style="width:100%; height:100%; border-radius:6px; object-fit:cover;" onerror="this.onerror=null;this.src='assets/logo-radio.jpg';" loading="lazy">` : '<i class="ri-music-2-line" style="color: #64748b;"></i>'}
         </div>
         <div class="musica-live-info">
           <span class="musica-live-title">${escapeHtml(song.songTitle)}</span>

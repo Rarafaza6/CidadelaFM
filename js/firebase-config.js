@@ -171,6 +171,9 @@ class RadioDatabase {
     ]);
     this.watchCollections(['suggestions', 'messages', 'rundowns', 'teamMemos', 'calendarEvents', 'adminUsers', 'tasks', 'nerdSubmissions']);
     this.clearLegacyStorage(['radio_suggestions', 'radio_messages', 'radio_rundowns', 'radio_team_memos', 'radio_calendar_events', 'radio_admin_users']);
+    ['suggestions', 'messages', 'rundowns', 'teamMemos', 'calendarEvents', 'adminUsers', 'tasks', 'nerdSubmissions'].forEach(col => {
+      document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: col } }));
+    });
   }
 
   clearLegacyStorage(keys) {
@@ -202,7 +205,10 @@ class RadioDatabase {
   }
 
   watchCollections(collectionNames) {
+    if (!this._activeWatchers) this._activeWatchers = new Set();
     collectionNames.forEach(name => {
+      if (this._activeWatchers.has(name)) return;
+      this._activeWatchers.add(name);
       try {
         firestore.collection(name).onSnapshot(snapshot => {
           if (!snapshot.empty) {
@@ -252,20 +258,63 @@ class RadioDatabase {
 
   // SUGGESTIONS
   getSuggestions() {
-    return this.cache.suggestions.map(({ studentName, ...suggestion }) => suggestion);
+    return (this.cache.suggestions || []).map(item => {
+      if (!item) return null;
+      const title = String(item.songTitle || item.title || 'Música').trim();
+      const artist = String(item.artist || 'Artista Não Especificado').trim();
+      const cover = item.artwork || item.cover || 'assets/logo-radio.jpg';
+      return {
+        ...item,
+        title,
+        songTitle: title,
+        cover,
+        artwork: cover,
+        artist,
+        status: item.status || 'pending',
+        timestamp: item.timestamp || Date.now()
+      };
+    }).filter(Boolean);
   }
 
   addSuggestion(suggestion) {
-    const newEntry = {
-      id: `sug-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      status: 'pending',
-      timestamp: Date.now(),
-      ...suggestion
+    const rawTitle = String(suggestion.songTitle || suggestion.title || '').trim().slice(0, 180);
+    const rawArtist = String(suggestion.artist || '').trim().slice(0, 180);
+    const rawCover = String(suggestion.artwork || suggestion.cover || 'assets/logo-radio.jpg').trim().slice(0, 600);
+    const rawPreview = String(suggestion.previewUrl || '').trim().slice(0, 600);
+    const newId = suggestion.id || `sug-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const status = suggestion.status || 'pending';
+    const timestamp = suggestion.timestamp || Date.now();
+
+    // Cumpre estritamente as regras de segurança do Cloud Firestore:
+    // keys permitidas: id, title, artist, cover, previewUrl, status, timestamp (+ studentClass, teacherName, weekKey, source)
+    const firestoreData = {
+      id: newId,
+      title: rawTitle || 'Música',
+      artist: rawArtist || 'Artista Não Especificado',
+      cover: rawCover,
+      previewUrl: rawPreview,
+      status: status,
+      timestamp: timestamp
     };
-    delete newEntry.studentName;
-    this.cache.suggestions.unshift(newEntry);
-    this.write('suggestions', newEntry.id, newEntry).catch(console.error);
-    return newEntry;
+    if (suggestion.studentClass) firestoreData.studentClass = String(suggestion.studentClass).trim().slice(0, 40);
+    if (suggestion.teacherName) firestoreData.teacherName = String(suggestion.teacherName).trim().slice(0, 120);
+    if (suggestion.weekKey) firestoreData.weekKey = String(suggestion.weekKey).trim().slice(0, 20);
+    if (suggestion.source) firestoreData.source = String(suggestion.source).trim().slice(0, 20);
+
+    const memoryEntry = {
+      ...firestoreData,
+      songTitle: firestoreData.title,
+      artwork: firestoreData.cover
+    };
+
+    if (!this.cache.suggestions) this.cache.suggestions = [];
+    this.cache.suggestions.unshift(memoryEntry);
+
+    this.write('suggestions', newId, firestoreData).catch(err => {
+      console.error('Erro ao escrever pedido de música no Firestore:', err);
+    });
+    document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'suggestions' } }));
+    return memoryEntry;
   }
 
   async getClassWeeklySuggestions(studentClass, weekKey) {
@@ -280,7 +329,7 @@ class RadioDatabase {
         .map(doc => ({ id: doc.id, ...doc.data() }))
         .filter(item => String(item.studentClass || '').trim().toUpperCase().replace(/\s+/g, '') === normClass);
     } catch (e) {
-      return (this.cache.suggestions || []).filter(item =>
+      return (this.getSuggestions() || []).filter(item =>
         item.weekKey === weekKey &&
         String(item.studentClass || '').trim().toUpperCase().replace(/\s+/g, '') === normClass
       );
@@ -292,6 +341,7 @@ class RadioDatabase {
     if (index !== -1) {
       this.cache.suggestions[index].status = status;
       this.write('suggestions', id, { status }).catch(console.error);
+      document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'suggestions' } }));
     }
   }
 
@@ -299,11 +349,26 @@ class RadioDatabase {
     const suggestions = [...this.cache.suggestions];
     this.cache.suggestions = [];
     suggestions.forEach(suggestion => this.remove('suggestions', suggestion.id).catch(console.error));
+    document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'suggestions' } }));
   }
 
   // MENSAGENS DA COMUNIDADE
   getMessages() {
-    return [...this.cache.messages].sort((a, b) => {
+    return (this.cache.messages || []).map(item => {
+      if (!item) return null;
+      const name = String(item.name || item.senderName || 'Anónimo').trim();
+      const studentClass = String(item.studentClass || item.senderGroup || '').trim();
+      return {
+        ...item,
+        name,
+        senderName: name,
+        studentClass,
+        senderGroup: studentClass,
+        message: item.message || '',
+        status: item.status || 'unread',
+        createdAt: item.createdAt || Date.now()
+      };
+    }).filter(Boolean).sort((a, b) => {
       const aUnread = a.status === 'unread' ? 1 : 0;
       const bUnread = b.status === 'unread' ? 1 : 0;
       if (aUnread !== bUnread) return bUnread - aUnread;
@@ -312,15 +377,40 @@ class RadioDatabase {
   }
 
   addMessage(message) {
-    const newEntry = {
-      id: 'msg-' + Date.now(),
-      createdAt: Date.now(),
-      status: 'unread',
-      ...message
+    const newId = message.id || ('msg-' + Date.now());
+    const senderName = String(message.name || message.senderName || 'Anónimo').trim().slice(0, 80);
+    const senderGroup = String(message.studentClass || message.senderGroup || '').trim().slice(0, 80);
+    const text = String(message.message || '').trim().slice(0, 1200);
+    const subject = String(message.subject || (text ? text.slice(0, 50) : 'Mensagem')).trim().slice(0, 120);
+    const createdAt = message.createdAt || Date.now();
+    const status = 'unread';
+
+    // Cumpre estritamente as regras de segurança do Cloud Firestore para messages
+    const firestoreData = {
+      id: newId,
+      senderName: senderName || 'Anónimo',
+      subject: subject || 'Mensagem',
+      message: text || 'Mensagem sem conteúdo',
+      createdAt,
+      status
     };
-    this.cache.messages.unshift(newEntry);
-    this.write('messages', newEntry.id, newEntry).catch(console.error);
-    return newEntry;
+    if (senderGroup) firestoreData.senderGroup = senderGroup;
+
+    const memoryEntry = {
+      ...firestoreData,
+      name: senderName,
+      studentClass: senderGroup,
+      email: message.email || ''
+    };
+
+    if (!this.cache.messages) this.cache.messages = [];
+    this.cache.messages.unshift(memoryEntry);
+
+    this.write('messages', newId, firestoreData).catch(err => {
+      console.error('Erro ao escrever mensagem no Firestore:', err);
+    });
+    document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'messages' } }));
+    return memoryEntry;
   }
 
   updateMessageStatus(id, status) {
@@ -328,12 +418,14 @@ class RadioDatabase {
     if (index !== -1) {
       this.cache.messages[index].status = status;
       this.write('messages', id, { status }).catch(console.error);
+      document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'messages' } }));
     }
   }
 
   deleteMessage(id) {
     this.cache.messages = this.cache.messages.filter(message => message.id !== id);
     this.remove('messages', id).catch(console.error);
+    document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'messages' } }));
   }
 
   // PODCASTS
@@ -463,31 +555,40 @@ class RadioDatabase {
 
   addAnnouncement(announcement) {
     const isInternal = announcement.visibility === 'internal' || announcement.onAir === true || Boolean(announcement.broadcastDate);
+    const newId = announcement.id || ('ann-' + Date.now());
     const newEntry = {
-      id: 'ann-' + Date.now(),
-      createdAt: Date.now(),
-      date: new Date().toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' }),
-      readTime: '2 min de leitura',
-      author: 'Equipa da Rádio • EBS Cidadela',
-      image: DEFAULT_ANNOUNCEMENT_IMAGE,
-      excerpt: '',
-      content: '<p>Escreve o conteúdo deste artigo.</p>',
-      visibility: isInternal ? 'internal' : 'public',
+      id: newId,
+      createdAt: announcement.createdAt || Date.now(),
+      date: announcement.date || new Date().toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' }),
+      readTime: announcement.readTime || '2 min de leitura',
+      author: announcement.author || 'Equipa da Rádio • EBS Cidadela',
+      image: announcement.image || DEFAULT_ANNOUNCEMENT_IMAGE,
+      excerpt: announcement.excerpt || '',
+      content: announcement.content || '<p>Escreve o conteúdo deste artigo.</p>',
       ...announcement,
+      id: newId,
       visibility: isInternal ? 'internal' : 'public'
     };
-    this.cache.announcements.unshift(newEntry);
-    const writePromise = this.write('announcements', newEntry.id, newEntry);
+    if (!this.cache.announcements) this.cache.announcements = [];
+    const existingIdx = this.cache.announcements.findIndex(a => String(a.id) === String(newId));
+    if (existingIdx !== -1) {
+      this.cache.announcements[existingIdx] = newEntry;
+    } else {
+      this.cache.announcements.unshift(newEntry);
+    }
+    const writePromise = this.write('announcements', newId, newEntry);
     writePromise.catch(console.error);
+    document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'announcements' } }));
     return this._attachWritePromise(newEntry, writePromise);
   }
 
   updateAnnouncement(id, updatedData) {
-    const index = this.cache.announcements.findIndex(a => a.id === id);
+    const index = this.cache.announcements.findIndex(a => String(a.id) === String(id));
     if (index !== -1) {
       const normalized = {
         ...this.cache.announcements[index],
         ...updatedData,
+        id,
         updatedAt: Date.now(),
         visibility: updatedData.visibility === 'internal' || updatedData.onAir === true || Boolean(updatedData.broadcastDate)
           ? 'internal'
@@ -496,6 +597,7 @@ class RadioDatabase {
       this.cache.announcements[index] = normalized;
       const writePromise = this.write('announcements', id, normalized);
       writePromise.catch(console.error);
+      document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'announcements' } }));
       return this._attachWritePromise(this.cache.announcements[index], writePromise);
     }
     return null;
@@ -503,11 +605,10 @@ class RadioDatabase {
 
   saveAnnouncement(announcement) {
     const existingId = announcement.id;
-    if (existingId && this.cache.announcements.find(a => a.id === existingId)) {
+    if (existingId && this.cache.announcements && this.cache.announcements.find(a => String(a.id) === String(existingId))) {
       return this.updateAnnouncement(existingId, announcement);
     }
-    const { id, ...rest } = announcement;
-    return this.addAnnouncement(rest);
+    return this.addAnnouncement(announcement);
   }
 
   async saveAnnouncementAsync(announcement) {
@@ -520,7 +621,9 @@ class RadioDatabase {
 
   deleteAnnouncement(id) {
     this.cache.announcements = this.cache.announcements.filter(announcement => announcement.id !== id);
-    return this.remove('announcements', id).catch(console.error);
+    const deletePromise = this.remove('announcements', id).catch(console.error);
+    document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'announcements' } }));
+    return deletePromise;
   }
 
   // LINKTREE LINKS
