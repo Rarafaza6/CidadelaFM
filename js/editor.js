@@ -269,20 +269,6 @@ function loadArticleFromQuery() {
   let loadedContent = article.content || `<p>${escapeHtml(article.excerpt || '')}</p>`;
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = loadedContent;
-  const firstBodyImg = tempDiv.querySelector('img');
-  if (firstBodyImg) {
-    const firstSrc = (firstBodyImg.getAttribute('src') || '').trim();
-    if (!loadedCover && firstSrc) {
-      loadedCover = firstSrc;
-      const wrap = firstBodyImg.closest('figure') || firstBodyImg;
-      wrap.remove();
-      loadedContent = tempDiv.innerHTML;
-    } else if (firstSrc && firstSrc === loadedCover) {
-      const wrap = firstBodyImg.closest('figure') || firstBodyImg;
-      wrap.remove();
-      loadedContent = tempDiv.innerHTML;
-    }
-  }
   document.getElementById('articleImage').value = loadedCover;
   body.innerHTML = loadedContent;
   updateCoverPreview(loadedCover || DEFAULT_COVER_IMAGE);
@@ -398,11 +384,6 @@ window.handleInlineImageFiles = async function (fileList) {
   const presetCovers = [DEFAULT_COVER_IMAGE, 'assets/brand/og-image.jpg', 'assets/logo-cidadela.png'];
   let startIdx = 0;
 
-  // Se ainda não há capa personalizada, a primeira foto carregada vai diretamente para a Capa (acima de tudo)
-  if (!currentCover || presetCovers.includes(currentCover)) {
-    await window.handleCoverFileUpload(files[0]);
-    startIdx = 1;
-  }
 
   for (let i = startIdx; i < files.length; i++) {
     const file = files[i];
@@ -965,22 +946,6 @@ function collectEditorPayload() {
   let image = document.getElementById('articleImage')?.value?.trim() || '';
   let content = document.getElementById('articleBody')?.innerHTML?.trim() || '';
 
-  // Se não foi escolhida capa dedicada mas há uma foto no corpo, promover a foto a capa acima do texto
-  if (!image || image === DEFAULT_COVER_IMAGE) {
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = content;
-    const firstImg = tempDiv.querySelector('img');
-    if (firstImg) {
-      const firstSrc = (firstImg.getAttribute('src') || '').trim();
-      if (firstSrc) {
-        image = firstSrc;
-        const fig = firstImg.closest('figure');
-        if (fig) fig.remove();
-        else firstImg.remove();
-        content = tempDiv.innerHTML.trim();
-      }
-    }
-  }
   if (!image) image = DEFAULT_COVER_IMAGE;
 
   const plainText = (document.getElementById('articleBody')?.innerText || '').trim();

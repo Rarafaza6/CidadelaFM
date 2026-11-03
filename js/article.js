@@ -50,20 +50,14 @@ function renderArticle() {
   if (bodyImgs.length > 0) {
     const firstBodyImg = bodyImgs[0];
     const firstSrc = (firstBodyImg.getAttribute('src') || '').trim();
-    if (!coverImg && firstSrc) {
-      coverImg = firstSrc;
+    // Só remove a primeira imagem do corpo se for duplicada da capa (artigos antigos)
+    const firstElem = tempDiv.firstElementChild;
+    const isLeadingImg = firstElem && (firstElem === firstBodyImg || firstElem.contains(firstBodyImg));
+    if (coverImg && firstSrc === coverImg && isLeadingImg) {
+      const wrap = firstBodyImg.closest('figure') || firstBodyImg;
+      wrap.remove();
+      safeContent = tempDiv.innerHTML;
     }
-    // Remover imagens do arranque/desenvolvimento para que a capa fique apenas no topo
-    bodyImgs.forEach((img, idx) => {
-      const src = (img.getAttribute('src') || '').trim();
-      const firstElem = tempDiv.firstElementChild;
-      const isLeadingImg = idx === 0 && firstElem && (firstElem === img || firstElem.contains(img));
-      if (idx === 0 || src === coverImg || isLeadingImg) {
-        const wrap = img.closest('figure') || (img.parentElement && img.parentElement.tagName === 'P' && img.parentElement.textContent.trim() === '' ? img.parentElement : img);
-        wrap.remove();
-      }
-    });
-    safeContent = tempDiv.innerHTML;
   }
   if (!coverImg) coverImg = 'assets/logo-radio.jpg';
 
