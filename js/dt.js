@@ -358,6 +358,54 @@ function initDtMusicSearch() {
   }
 }
 
+function searchDtDeezerJSONP(query, limit = 8) {
+  return new Promise((resolve) => {
+    const callbackName = 'dt_deezer_cb_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+    const script = document.createElement('script');
+    let timedOut = false;
+
+    const timer = setTimeout(() => {
+      timedOut = true;
+      cleanup();
+      resolve([]);
+    }, 4500);
+
+    const cleanup = () => {
+      clearTimeout(timer);
+      try { delete window[callbackName]; } catch (_) {}
+      if (script.parentNode) script.parentNode.removeChild(script);
+    };
+
+    window[callbackName] = (data) => {
+      if (timedOut) return;
+      cleanup();
+      if (!data || !Array.isArray(data.data)) return resolve([]);
+      const tracks = data.data.map(track => {
+        const cover = (track.album && (track.album.cover_big || track.album.cover_medium || track.album.cover)) || 'assets/brand/favicon-negativa.png';
+        const artistName = track.artist ? track.artist.name : '';
+        const isExplicit = Boolean(track.explicit_lyrics) ||
+          (typeof window.isExplicitSong === 'function' ? window.isExplicitSong(track.title, artistName) : false);
+        return {
+          trackName: track.title,
+          artistName: artistName,
+          artwork: cover,
+          previewUrl: track.preview || '',
+          releaseYear: '',
+          explicit: isExplicit
+        };
+      });
+      resolve(tracks);
+    };
+
+    script.src = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=${limit}&output=jsonp&callback=${callbackName}`;
+    script.onerror = () => {
+      cleanup();
+      resolve([]);
+    };
+    document.head.appendChild(script);
+  });
+}
+
 async function fetchDtMusicCatalog(query, dropdown) {
   dropdown.innerHTML = `
     <div class="search-dropdown-status">
@@ -366,68 +414,131 @@ async function fetchDtMusicCatalog(query, dropdown) {
   `;
   dropdown.classList.add('active');
 
+  let normalizedTracks = [];
+
+  // 1. Tentar Apple Music / iTunes
   try {
     const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=8`;
     const res = await fetch(url);
-    const data = await res.json();
-
-    if (!data.results || data.results.length === 0) {
-      dropdown.innerHTML = `
-        <div class="search-dropdown-status">
-          Nenhuma música encontrada no catálogo do Apple Music. Verifica se o título ou artista está bem escrito.
-        </div>
-      `;
-      return;
+    if (res.ok) {
+      const data = await res.json();
+      if (data && Array.isArray(data.results) && data.results.length > 0) {
+        normalizedTracks = data.results.map(track => {
+          const rawArtwork = track.artworkUrl100 || track.artworkUrl60 || 'assets/logo-radio.jpg';
+          const artwork = rawArtwork.replace('100x100bb', '300x300bb').replace('100x100', '300x300');
+          const releaseYear = track.releaseDate ? new Date(track.releaseDate).getFullYear() : '';
+          const isExplicit = (track.trackExplicitness === 'explicit') ||
+            (window.RadioDatabase && window.RadioDatabase.isExplicitSong(track.trackName, track.artistName)) ||
+            (typeof window.isExplicitSong === 'function' && window.isExplicitSong(track.trackName, track.artistName));
+          return {
+            trackName: track.trackName,
+            artistName: track.artistName,
+            artwork: artwork,
+            previewUrl: track.previewUrl || '',
+            releaseYear: releaseYear,
+            explicit: Boolean(isExplicit)
+          };
+        });
+      }
     }
-
-    dropdown.innerHTML = '';
-    data.results.forEach(track => {
-      const rawArtwork = track.artworkUrl100 || track.artworkUrl60 || 'assets/logo-radio.jpg';
-      const artwork = rawArtwork.replace('100x100bb', '300x300bb').replace('100x100', '300x300');
-      const releaseYear = track.releaseDate ? new Date(track.releaseDate).getFullYear() : '';
-
-      const item = document.createElement('div');
-      item.className = 'search-result-item search-row';
-      item.innerHTML = `
-        <div class="search-result-thumb">
-          <img src="${artwork}" alt="${escapeHtml(track.trackName)}" loading="lazy">
-        </div>
-        <div class="search-result-details">
-          <h4 class="item-title">${escapeHtml(track.trackName)}</h4>
-          <p class="item-artist">
-            <span>${escapeHtml(track.artistName)}</span>
-            ${releaseYear ? `<span class="search-result-sep">•</span><span>${releaseYear}</span>` : ''}
-          </p>
-        </div>
-        <div class="search-result-action">
-          <span class="select-badge"><i class="ri-add-line"></i> Juntar</span>
-        </div>
-      `;
-
-      item.addEventListener('click', () => {
-        const isExplicit = (track.trackExplicitness === 'explicit') ||
-          (window.RadioDatabase && window.RadioDatabase.isExplicitSong(track.trackName, track.artistName)) ||
-          (typeof window.isExplicitSong === 'function' && window.isExplicitSong(track.trackName, track.artistName));
-        dtSelectedTrack = {
-          songTitle: track.trackName,
-          artist: track.artistName,
-          artwork: artwork,
-          previewUrl: track.previewUrl || '',
-          explicit: Boolean(isExplicit)
-        };
-        dropdown.classList.remove('active');
-        addCurrentInputOrTrackToQueue();
-      });
-
-      dropdown.appendChild(item);
-    });
   } catch (err) {
+    console.warn('iTunes API indisponível em DT, a usar Deezer:', err.message);
+  }
+
+  // 2. Fallback ao Deezer
+  if (normalizedTracks.length === 0) {
+    try {
+      const fallbackTracks = await searchDtDeezerJSONP(query, 8);
+      if (fallbackTracks && fallbackTracks.length > 0) {
+        normalizedTracks = fallbackTracks;
+      }
+    } catch (_) {}
+  }
+
+  const addManualDtTrack = () => {
+    const parts = query.split(/\s*[-–—]\s*|\s+by\s+|\s+de\s+/i);
+    const parsedTitle = parts[0] ? parts[0].trim() : query.trim();
+    const parsedArtist = parts[1] ? parts.slice(1).join(' - ').trim() : 'Artista a confirmar';
+    dtSelectedTrack = {
+      songTitle: parsedTitle,
+      artist: parsedArtist,
+      artwork: 'assets/brand/favicon-negativa.png',
+      previewUrl: '',
+      explicit: Boolean(typeof window.isExplicitSong === 'function' && window.isExplicitSong(parsedTitle, parsedArtist))
+    };
+    dropdown.classList.remove('active');
+    addCurrentInputOrTrackToQueue();
+  };
+
+  if (normalizedTracks.length === 0) {
     dropdown.innerHTML = `
-      <div class="search-dropdown-status search-dropdown-error">
-        <i class="ri-error-warning-line"></i> Sem ligação ao catálogo do Apple Music. Verifica a tua ligação e tenta novamente.
+      <div class="search-dropdown-status" style="padding: 1.2rem;">
+        <i class="ri-music-2-line" style="font-size: 1.5rem; display: block; margin-bottom: 0.35rem; color: #e4232a;"></i>
+        Não encontramos correspondência exata no catálogo automático.
+        <div style="margin-top: 0.75rem;">
+          <button type="button" class="w-btn w-btn-red" id="btnDtManualTrack" style="width: 100%; font-size: 0.95rem; padding: 0.5rem 0.8rem;">
+            <i class="ri-add-line"></i> Adicionar "${escapeHtml(query)}"
+          </button>
+        </div>
       </div>
     `;
+    const btn = dropdown.querySelector('#btnDtManualTrack');
+    if (btn) btn.addEventListener('click', addManualDtTrack);
+    return;
   }
+
+  dropdown.innerHTML = '';
+  normalizedTracks.forEach(track => {
+    const item = document.createElement('div');
+    item.className = 'search-result-item search-row';
+    item.innerHTML = `
+      <div class="search-result-thumb">
+        <img src="${track.artwork}" alt="${escapeHtml(track.trackName)}" loading="lazy">
+      </div>
+      <div class="search-result-details">
+        <h4 class="item-title">${escapeHtml(track.trackName)}</h4>
+        <p class="item-artist">
+          <span>${escapeHtml(track.artistName)}</span>
+          ${track.releaseYear ? `<span class="search-result-sep">•</span><span>${track.releaseYear}</span>` : ''}
+        </p>
+      </div>
+      <div class="search-result-action">
+        <span class="select-badge"><i class="ri-add-line"></i> Juntar</span>
+      </div>
+    `;
+
+    item.addEventListener('click', () => {
+      dtSelectedTrack = {
+        songTitle: track.trackName,
+        artist: track.artistName,
+        artwork: track.artwork,
+        previewUrl: track.previewUrl || '',
+        explicit: Boolean(track.explicit)
+      };
+      dropdown.classList.remove('active');
+      addCurrentInputOrTrackToQueue();
+    });
+
+    dropdown.appendChild(item);
+  });
+
+  const manualRow = document.createElement('div');
+  manualRow.className = 'search-result-item search-row manual-option';
+  manualRow.style.cssText = 'border-top: 1px dashed var(--edge, #e9e2e2); background: rgba(228, 35, 42, 0.04);';
+  manualRow.innerHTML = `
+    <div class="search-result-thumb" style="display:flex;align-items:center;justify-content:center;background:#e9e2e2;border-radius:4px;">
+      <i class="ri-edit-line" style="font-size:1.1rem;color:#e4232a;"></i>
+    </div>
+    <div class="search-result-details">
+      <h4 class="item-title" style="font-size: 0.95rem;">Adicionar "${escapeHtml(query)}" manualmente</h4>
+      <p class="item-artist"><span>Adiciona a música diretamente à lista da tua turma</span></p>
+    </div>
+    <div class="search-result-action">
+      <span class="select-badge" style="background:#282425;color:#fff;"><i class="ri-check-line"></i> Usar esta</span>
+    </div>
+  `;
+  manualRow.addEventListener('click', addManualDtTrack);
+  dropdown.appendChild(manualRow);
 }
 
 function addCurrentInputOrTrackToQueue() {

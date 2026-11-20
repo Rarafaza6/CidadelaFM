@@ -855,7 +855,14 @@ class RadioDatabase {
   }
 
   getAllPublicAnnouncements() {
-    return this.getAnnouncements().filter(item => item.visibility !== 'internal' && item.onAir !== true && !item.broadcastDate);
+    return this.getAnnouncements().filter(item =>
+      item.visibility !== 'internal' &&
+      item.visibility !== 'draft' &&
+      item.status !== 'draft' &&
+      item.isDraft !== true &&
+      item.onAir !== true &&
+      !item.broadcastDate
+    );
   }
 
   getPublicAnnouncements() {

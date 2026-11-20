@@ -450,6 +450,7 @@ function buildGroupedSongsList(suggestions) {
         ids: [],
         dtClasses: [],
         studentIdentities: [],
+        requests: [],
         hasWeb: false,
         hasDT: false,
         latestTimestamp: 0,
@@ -470,19 +471,71 @@ function buildGroupedSongsList(suggestions) {
     if (ts > group.latestTimestamp) group.latestTimestamp = ts;
     if (ts > 0 && (!group.firstTimestamp || ts < group.firstTimestamp)) group.firstTimestamp = ts;
 
-    const isIdentifiedStudent = item.source === 'web' && (String(item.teacherName || '').startsWith('Aluno:') || item.studentClass);
-    if (isIdentifiedStudent) {
-      group.hasWeb = true;
-      const studentLabel = item.teacherName || `Aluno (${item.studentClass})`;
-      if (!group.studentIdentities.includes(studentLabel)) group.studentIdentities.push(studentLabel);
-    } else if (item.source === 'dt' || item.studentClass) {
+    // Parsing rigoroso e profissional de quem pediu:
+    const rawTeacher = String(item.teacherName || item.studentName || item.name || '').trim();
+    const rawClass = String(item.studentClass || '').trim();
+    const isDt = item.source === 'dt';
+
+    let studentName = '';
+    let studentMeta = '';
+
+    if (isDt) {
+      studentName = rawTeacher ? `Prof. ${rawTeacher.replace(/^Prof\.?\s*/i, '')}` : 'Diretor de Turma';
+      studentMeta = rawClass ? `Turma ${rawClass}` : 'Sugestão DT';
+    } else {
+      const alunoMatch = rawTeacher.match(/^Aluno:\s*([^(]+)(?:\(([^)]+)\))?/i);
+      if (alunoMatch) {
+        studentName = alunoMatch[1].trim();
+        studentMeta = alunoMatch[2] ? alunoMatch[2].trim() : (rawClass ? `Turma ${rawClass}` : '');
+      } else if (rawTeacher) {
+        studentName = rawTeacher;
+        studentMeta = rawClass ? `Turma ${rawClass}` : '';
+      } else if (rawClass) {
+        studentName = 'Aluno';
+        studentMeta = `Turma ${rawClass}`;
+      } else {
+        studentName = 'Aluno da Escola';
+        studentMeta = 'Web';
+      }
+    }
+
+    let dateFormatted = 'Data recente';
+    let timeFormatted = '';
+    if (ts > 0) {
+      const dt = new Date(ts);
+      if (!isNaN(dt.getTime())) {
+        dateFormatted = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(dt);
+        timeFormatted = new Intl.DateTimeFormat('pt-PT', { hour: '2-digit', minute: '2-digit' }).format(dt);
+      }
+    }
+
+    const fullWho = studentMeta ? `${studentName} (${studentMeta})` : studentName;
+    const fullWhen = timeFormatted ? `${dateFormatted} às ${timeFormatted}` : dateFormatted;
+
+    group.requests.push({
+      id: item.id || '',
+      name: studentName,
+      meta: studentMeta,
+      who: fullWho,
+      when: fullWhen,
+      dateFormatted,
+      timeFormatted,
+      timestamp: ts,
+      isDt,
+      source: item.source || 'web'
+    });
+
+    if (item.source === 'dt') {
       group.hasDT = true;
-      if (item.studentClass) {
-        const dtLabel = item.teacherName ? `${item.studentClass} (${item.teacherName})` : item.studentClass;
+      if (rawClass) {
+        const dtLabel = rawTeacher ? `${rawClass} (${rawTeacher})` : rawClass;
         if (!group.dtClasses.includes(dtLabel)) group.dtClasses.push(dtLabel);
       }
     } else {
       group.hasWeb = true;
+      if (!group.studentIdentities.includes(fullWho)) {
+        group.studentIdentities.push(fullWho);
+      }
     }
 
     if (typeof item.explicit === 'boolean') {
@@ -498,6 +551,7 @@ function buildGroupedSongsList(suggestions) {
       ? window.isExplicitSong(group.songTitle, group.artist)
       : false;
     group.isExplicit = group.trackExplicitness === 'explicit' || dictExplicit;
+    group.requests.sort((a, b) => b.timestamp - a.timestamp);
   });
 
   return Array.from(map.values());
@@ -569,13 +623,15 @@ window.exportSongsRankingCSV = function () {
 
   const escCsv = (val) => `"${String(val || '').replace(/"/g, '""')}"`;
   const rows = [
-    ['Posicao', 'Titulo', 'Artista', 'Pedidos', 'Estado', 'Origem'],
+    ['Posicao', 'Titulo', 'Artista', 'Pedidos', 'Estado', 'Quem Pediu', 'Quando Pediu', 'Origem'],
     ...grouped.map((s, idx) => [
       idx + 1,
       s.songTitle,
       s.artist,
       s.count,
       s.status,
+      (s.requests && s.requests.length) ? s.requests.map(r => r.who).join('; ') : (s.studentIdentities || []).join('; ') || 'Aluno',
+      (s.requests && s.requests.length) ? s.requests.map(r => r.when).join('; ') : (formatSongRequestDate(s.latestTimestamp)?.label || ''),
       [s.hasWeb ? 'Alunos' : '', ...s.dtClasses.map(c => `DT ${c}`)].filter(Boolean).join(' | ')
     ])
   ];
@@ -1000,6 +1056,51 @@ window.saveNewPodcast = function (e) {
 
 let activeAnnouncementFilter = 'all';
 
+// Recupera rascunhos guardados no editor editorial (localStorage)
+function getLocalEditorDrafts() {
+  const drafts = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('wave_editor_draft_')) {
+        try {
+          const raw = localStorage.getItem(key);
+          if (!raw) continue;
+          const parsed = JSON.parse(raw);
+          if (parsed && (parsed.title || parsed.content)) {
+            const articleId = key === 'wave_editor_draft_new' ? '' : key.replace('wave_editor_draft_', '');
+            drafts.push({
+              id: articleId ? `draft_${articleId}` : 'draft_new',
+              targetArticleId: articleId,
+              localDraftKey: key,
+              title: parsed.title ? `[Rascunho] ${parsed.title}` : '[Rascunho Sem Título]',
+              excerpt: parsed.excerpt || (parsed.content ? parsed.content.replace(/<[^>]+>/g, '').slice(0, 120) + '...' : 'Rascunho guardado localmente no dispositivo'),
+              category: parsed.category || 'Rascunho Editorial',
+              author: parsed.author || 'Equipa da Rádio',
+              date: parsed.savedAt ? new Date(parsed.savedAt).toLocaleDateString('pt-PT') : 'Local',
+              readTime: parsed.readTime || '1 min',
+              image: parsed.image || 'assets/logo-radio.jpg',
+              visibility: 'draft',
+              isLocalDraft: true
+            });
+          }
+        } catch (_) {}
+      }
+    }
+  } catch (_) {}
+  return drafts;
+}
+
+window.discardLocalEditorDraft = function (key) {
+  if (confirm('Eliminar permanentemente este rascunho guardado no dispositivo?')) {
+    try {
+      localStorage.removeItem(key);
+    } catch (_) {}
+    renderAdminAnnouncementsTable();
+    showToast('Rascunho descartado com sucesso.', 'info');
+  }
+};
+
 window.filterAdminAnnouncements = function (filterMode = 'all') {
   activeAnnouncementFilter = filterMode;
   document.querySelectorAll('[data-ann-filter]').forEach(btn => {
@@ -1013,12 +1114,16 @@ function renderAdminAnnouncementsTable() {
   if (!tbody) return;
 
   const query = (document.getElementById('annSearchInput')?.value || '').trim().toLowerCase();
-  let list = window.db.getAnnouncements();
+  const dbList = window.db.getAnnouncements ? window.db.getAnnouncements() : [];
+  const localDrafts = getLocalEditorDrafts();
+  let list = [...localDrafts, ...dbList];
 
   if (activeAnnouncementFilter === 'public') {
-    list = list.filter(a => a.visibility !== 'internal' && a.onAir !== true && !a.broadcastDate);
+    list = list.filter(a => !a.isLocalDraft && a.visibility !== 'draft' && a.status !== 'draft' && a.isDraft !== true && a.visibility !== 'internal' && a.onAir !== true && !a.broadcastDate);
   } else if (activeAnnouncementFilter === 'internal') {
-    list = list.filter(a => a.visibility === 'internal' || a.onAir === true || Boolean(a.broadcastDate));
+    list = list.filter(a => !a.isLocalDraft && (a.visibility === 'internal' || a.onAir === true || Boolean(a.broadcastDate)));
+  } else if (activeAnnouncementFilter === 'draft') {
+    list = list.filter(a => a.isLocalDraft || a.visibility === 'draft' || a.status === 'draft' || a.isDraft === true);
   }
 
   if (query) {
@@ -1031,11 +1136,14 @@ function renderAdminAnnouncementsTable() {
   }
 
   if (list.length === 0) {
+    const emptyMsg = activeAnnouncementFilter === 'draft'
+      ? 'Nenhum rascunho encontrado. Podes guardar rascunhos no Estúdio Editorial com Ctrl+S.'
+      : 'Nenhum artigo encontrado. Clica em "Estúdio Editorial Completo" para escrever uma notícia com fotos.';
     tbody.innerHTML = `
       <tr>
         <td colspan="4" class="admin-empty-cell">
           <i class="ri-newspaper-line"></i>
-          Nenhum artigo encontrado. Clica em "Estúdio Editorial Completo" para escrever uma notícia com fotos.
+          ${escapeHtml(emptyMsg)}
         </td>
       </tr>
     `;
@@ -1044,10 +1152,39 @@ function renderAdminAnnouncementsTable() {
 
   tbody.innerHTML = '';
   list.forEach(ann => {
-    const isInternal = ann.visibility === 'internal' || ann.onAir === true || Boolean(ann.broadcastDate);
+    const isDraft = ann.isLocalDraft || ann.visibility === 'draft' || ann.status === 'draft' || ann.isDraft === true;
+    const isInternal = !isDraft && (ann.visibility === 'internal' || ann.onAir === true || Boolean(ann.broadcastDate));
     const isBase64 = String(ann.image || '').startsWith('data:image/');
     const coverSrc = ann.image || 'assets/logo-radio.jpg';
     const tr = document.createElement('tr');
+
+    let statusBadgeHtml = '';
+    if (ann.isLocalDraft) {
+      statusBadgeHtml = `<span class="status-badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 0.72rem;"><i class="ri-draft-line"></i> Rascunho no Navegador</span>`;
+    } else if (isDraft) {
+      statusBadgeHtml = `<span class="status-badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 0.72rem;"><i class="ri-draft-line"></i> Rascunho Privado</span>`;
+    } else if (isInternal) {
+      statusBadgeHtml = `<span class="status-badge status-pending" style="font-size: 0.72rem;"><i class="ri-mic-line"></i> Aviso em Antena</span>`;
+    } else {
+      statusBadgeHtml = `<span class="status-badge status-played" style="font-size: 0.72rem;"><i class="ri-global-line"></i> Público no Site${isBase64 ? ' • Base64' : ''}</span>`;
+    }
+
+    let actionsHtml = '';
+    if (ann.isLocalDraft) {
+      actionsHtml = `
+        <a class="btn-action" href="admin-editor.html${ann.targetArticleId ? '?id=' + encodeURIComponent(ann.targetArticleId) : ''}" style="border-color: #f59e0b; color: #fbbf24;" title="Retomar edição deste rascunho"><i class="ri-edit-2-line"></i> Retomar Rascunho</a>
+        <button class="btn-action" type="button" style="color: #ef4444;" onclick="discardLocalEditorDraft('${escapeHtml(ann.localDraftKey)}')" title="Descartar rascunho"><i class="ri-delete-bin-line"></i></button>
+      `;
+    } else {
+      actionsHtml = `
+        ${!isInternal && !isDraft ? `<a class="btn-action" href="artigo.html?id=${encodeURIComponent(ann.id)}" target="_blank" title="Ver página do artigo"><i class="ri-eye-line"></i> Ver</a>` : ''}
+        <a class="btn-action" href="admin-editor.html?id=${encodeURIComponent(ann.id)}" style="border-color: rgba(56, 189, 248, 0.35); color: #7dd3fc;" title="Abrir no Estúdio Editorial Completo"><i class="ri-quill-pen-line"></i> Estúdio</a>
+        <button class="btn-action" type="button" onclick="openAnnouncementModal('${escapeHtml(ann.id)}')" title="Edição rápida"><i class="ri-edit-line"></i></button>
+        <button class="btn-action" type="button" onclick="duplicateAnnouncementItem('${escapeHtml(ann.id)}')" title="Duplicar artigo"><i class="ri-file-copy-line"></i></button>
+        <button class="btn-action" type="button" style="color: #ef4444;" onclick="deleteAnnouncementItem('${escapeHtml(ann.id)}')" title="Eliminar"><i class="ri-delete-bin-line"></i></button>
+      `;
+    }
+
     tr.innerHTML = `
       <td>
         <div style="display: flex; align-items: center; gap: 0.85rem;">
@@ -1068,10 +1205,7 @@ function renderAdminAnnouncementsTable() {
         <div style="display: flex; flex-direction: column; gap: 0.3rem; align-items: flex-start;">
           <span class="blog-tag">${escapeHtml(ann.category || ann.tag || 'Notícia')}</span>
           ${(ann.portal === 'economia' || ann.portal === 'both') ? `<span class="blog-tag" style="background: rgba(16, 185, 129, 0.16); color: #34d399; font-size: 0.7rem;">${ann.portal === 'both' ? 'Principal + Economia' : 'Economia em Frequência'}</span>` : ''}
-          <span class="status-badge ${isInternal ? 'status-pending' : 'status-played'}" style="font-size: 0.72rem;">
-            ${isInternal ? '<i class="ri-mic-line"></i> Aviso em Antena' : '<i class="ri-global-line"></i> Público no Site'}
-            ${isBase64 ? ' • Base64' : ''}
-          </span>
+          ${statusBadgeHtml}
         </div>
       </td>
       <td style="font-size: 0.85rem;">
@@ -1080,11 +1214,7 @@ function renderAdminAnnouncementsTable() {
       </td>
       <td style="text-align: right;">
         <div style="display: inline-flex; gap: 0.35rem; flex-wrap: wrap; justify-content: flex-end;">
-          ${!isInternal ? `<a class="btn-action" href="artigo.html?id=${encodeURIComponent(ann.id)}" target="_blank" title="Ver página do artigo"><i class="ri-eye-line"></i> Ver</a>` : ''}
-          <a class="btn-action" href="admin-editor.html?id=${encodeURIComponent(ann.id)}" style="border-color: rgba(56, 189, 248, 0.35); color: #7dd3fc;" title="Abrir no Estúdio Editorial Completo"><i class="ri-quill-pen-line"></i> Estúdio</a>
-          <button class="btn-action" type="button" onclick="openAnnouncementModal('${escapeHtml(ann.id)}')" title="Edição rápida"><i class="ri-edit-line"></i></button>
-          <button class="btn-action" type="button" onclick="duplicateAnnouncementItem('${escapeHtml(ann.id)}')" title="Duplicar artigo"><i class="ri-file-copy-line"></i></button>
-          <button class="btn-action" type="button" style="color: #ef4444;" onclick="deleteAnnouncementItem('${escapeHtml(ann.id)}')" title="Eliminar"><i class="ri-delete-bin-line"></i></button>
+          ${actionsHtml}
         </div>
       </td>
     `;
@@ -3574,59 +3704,9 @@ function renderAoVivoSongs(filterStatus = 'pending') {
   if (!listEl) return;
 
   const suggestions = window.db.getSuggestions() || [];
-  const map = new Map();
+  const groupedList = buildGroupedSongsList(suggestions);
 
-  suggestions.forEach(item => {
-    if (!item) return;
-
-    const rawTitle = String(item.songTitle || item.title || '').trim();
-    const rawArtist = String(item.artist || '').trim();
-    if (!rawTitle && !rawArtist) return;
-
-    const displayTitle = rawTitle || 'Música sem título';
-    const displayArtist = rawArtist || 'Artista não especificado';
-    const artwork = item.artwork || item.cover || 'assets/logo-radio.jpg';
-    const previewUrl = item.previewUrl || '';
-
-    const key = `${displayTitle.toLowerCase()}___${displayArtist.toLowerCase()}`;
-    if (!map.has(key)) {
-      map.set(key, {
-        key,
-        songTitle: displayTitle,
-        title: displayTitle,
-        artist: displayArtist,
-        artwork: artwork,
-        cover: artwork,
-        previewUrl: previewUrl,
-        count: 0,
-        ids: [],
-        dtClasses: [],
-        latestTimestamp: 0,
-        firstTimestamp: 0,
-        status: item.status || 'pending',
-        isExplicit: false,
-        explicitOverrides: []
-      });
-    }
-
-    const group = map.get(key);
-    group.count += 1;
-    const ts = Number(item.timestamp) || 0;
-    if (ts > group.latestTimestamp) group.latestTimestamp = ts;
-    if (ts > 0 && (!group.firstTimestamp || ts < group.firstTimestamp)) group.firstTimestamp = ts;
-    if (!group.previewUrl && previewUrl) group.previewUrl = previewUrl;
-    if (item.id) group.ids.push(item.id);
-    if (typeof item.explicit === 'boolean') group.explicitOverrides.push(item.explicit);
-    if (item.studentClass && !group.dtClasses.includes(item.studentClass)) {
-      group.dtClasses.push(item.studentClass);
-    }
-  });
-
-  const rankedList = Array.from(map.values()).map(group => {
-    const dictExplicit = typeof window.isExplicitSong === 'function' ? window.isExplicitSong(group.songTitle, group.artist) : false;
-    const isExplicit = group.trackExplicitness === 'explicit' || dictExplicit;
-    return { ...group, isExplicit };
-  }).filter(song => {
+  const rankedList = groupedList.filter(song => {
     if (filterStatus === 'clean') {
       return song.status === 'pending' && !song.isExplicit;
     }
@@ -3658,9 +3738,12 @@ function renderAoVivoSongs(filterStatus = 'pending') {
   listEl.innerHTML = rankedList.map((song, idx) => {
     const isPlayed = song.status === 'played';
     const isExplicit = song.isExplicit;
-    const dtTag = song.dtClasses.length ? ` · <span style="color:#38bdf8;">DT ${escapeHtml(song.dtClasses.join(', '))}</span>` : '';
+    const firstReq = (song.requests && song.requests[0]) || null;
+    const reqWho = firstReq ? firstReq.who : (song.studentIdentities && song.studentIdentities[0] ? song.studentIdentities[0] : (song.dtClasses.length ? `DT ${song.dtClasses[0]}` : 'Aluno'));
+    const reqWhen = firstReq && firstReq.when ? firstReq.when : '';
     const dateInfo = formatSongRequestDate(song.latestTimestamp, song.firstTimestamp, song.count);
-    const dateTag = dateInfo ? ` · <span style="color:#94a3b8;" title="${escapeHtml(dateInfo.tooltip)}"><i class="ri-calendar-line"></i> ${escapeHtml(dateInfo.shortDate)}</span>` : '';
+    const reqTag = ` · <span style="color:#7dd3fc;" title="Pedido por ${escapeHtml(reqWho)}${reqWhen ? ' em ' + escapeHtml(reqWhen) : ''}"><i class="ri-user-smile-line"></i> ${escapeHtml(reqWho)}</span>`;
+    const dateTag = dateInfo ? ` · <span style="color:#cbd5e1;" title="${escapeHtml(dateInfo.tooltip)}"><i class="ri-time-line"></i> ${escapeHtml(dateInfo.shortDate)}</span>` : '';
     return `
       <div class="musica-live-card ${isPlayed ? 'is-played' : ''} ${isExplicit ? 'is-explicit-danger' : ''}" draggable="true" data-drag-type="song" data-pick-song="${escapeHtml(song.songTitle)}" data-pick-artist="${escapeHtml(song.artist)}" data-pick-exp="${isExplicit ? '1' : '0'}" data-pick-preview="${escapeHtml(song.previewUrl || '')}" data-pick-art="${escapeHtml(song.artwork || '')}" data-wp-row="${escapeHtml(song.key)}" title="Arrasta para a posição desejada na tabela ou clica em + Guião">
         <span class="rs-card-grip no-print" aria-hidden="true"><i class="ri-draggable"></i></span>
@@ -3676,7 +3759,7 @@ function renderAoVivoSongs(filterStatus = 'pending') {
             ${isExplicit ? '<span class="song-explicit-tag live-explicit-tag" title="ALERTA: Conteúdo Explícito [E] — Não emitir em contexto escolar!">E</span>' : ''}
             <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(song.songTitle)}</span>
           </span>
-          <span class="musica-live-artist">${escapeHtml(song.artist)}${dtTag}${dateTag}</span>
+          <span class="musica-live-artist">${escapeHtml(song.artist)}${reqTag}${dateTag}</span>
         </div>
         <div class="musica-live-actions">
           <span class="musica-live-votes"><i class="ri-fire-fill"></i> ${song.count}</span>

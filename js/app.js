@@ -153,80 +153,207 @@ function initMusicSearch() {
   });
 }
 
+// Deezer JSONP Search Helper (resilient fallback against CORS and Apple 403 blocks)
+function searchDeezerMusicJSONP(query, limit = 8) {
+  return new Promise((resolve) => {
+    const callbackName = 'deezer_cb_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+    const script = document.createElement('script');
+    let timedOut = false;
+
+    const timer = setTimeout(() => {
+      timedOut = true;
+      cleanup();
+      resolve([]);
+    }, 4500);
+
+    const cleanup = () => {
+      clearTimeout(timer);
+      try { delete window[callbackName]; } catch (_) {}
+      if (script.parentNode) script.parentNode.removeChild(script);
+    };
+
+    window[callbackName] = (data) => {
+      if (timedOut) return;
+      cleanup();
+      if (!data || !Array.isArray(data.data)) {
+        return resolve([]);
+      }
+      const tracks = data.data.map(track => {
+        const cover = (track.album && (track.album.cover_big || track.album.cover_medium || track.album.cover)) || 'assets/brand/favicon-negativa.png';
+        const artistName = track.artist ? track.artist.name : '';
+        const isExplicit = Boolean(track.explicit_lyrics) ||
+          (typeof window.isExplicitSong === 'function' ? window.isExplicitSong(track.title, artistName) : false);
+        return {
+          trackId: track.id,
+          songTitle: track.title,
+          artist: artistName,
+          artwork: cover,
+          previewUrl: track.preview || '',
+          releaseYear: '',
+          explicit: isExplicit,
+          source: 'Deezer'
+        };
+      });
+      resolve(tracks);
+    };
+
+    script.src = `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=${limit}&output=jsonp&callback=${callbackName}`;
+    script.onerror = () => {
+      cleanup();
+      resolve([]);
+    };
+    document.head.appendChild(script);
+  });
+}
+
 async function searchITunesMusic(query, dropdown) {
   dropdown.innerHTML = `
     <div class="search-dropdown-status">
-      <i class="ri-loader-4-line ri-spin"></i> A pesquisar músicas no catálogo Apple Music...
+      <i class="ri-loader-4-line ri-spin"></i> A pesquisar músicas no catálogo...
     </div>
   `;
   dropdown.classList.add('active');
 
+  let normalizedTracks = [];
+
+  // 1. Tentar catálogo Apple Music / iTunes
   try {
     const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=8`);
-    const data = await response.json();
-
-    if (!data.results || data.results.length === 0) {
-      dropdown.innerHTML = `
-        <div class="search-dropdown-status search-dropdown-empty">
-          <i class="ri-music-2-line" style="font-size: 1.5rem; display: block; margin-bottom: 0.35rem; color: #e4232a;"></i>
-          <strong>Nenhuma música encontrada no catálogo</strong>
-          <span style="display: block; font-size: 0.8rem; color: #6f6768; margin-top: 0.25rem;">Verifica se o nome da música ou artista está bem escrito para escolheres uma das sugestões do Apple Music.</span>
-        </div>
-      `;
-      return;
-    }
-
-    dropdown.innerHTML = '';
-    data.results.forEach(track => {
-      const item = document.createElement('div');
-      item.className = 'search-result-item search-row';
-      const rawArtwork = track.artworkUrl100 || track.artworkUrl60 || 'assets/logo-radio.jpg';
-      const artwork = rawArtwork.replace('100x100bb', '300x300bb');
-      const releaseYear = track.releaseDate ? new Date(track.releaseDate).getFullYear() : '';
-      const isExplicitTrack = (track.trackExplicitness === 'explicit' || track.trackExplicitness === 'cleaned') ||
-        (typeof window.isExplicitSong === 'function' ? window.isExplicitSong(track.trackName, track.artistName) : false);
-
-      item.innerHTML = `
-        <div class="search-result-thumb">
-          <img src="${artwork}" alt="${escapeHtml(track.trackName)}" loading="lazy">
-        </div>
-        <div class="search-result-details">
-          <h4 class="item-title">${isExplicitTrack ? '<span class="song-explicit-tag" title="Conteúdo Explícito [E] — Impróprio para emissão escolar">E</span>' : ''}${escapeHtml(track.trackName)}</h4>
-          <p class="item-artist">
-            <span>${escapeHtml(track.artistName)}</span>
-            ${releaseYear ? `<span class="search-result-sep">•</span><span>${releaseYear}</span>` : ''}
-          </p>
-        </div>
-        <div class="search-result-action">
-          <span class="select-badge"><i class="ri-add-line"></i> Selecionar</span>
-        </div>
-      `;
-
-      item.addEventListener('click', () => {
-        selectTrack({
-          trackId: track.trackId,
-          songTitle: track.trackName,
-          artist: track.artistName,
-          artwork: artwork,
-          previewUrl: track.previewUrl,
-          explicit: isExplicitTrack
+    if (response.ok) {
+      const data = await response.json();
+      if (data && Array.isArray(data.results) && data.results.length > 0) {
+        normalizedTracks = data.results.map(track => {
+          const rawArtwork = track.artworkUrl100 || track.artworkUrl60 || 'assets/logo-radio.jpg';
+          const artwork = rawArtwork.replace('100x100bb', '300x300bb');
+          const releaseYear = track.releaseDate ? new Date(track.releaseDate).getFullYear() : '';
+          const isExplicitTrack = (track.trackExplicitness === 'explicit' || track.trackExplicitness === 'cleaned') ||
+            (typeof window.isExplicitSong === 'function' ? window.isExplicitSong(track.trackName, track.artistName) : false);
+          return {
+            trackId: track.trackId,
+            songTitle: track.trackName,
+            artist: track.artistName,
+            artwork: artwork,
+            previewUrl: track.previewUrl || '',
+            releaseYear: releaseYear,
+            explicit: isExplicitTrack,
+            source: 'Apple Music'
+          };
         });
-        dropdown.classList.remove('active');
-        document.getElementById('musicSearchInput').value = track.trackName + ' - ' + track.artistName;
-        const alertContainer = document.getElementById('suggestionAlertContainer');
-        if (alertContainer) alertContainer.innerHTML = '';
-      });
-
-      dropdown.appendChild(item);
-    });
+      }
+    }
   } catch (err) {
-    console.error('Erro iTunes API:', err);
+    console.warn('iTunes API indisponível, a recorrer a catálogo alternativo:', err.message);
+  }
+
+  // 2. Fallback resiliente ao Deezer se iTunes estiver com 403, indisponível ou sem resultados
+  if (normalizedTracks.length === 0) {
+    try {
+      const deezerTracks = await searchDeezerMusicJSONP(query, 8);
+      if (deezerTracks && deezerTracks.length > 0) {
+        normalizedTracks = deezerTracks;
+      }
+    } catch (errDeezer) {
+      console.warn('Fallback Deezer também indisponível:', errDeezer);
+    }
+  }
+
+  // Função auxiliar para selecionar manualmente
+  const pickManualSong = () => {
+    const parts = query.split(/\s*[-–—]\s*|\s+by\s+|\s+de\s+/i);
+    const parsedTitle = parts[0] ? parts[0].trim() : query.trim();
+    const parsedArtist = parts[1] ? parts.slice(1).join(' - ').trim() : 'Artista a confirmar';
+    const isExpl = typeof window.isExplicitSong === 'function' ? window.isExplicitSong(parsedTitle, parsedArtist) : false;
+    selectTrack({
+      trackId: 'manual_' + Date.now(),
+      songTitle: parsedTitle,
+      artist: parsedArtist,
+      artwork: 'assets/brand/favicon-negativa.png',
+      previewUrl: '',
+      explicit: Boolean(isExpl)
+    });
+    dropdown.classList.remove('active');
+    document.getElementById('musicSearchInput').value = `${parsedTitle} - ${parsedArtist}`;
+    const alertContainer = document.getElementById('suggestionAlertContainer');
+    if (alertContainer) alertContainer.innerHTML = '';
+  };
+
+  if (normalizedTracks.length === 0) {
     dropdown.innerHTML = `
-      <div class="search-dropdown-status search-dropdown-error">
-        <i class="ri-error-warning-line"></i> Erro na ligação ao catálogo do Apple Music. Verifica a tua ligação e tenta novamente.
+      <div class="search-dropdown-status search-dropdown-empty" style="padding: 1.2rem;">
+        <i class="ri-music-2-line" style="font-size: 1.8rem; display: block; margin-bottom: 0.35rem; color: #e4232a;"></i>
+        <strong>Não encontramos no catálogo automático</strong>
+        <span style="display: block; font-size: 0.85rem; color: #6f6768; margin-top: 0.25rem; margin-bottom: 0.85rem;">
+          Podes pedir "${escapeHtml(query)}" manualmente e a equipa da rádio tratará de a encontrar!
+        </span>
+        <button type="button" class="w-btn w-btn-red" id="btnSelectManualSong" style="width: 100%; font-size: 1rem; padding: 0.55rem 0.85rem;">
+          <i class="ri-check-line"></i> Pedir "${escapeHtml(query)}"
+        </button>
       </div>
     `;
+    const btnManual = dropdown.querySelector('#btnSelectManualSong');
+    if (btnManual) {
+      btnManual.addEventListener('click', pickManualSong);
+    }
+    return;
   }
+
+  dropdown.innerHTML = '';
+  normalizedTracks.forEach(track => {
+    const item = document.createElement('div');
+    item.className = 'search-result-item search-row';
+
+    item.innerHTML = `
+      <div class="search-result-thumb">
+        <img src="${track.artwork}" alt="${escapeHtml(track.songTitle)}" loading="lazy">
+      </div>
+      <div class="search-result-details">
+        <h4 class="item-title">${track.explicit ? '<span class="song-explicit-tag" title="Conteúdo Explícito [E] — Impróprio para emissão escolar">E</span>' : ''}${escapeHtml(track.songTitle)}</h4>
+        <p class="item-artist">
+          <span>${escapeHtml(track.artist)}</span>
+          ${track.releaseYear ? `<span class="search-result-sep">•</span><span>${track.releaseYear}</span>` : ''}
+        </p>
+      </div>
+      <div class="search-result-action">
+        <span class="select-badge"><i class="ri-add-line"></i> Selecionar</span>
+      </div>
+    `;
+
+    item.addEventListener('click', () => {
+      selectTrack({
+        trackId: track.trackId,
+        songTitle: track.songTitle,
+        artist: track.artist,
+        artwork: track.artwork,
+        previewUrl: track.previewUrl,
+        explicit: track.explicit
+      });
+      dropdown.classList.remove('active');
+      document.getElementById('musicSearchInput').value = track.songTitle + ' - ' + track.artist;
+      const alertContainer = document.getElementById('suggestionAlertContainer');
+      if (alertContainer) alertContainer.innerHTML = '';
+    });
+
+    dropdown.appendChild(item);
+  });
+
+  // Opção manual no rodapé do dropdown
+  const manualRow = document.createElement('div');
+  manualRow.className = 'search-result-item search-row manual-option';
+  manualRow.style.cssText = 'border-top: 1px dashed var(--edge, #e9e2e2); background: rgba(228, 35, 42, 0.04);';
+  manualRow.innerHTML = `
+    <div class="search-result-thumb" style="display:flex;align-items:center;justify-content:center;background:#e9e2e2;border-radius:4px;">
+      <i class="ri-edit-line" style="font-size:1.1rem;color:#e4232a;"></i>
+    </div>
+    <div class="search-result-details">
+      <h4 class="item-title" style="font-size: 0.95rem;">Pedir "${escapeHtml(query)}" manualmente</h4>
+      <p class="item-artist"><span>Não encontras a versão certa? Clica para avançar com este título.</span></p>
+    </div>
+    <div class="search-result-action">
+      <span class="select-badge" style="background:#282425;color:#fff;"><i class="ri-check-line"></i> Usar esta</span>
+    </div>
+  `;
+  manualRow.addEventListener('click', pickManualSong);
+  dropdown.appendChild(manualRow);
 }
 
 function selectTrack(track) {
@@ -246,11 +373,15 @@ function selectTrack(track) {
     const reqDate = new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(cooldown.requestedAt));
     const availDate = new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' }).format(cooldown.cooldownDate);
     cooldownAlertHtml = `
-      <div class="song-cooldown-warning" style="margin-top: 0.55rem; padding: 0.65rem 0.85rem; border-radius: 8px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.45); color: #fbbf24; font-size: 0.78rem; display: flex; align-items: flex-start; gap: 0.5rem; line-height: 1.45;">
-        <i class="ri-history-line" style="font-size: 1.25rem; flex-shrink: 0; color: #f59e0b; margin-top: 1px;"></i>
-        <div>
-          <strong style="color: #fef08a;">Bloqueio de 4 meses ativo:</strong><br>
-          Já sugeriste este tema a ${reqDate}. Para manter a emissão diversificada, só poderás voltar a pedir esta música a partir de <strong>${availDate}</strong>. Escolhe outra música!
+      <div class="w-song-cooldown-box" role="alert">
+        <i class="ri-history-line w-song-cooldown-icon" aria-hidden="true"></i>
+        <div class="w-song-cooldown-content">
+          <div class="w-song-cooldown-badge">
+            <i class="ri-forbid-line" aria-hidden="true"></i> Bloqueio de 4 meses ativo
+          </div>
+          <p class="w-song-cooldown-text">
+            Já sugeriste este tema a <strong>${reqDate}</strong>. Para manter a emissão diversificada, só poderás voltar a pedir esta música a partir de <span class="w-song-cooldown-date">${availDate}</span>. Escolhe outra música!
+          </p>
         </div>
       </div>
     `;
@@ -266,14 +397,15 @@ function selectTrack(track) {
         <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
           <span class="track-status-tag"><i class="ri-disc-line"></i> Música Selecionada</span>
           ${isExplicit ? '<span class="song-explicit-tag" title="Conteúdo Explícito [E] — Pode não ser transmitida em horário escolar">E</span>' : ''}
-          ${cooldown && cooldown.isBlocked ? '<span class="song-cooldown-tag" style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.7rem; font-weight: 800; padding: 0.1rem 0.4rem; border-radius: 4px;"><i class="ri-history-line"></i> 4 Meses</span>' : ''}
+          ${cooldown && cooldown.isBlocked ? '<span class="w-cooldown-pill" title="Música em período de intervalo (4 meses)"><i class="ri-history-line"></i> 4 Meses</span>' : ''}
         </div>
         <h4 class="track-title">${isExplicit ? '<span class="song-explicit-tag" title="Conteúdo Explícito [E]">E</span>' : ''}${escapeHtml(track.songTitle)}</h4>
         <p class="track-artist">${escapeHtml(track.artist)}</p>
         ${cooldownAlertHtml}
         ${isExplicit ? `
-          <div class="song-explicit-school-alert" style="margin-top: 0.35rem; padding: 0.35rem 0.6rem; border-radius: 6px; background: rgba(220, 38, 38, 0.12); border: 1px solid rgba(220, 38, 38, 0.3); font-size: 0.74rem; color: #fca5a5; display: flex; align-items: center; gap: 0.4rem;">
-            <i class="ri-alert-line"></i> <span>Atenção: Música com conteúdo explícito [E] (palavrões/linguagem sensível). Poderá não ser transmitida em contexto escolar.</span>
+          <div class="w-song-explicit-box" role="alert">
+            <span class="song-explicit-tag" style="flex-shrink: 0;">E</span>
+            <span><strong>Conteúdo Explícito:</strong> Contém linguagem sensível / palavrões. Poderá não ser transmitida durante os intervalos escolares.</span>
           </div>
         ` : ''}
         ${hasPreview ? `

@@ -1,0 +1,634 @@
+/* ==========================================================================
+   WAVE RÁDIO — BANNER & GESTÃO DE CONSENTIMENTO DE COOKIES (RGPD / ePrivacy)
+   Compatível com o Design System "Cartaz de Rádio" e Google Consent Mode v2.
+   ========================================================================== */
+
+/* ---------- 1. BANNER PRINCIPAL (BOTTOM BAR / CARD) ---------- */
+.wave-cookie-banner-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(40, 36, 37, 0.45);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 99990;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.wave-cookie-banner-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.wave-cookie-banner {
+  position: fixed;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  max-width: 500px;
+  width: calc(100% - 2.5rem);
+  background: var(--paper, #f5f1f1);
+  color: var(--ink, #282425);
+  border: 2px solid var(--ink, #282425);
+  box-shadow: 5px 5px 0 var(--ink, #282425);
+  padding: 1.4rem;
+  z-index: 99995;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transform: translateY(120%);
+  opacity: 0;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+  font-family: var(--body, 'Plus Jakarta Sans', system-ui, sans-serif);
+}
+
+.wave-cookie-banner.visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.wave-cookie-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.wave-cookie-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background: var(--red, #e4232a);
+  color: #ffffff;
+  border: 2px solid var(--ink, #282425);
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+
+.wave-cookie-title {
+  font-family: var(--display, 'Bebas Neue', sans-serif);
+  font-size: 1.55rem;
+  line-height: 1;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--ink, #282425);
+}
+
+.wave-cookie-badge {
+  display: inline-block;
+  font-family: var(--mono, monospace);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--ink, #282425);
+  color: var(--paper, #f5f1f1);
+  padding: 0.2rem 0.45rem;
+  margin-left: auto;
+  font-weight: 600;
+}
+
+.wave-cookie-text {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--ink, #282425);
+  margin: 0;
+}
+
+.wave-cookie-text a {
+  color: var(--red-a, #bd1a21);
+  text-decoration: underline;
+  font-weight: 600;
+  text-underline-offset: 2px;
+}
+
+.wave-cookie-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.wave-cookie-actions-full {
+  grid-column: span 2;
+}
+
+/* Botões do banner */
+.wave-cookie-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.65rem 0.9rem;
+  font-family: var(--display, 'Bebas Neue', sans-serif);
+  font-size: 1.18rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1;
+  cursor: pointer;
+  border: 2px solid var(--ink, #282425);
+  text-decoration: none;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s ease, color 0.15s ease;
+  user-select: none;
+}
+
+.wave-cookie-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none !important;
+}
+
+.wave-cookie-btn-primary {
+  background: var(--red, #e4232a);
+  color: #ffffff;
+  box-shadow: 3px 3px 0 var(--ink, #282425);
+}
+.wave-cookie-btn-primary:hover {
+  background: var(--red-d, #b8161c);
+  color: #ffffff;
+}
+
+.wave-cookie-btn-secondary {
+  background: var(--paper-2, #e9e2e2);
+  color: var(--ink, #282425);
+  box-shadow: 3px 3px 0 var(--ink, #282425);
+}
+.wave-cookie-btn-secondary:hover {
+  background: var(--ink, #282425);
+  color: var(--paper, #f5f1f1);
+}
+
+.wave-cookie-btn-outline {
+  background: transparent;
+  color: var(--ink, #282425);
+  border: 2px solid var(--ink, #282425);
+  font-size: 1.05rem;
+  padding: 0.55rem 0.8rem;
+}
+.wave-cookie-btn-outline:hover {
+  background: rgba(40, 36, 37, 0.08);
+}
+
+/* ---------- 2. MODAL DE PREFERÊNCIAS / RGPD ---------- */
+.wave-cookie-modal-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(40, 36, 37, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.wave-cookie-modal-wrap.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.wave-cookie-modal {
+  background: var(--paper, #f5f1f1);
+  color: var(--ink, #282425);
+  border: 2px solid var(--ink, #282425);
+  box-shadow: 6px 6px 0 var(--ink, #282425);
+  width: 100%;
+  max-width: 620px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: scale(0.96) translateY(10px);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: var(--body, 'Plus Jakarta Sans', system-ui, sans-serif);
+}
+
+.wave-cookie-modal-wrap.open .wave-cookie-modal {
+  transform: scale(1) translateY(0);
+}
+
+.wave-cookie-modal-header {
+  padding: 1.2rem 1.4rem;
+  border-bottom: 2px solid var(--ink, #282425);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--paper-2, #e9e2e2);
+}
+
+.wave-cookie-modal-title {
+  font-family: var(--display, 'Bebas Neue', sans-serif);
+  font-size: 1.7rem;
+  line-height: 1;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.wave-cookie-modal-close {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--ink, #282425);
+  background: var(--paper, #f5f1f1);
+  color: var(--ink, #282425);
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.wave-cookie-modal-close:hover {
+  background: var(--red, #e4232a);
+  color: #ffffff;
+}
+
+.wave-cookie-modal-body {
+  padding: 1.4rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.wave-cookie-lead {
+  font-size: 0.92rem;
+  color: var(--ink, #282425);
+  margin: 0;
+}
+
+/* Categorias de Cookies */
+.wave-cookie-category {
+  border: 2px solid var(--ink, #282425);
+  background: var(--white, #ffffff);
+  padding: 1.1rem;
+  box-shadow: 3px 3px 0 var(--ink, #282425);
+}
+
+.wave-cookie-cat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.wave-cookie-cat-title {
+  font-family: var(--display, 'Bebas Neue', sans-serif);
+  font-size: 1.3rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--ink, #282425);
+}
+
+.wave-cookie-cat-desc {
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--mute, #5f5758);
+  margin: 0 0 0.75rem 0;
+}
+
+.wave-cookie-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.wave-cookie-tag {
+  font-family: var(--mono, monospace);
+  font-size: 0.72rem;
+  padding: 0.18rem 0.5rem;
+  background: var(--paper-2, #e9e2e2);
+  border: 1px solid var(--ink, #282425);
+  color: var(--ink, #282425);
+}
+
+/* Toggle Switch Brutalista */
+.wave-cookie-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.wave-cookie-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.wave-cookie-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: var(--paper-2, #e9e2e2);
+  border: 2px solid var(--ink, #282425);
+  transition: 0.2s;
+}
+
+.wave-cookie-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background: var(--ink, #282425);
+  transition: 0.2s;
+}
+
+.wave-cookie-switch input:checked + .wave-cookie-slider {
+  background: var(--red, #e4232a);
+}
+
+.wave-cookie-switch input:checked + .wave-cookie-slider:before {
+  transform: translateX(22px);
+  background: #ffffff;
+}
+
+.wave-cookie-switch input:disabled + .wave-cookie-slider {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.wave-cookie-badge-req {
+  font-family: var(--mono, monospace);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #1b7430;
+  background: #d4edda;
+  border: 1px solid #1b7430;
+  padding: 0.2rem 0.5rem;
+  letter-spacing: 0.05em;
+}
+
+/* Detalhes legais RGPD */
+.wave-cookie-legal-box {
+  background: var(--paper-2, #e9e2e2);
+  border: 2px dashed var(--ink, #282425);
+  padding: 0.9rem;
+  font-size: 0.8rem;
+  color: var(--mute, #5f5758);
+  line-height: 1.45;
+}
+
+.wave-cookie-legal-box strong {
+  color: var(--ink, #282425);
+}
+
+.wave-cookie-modal-footer {
+  padding: 1.1rem 1.4rem;
+  border-top: 2px solid var(--ink, #282425);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background: var(--paper-2, #e9e2e2);
+}
+
+/* ---------- 3. BOTÃO FLUTUANTE REUTILIZÁVEL (REVOGAÇÃO RGPD) ---------- */
+.wave-cookie-float-btn {
+  position: fixed;
+  bottom: 1.25rem;
+  left: 1.25rem;
+  z-index: 99980;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.75rem;
+  background: var(--paper, #f5f1f1);
+  color: var(--ink, #282425);
+  border: 2px solid var(--ink, #282425);
+  box-shadow: 3px 3px 0 var(--ink, #282425);
+  cursor: pointer;
+  font-family: var(--display, 'Bebas Neue', sans-serif);
+  font-size: 1.05rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+  user-select: none;
+}
+
+.wave-cookie-float-btn:hover {
+  background: var(--ink, #282425);
+  color: var(--paper, #f5f1f1);
+  transform: translateY(-2px);
+}
+
+.wave-cookie-float-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.wave-cookie-float-btn i {
+  font-size: 1.15rem;
+  color: var(--red, #e4232a);
+}
+
+.wave-cookie-float-btn:hover i {
+  color: var(--white, #ffffff);
+}
+
+/* Link no rodapé */
+.w-cookie-footer-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.w-cookie-footer-link:hover {
+  color: var(--red, #e4232a);
+}
+
+/* ---------- 4. SUPORTE MODO ESCURO (html[data-theme="dark"]) ---------- */
+html[data-theme="dark"] .wave-cookie-banner {
+  background: #1b1819;
+  color: #f5f1f1;
+  border-color: #f5f1f1;
+  box-shadow: 5px 5px 0 #f5f1f1;
+}
+
+html[data-theme="dark"] .wave-cookie-title {
+  color: #f5f1f1;
+}
+
+html[data-theme="dark"] .wave-cookie-text {
+  color: #e9e2e2;
+}
+
+html[data-theme="dark"] .wave-cookie-text a {
+  color: #ff5a60;
+}
+
+html[data-theme="dark"] .wave-cookie-icon {
+  border-color: #f5f1f1;
+}
+
+html[data-theme="dark"] .wave-cookie-badge {
+  background: #f5f1f1;
+  color: #1b1819;
+}
+
+html[data-theme="dark"] .wave-cookie-btn {
+  border-color: #f5f1f1;
+}
+
+html[data-theme="dark"] .wave-cookie-btn-primary {
+  box-shadow: 3px 3px 0 #f5f1f1;
+}
+
+html[data-theme="dark"] .wave-cookie-btn-secondary {
+  background: #282425;
+  color: #f5f1f1;
+  box-shadow: 3px 3px 0 #f5f1f1;
+}
+
+html[data-theme="dark"] .wave-cookie-btn-secondary:hover {
+  background: #f5f1f1;
+  color: #1b1819;
+}
+
+html[data-theme="dark"] .wave-cookie-btn-outline {
+  border-color: #f5f1f1;
+  color: #f5f1f1;
+}
+
+html[data-theme="dark"] .wave-cookie-btn-outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+html[data-theme="dark"] .wave-cookie-modal {
+  background: #1b1819;
+  color: #f5f1f1;
+  border-color: #f5f1f1;
+  box-shadow: 6px 6px 0 #f5f1f1;
+}
+
+html[data-theme="dark"] .wave-cookie-modal-header,
+html[data-theme="dark"] .wave-cookie-modal-footer {
+  background: #282425;
+  border-color: #f5f1f1;
+}
+
+html[data-theme="dark"] .wave-cookie-modal-close {
+  background: #1b1819;
+  color: #f5f1f1;
+  border-color: #f5f1f1;
+}
+
+html[data-theme="dark"] .wave-cookie-lead {
+  color: #f5f1f1;
+}
+
+html[data-theme="dark"] .wave-cookie-category {
+  background: #282425;
+  border-color: #f5f1f1;
+  box-shadow: 3px 3px 0 #f5f1f1;
+}
+
+html[data-theme="dark"] .wave-cookie-cat-title {
+  color: #f5f1f1;
+}
+
+html[data-theme="dark"] .wave-cookie-cat-desc {
+  color: #b3abab;
+}
+
+html[data-theme="dark"] .wave-cookie-tag {
+  background: #1b1819;
+  border-color: #f5f1f1;
+  color: #f5f1f1;
+}
+
+html[data-theme="dark"] .wave-cookie-slider {
+  background: #1b1819;
+  border-color: #f5f1f1;
+}
+
+html[data-theme="dark"] .wave-cookie-slider:before {
+  background: #f5f1f1;
+}
+
+html[data-theme="dark"] .wave-cookie-legal-box {
+  background: #282425;
+  border-color: #f5f1f1;
+  color: #b3abab;
+}
+
+html[data-theme="dark"] .wave-cookie-legal-box strong {
+  color: #f5f1f1;
+}
+
+html[data-theme="dark"] .wave-cookie-float-btn {
+  background: #1b1819;
+  color: #f5f1f1;
+  border-color: #f5f1f1;
+  box-shadow: 3px 3px 0 #f5f1f1;
+}
+
+html[data-theme="dark"] .wave-cookie-float-btn:hover {
+  background: #f5f1f1;
+  color: #1b1819;
+}
+
+/* ---------- 5. ADAPTAÇÕES MOBILE ---------- */
+@media (max-width: 600px) {
+  .wave-cookie-banner {
+    bottom: 0.75rem;
+    right: 0.75rem;
+    left: 0.75rem;
+    width: auto;
+    padding: 1.1rem;
+  }
+
+  .wave-cookie-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .wave-cookie-actions-full {
+    grid-column: span 1;
+  }
+
+  .wave-cookie-modal {
+    max-height: 94vh;
+  }
+
+  .wave-cookie-modal-footer {
+    flex-direction: column;
+  }
+
+  .wave-cookie-modal-footer .wave-cookie-btn {
+    width: 100%;
+  }
+
+  .wave-cookie-float-btn span {
+    display: none;
+  }
+
+  .wave-cookie-float-btn {
+    padding: 0.45rem;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    justify-content: center;
+  }
+}
+

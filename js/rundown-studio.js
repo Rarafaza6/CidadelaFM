@@ -731,15 +731,51 @@
     }
   }
 
+  function searchRundownDeezerJSONP(q, limit = 12) {
+    return new Promise((resolve) => {
+      const cb = 'rs_dz_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+      const script = document.createElement('script');
+      let done = false;
+      const timer = setTimeout(() => { done = true; cleanup(); resolve([]); }, 4500);
+      const cleanup = () => { clearTimeout(timer); try { delete window[cb]; } catch (_) {} if (script.parentNode) script.parentNode.removeChild(script); };
+      window[cb] = (data) => {
+        if (done) return;
+        cleanup();
+        if (!data || !Array.isArray(data.data)) return resolve([]);
+        const mapped = data.data.map(item => ({
+          trackId: item.id,
+          trackName: item.title,
+          artistName: item.artist ? item.artist.name : '',
+          trackTimeMillis: (item.duration || 0) * 1000,
+          artworkUrl100: (item.album && (item.album.cover_big || item.album.cover_medium || item.album.cover)) || 'assets/brand/favicon-negativa.png',
+          previewUrl: item.preview || '',
+          trackExplicitness: item.explicit_lyrics ? 'explicit' : 'notExplicit'
+        }));
+        resolve(mapped);
+      };
+      script.src = `https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=${limit}&output=jsonp&callback=${cb}`;
+      script.onerror = () => { cleanup(); resolve([]); };
+      document.head.appendChild(script);
+    });
+  }
+
   async function searchCatalog(q) {
     state.catLoading = true;
     renderPicker();
     try {
       const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=12`);
-      const data = await res.json();
-      state.catResults = (data && data.results) || [];
+      if (res.ok) {
+        const data = await res.json();
+        state.catResults = (data && data.results) || [];
+      } else {
+        throw new Error('iTunes status ' + res.status);
+      }
     } catch (_) {
-      state.catResults = [];
+      try {
+        state.catResults = await searchRundownDeezerJSONP(q, 12);
+      } catch (e2) {
+        state.catResults = [];
+      }
     } finally {
       state.catLoading = false;
       renderPicker();

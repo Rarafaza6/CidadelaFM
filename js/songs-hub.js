@@ -41,32 +41,26 @@
   };
 
   /* ---------- Render ---------- */
-  function verdictChip(g) {
-    const v = g.v;
-    if (v.state !== 'explicit') return '';
-    const titleLabel = v.cat ? `Imprópria · ${v.cat}` : 'Imprópria para escola';
-    let why = 'Detetada automaticamente';
-    if (v.manual) why = 'Marcada manualmente';
-    else if (v.words && v.words.length) why = `Termos: ${v.words.slice(0, 4).join(', ')}`;
-    else if (v.src === 'itunes') why = 'Classificação explícita no catálogo';
-    else if (v.src === 'texto') why = 'Título/versão explícita';
-    return `<span class="sh-verdict is-explicit" title="${esc(titleLabel)} — ${esc(why)}"><i class="ri-alarm-warning-fill"></i><b>${esc(titleLabel)}</b><small>${esc(why)}</small></span>`;
-  }
-
-  function originChips(g) {
-    const out = [];
-    if (g.hasWeb) out.push('<span class="sh-chip is-web"><i class="ri-user-smile-line"></i> Alunos</span>');
-    (g.studentIdentities || []).slice(0, 3).forEach(st => out.push(`<span class="sh-chip is-web" title="${esc(st)}"><i class="ri-id-card-line"></i> ${esc(st)}</span>`));
-    if ((g.studentIdentities || []).length > 3) out.push(`<span class="sh-chip is-web">+${g.studentIdentities.length - 3}</span>`);
-    (g.dtClasses || []).slice(0, 3).forEach(c => out.push(`<span class="sh-chip is-dt"><i class="ri-graduation-cap-line"></i> ${esc(c)}</span>`));
-    if ((g.dtClasses || []).length > 3) out.push(`<span class="sh-chip is-dt">+${g.dtClasses.length - 3}</span>`);
-    const dateInfo = typeof window.formatSongRequestDate === 'function'
-      ? window.formatSongRequestDate(g.latestTimestamp, g.firstTimestamp, g.count)
-      : null;
-    if (dateInfo) {
-      out.push(`<span class="sh-chip is-date" title="${esc(dateInfo.tooltip)}"><i class="ri-calendar-line"></i> ${esc(dateInfo.label)}</span>`);
+  /* ---------- Render ---------- */
+  function getFirstRequester(g) {
+    const reqs = (g.requests && g.requests.length) ? g.requests : [];
+    if (reqs.length > 0 && reqs[0]) {
+      return reqs[0];
     }
-    return out.join('');
+    const defaultName = (g.studentIdentities && g.studentIdentities[0]) || (g.hasDT ? (g.dtClasses[0] || 'Diretor de Turma') : 'Aluno da Escola');
+    const defaultMeta = g.hasDT ? (g.dtClasses[0] || 'Docente') : 'Web';
+    const defaultDate = typeof window.formatSongRequestDate === 'function'
+      ? (window.formatSongRequestDate(g.latestTimestamp, g.firstTimestamp, g.count)?.label || 'Hoje')
+      : 'Hoje';
+    return {
+      name: defaultName,
+      meta: defaultMeta,
+      dateFormatted: defaultDate,
+      timeFormatted: '',
+      isDt: !!g.hasDT,
+      who: defaultName,
+      when: defaultDate
+    };
   }
 
   function rowHtml(g, idx) {
@@ -79,6 +73,13 @@
         <img src="${esc(g.artwork)}" alt="" loading="lazy" onerror="this.onerror=null;this.src='assets/logo-radio.jpg';">
         <i class="ri-play-fill"></i>
       </button>`;
+
+    const reqs = (g.requests && g.requests.length) ? g.requests : [];
+    const firstReq = getFirstRequester(g);
+    const moreCount = reqs.length > 1 ? reqs.length - 1 : (g.count > 1 ? g.count - 1 : 0);
+    const fullHistoryTooltip = reqs.length > 0
+      ? reqs.map((r, i) => `${i + 1}. ${r.name || r.who}${r.meta ? ` (${r.meta})` : ''} — ${r.when || r.dateFormatted}`).join('\n')
+      : `${firstReq.name}${firstReq.meta ? ` (${firstReq.meta})` : ''} — ${firstReq.dateFormatted}`;
 
     const addBtn = g.ex
       ? `<button type="button" class="sh-btn is-danger-soft" data-act="add" title="Música explícita — só adicionar se tiveres a certeza"><i class="ri-play-list-add-line"></i> Guião</button>`
@@ -96,17 +97,56 @@
       ? `<button type="button" class="sh-icon" data-act="safe" title="Falso alarme: esta música é segura"><i class="ri-shield-check-line"></i></button>`
       : (g.v.state === 'clean' ? `<button type="button" class="sh-icon sh-icon-faint" data-act="flag" title="Exceção: tratar como explícita"><i class="ri-flag-line"></i></button>` : '');
 
+    // Classificação de radiodifusão
+    let verdictHtml = '';
+    if (g.ex) {
+      const why = g.v.manual ? 'Manual' : (g.v.src === 'itunes' ? 'Catálogo' : (g.v.words && g.v.words.length ? g.v.words.slice(0, 3).join(', ') : 'Letra'));
+      verdictHtml = `<span class="sh-status-tag is-explicit" title="Conteúdo Explícito — ${esc(why)}"><i class="ri-forbid-line"></i> Explícita [E]</span>`;
+    } else if (g.v.state === 'clean') {
+      verdictHtml = `<span class="sh-status-tag is-clean" title="Música verificada: Apropriada para a escola"><i class="ri-checkbox-circle-line"></i> Apropriada</span>`;
+    } else {
+      verdictHtml = `<span class="sh-status-tag is-checking" title="A verificar conformidade"><i class="ri-loader-4-line ri-spin"></i> A verificar</span>`;
+    }
+
     return `
       <div class="sh-row ${g.ex ? 'is-explicit' : ''} ${played ? 'is-played' : ''} ${archived ? 'is-archived' : ''} ${sel ? 'is-selected' : ''}" data-key="${key}" data-wp-row="${key}">
-        <label class="sh-check" title="Selecionar"><input type="checkbox" data-act="select" ${sel ? 'checked' : ''}><span></span></label>
-        <div class="sh-votes" title="${g.count} pedido(s)"><b>${g.count}</b><small>${g.count === 1 ? 'pedido' : 'pedidos'}</small></div>
-        <div class="sh-cover">${thumb}</div>
-        <div class="sh-main">
-          <div class="sh-title">${g.ex ? '<span class="song-explicit-tag">E</span>' : ''}<span>${esc(g.songTitle)}</span></div>
-          <div class="sh-sub"><span class="sh-artist">${esc(g.artist)}</span>${originChips(g)}</div>
+        <label class="sh-check" title="Selecionar linha"><input type="checkbox" data-act="select" ${sel ? 'checked' : ''}><span></span></label>
+        
+        <div class="sh-cell-votes" title="${g.count} pedido(s)">
+          <b>${g.count}</b>
+          <small>${g.count === 1 ? 'PEDIDO' : 'PEDIDOS'}</small>
         </div>
-        ${verdictChip(g)}
-        <div class="sh-actions">${addBtn}${playedBtn}${archiveBtn}${exceptionBtn}<button type="button" class="sh-icon is-danger" data-act="delete" title="Eliminar pedidos"><i class="ri-delete-bin-line"></i></button></div>
+        
+        <div class="sh-cell-cover">${thumb}</div>
+        
+        <div class="sh-cell-track">
+          <div class="sh-track-title">
+            ${g.ex ? '<span class="song-explicit-tag mini" title="Conteúdo Explícito [E]">E</span>' : ''}
+            <span>${esc(g.songTitle)}</span>
+          </div>
+          <div class="sh-track-artist">${esc(g.artist)}</div>
+        </div>
+        
+        <div class="sh-cell-requester" title="${esc(fullHistoryTooltip)}">
+          <div class="sh-req-name">
+            <i class="${firstReq.isDt ? 'ri-graduation-cap-line' : 'ri-user-3-line'}"></i>
+            <span>${esc(firstReq.name)}</span>
+            ${moreCount > 0 ? `<span class="sh-req-badge-more" title="${moreCount} outro(s) pedido(s)">+${moreCount}</span>` : ''}
+          </div>
+          ${firstReq.meta ? `<div class="sh-req-meta">${esc(firstReq.meta)}</div>` : ''}
+        </div>
+        
+        <div class="sh-cell-time" title="${esc(fullHistoryTooltip)}">
+          <div class="sh-time-date">${esc(firstReq.dateFormatted)}</div>
+          ${firstReq.timeFormatted ? `<div class="sh-time-hour"><i class="ri-time-line"></i> ${esc(firstReq.timeFormatted)}</div>` : ''}
+        </div>
+        
+        <div class="sh-cell-verdict">${verdictHtml}</div>
+        
+        <div class="sh-cell-actions">
+          ${addBtn}${playedBtn}${archiveBtn}${exceptionBtn}
+          <button type="button" class="sh-icon is-danger" data-act="delete" title="Eliminar pedidos"><i class="ri-delete-bin-line"></i></button>
+        </div>
       </div>`;
   }
 
@@ -144,7 +184,7 @@
     visible = groups.filter(inTab[state.tab]).filter(g => {
       if (state.source === 'dt' && !g.hasDT) return false;
       if (state.source === 'web' && !g.hasWeb) return false;
-      if (q && !`${g.songTitle} ${g.artist} ${(g.dtClasses || []).join(' ')} ${(g.studentIdentities || []).join(' ')}`.toLowerCase().includes(q)) return false;
+      if (q && !`${g.songTitle} ${g.artist} ${(g.dtClasses || []).join(' ')} ${(g.studentIdentities || []).join(' ')} ${(g.requests || []).map(r => `${r.who} ${r.when}`).join(' ')}`.toLowerCase().includes(q)) return false;
       return true;
     });
     if (state.sort === 'recent') visible.sort((a, b) => b.latestTimestamp - a.latestTimestamp || b.count - a.count);

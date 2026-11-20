@@ -591,6 +591,18 @@
             </div>
           </div>
 
+          <!-- CABEÇALHO DA TABELA OFICIAL DE ESTÚDIO -->
+          <div class="sh-grid-header" aria-hidden="true">
+            <span class="sh-gh-check"></span>
+            <span class="sh-gh-votes" title="Número de pedidos">Pedidos</span>
+            <span class="sh-gh-cover">Áudio</span>
+            <span class="sh-gh-track">Música &amp; Artista</span>
+            <span class="sh-gh-requester">Requerente (Aluno &amp; Turma)</span>
+            <span class="sh-gh-time">Data / Hora</span>
+            <span class="sh-gh-verdict">Classificação</span>
+            <span class="sh-gh-actions">Comandos de Emissão</span>
+          </div>
+
           <div class="sh-list" id="shList"></div>
         </section>
 
@@ -683,6 +695,8 @@
                 onclick="filterAdminAnnouncements('public')">Públicos no Site</button>
               <button class="rbac-filter-chip" data-ann-filter="internal"
                 onclick="filterAdminAnnouncements('internal')">Avisos em Antena</button>
+              <button class="rbac-filter-chip" data-ann-filter="draft"
+                onclick="filterAdminAnnouncements('draft')"><i class="ri-draft-line"></i> Rascunhos</button>
             </div>
           </div>
 
@@ -1867,6 +1881,7 @@
             <select id="annVisibilityInput" class="form-input-lg">
               <option value="public">Público no Site</option>
               <option value="internal">Aviso Interno (Antena)</option>
+              <option value="draft">Rascunho (Não publicar no site)</option>
             </select>
           </div>
           <div class="form-field">

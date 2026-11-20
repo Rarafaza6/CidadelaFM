@@ -1109,16 +1109,133 @@ body.w-ink .news-search-box input { font-size: 16px; }
 }
 
 .w-btn-outline {
-  background: transparent;
-  color: var(--ink);
+  background: var(--paper);
+  color: var(--ink) !important;
   border: 2px solid var(--ink);
   box-shadow: 3px 3px 0 var(--red);
 }
 .w-btn-outline:hover {
   background: var(--ink);
-  color: var(--paper);
+  color: var(--paper) !important;
   border-color: var(--ink);
   box-shadow: 5px 5px 0 var(--red);
+}
+
+/* ---------- Alerta de Cooldown & Conteúdo Explícito (Brand Kit Cartaz de Rádio) ---------- */
+.w-song-cooldown-box {
+  margin-top: 0.85rem;
+  padding: 0.95rem 1.15rem;
+  background: var(--paper, #f5f1f1);
+  border: 2px solid var(--ink, #282425);
+  box-shadow: 4px 4px 0 var(--red, #e4232a);
+  color: var(--ink, #282425);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  text-align: left;
+}
+
+.w-song-cooldown-icon {
+  font-size: 1.5rem;
+  color: var(--red-a, #bd1a21);
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.w-song-cooldown-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.w-song-cooldown-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--red-a, #bd1a21);
+  color: #ffffff;
+  font-family: var(--mono, monospace);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.22rem 0.55rem;
+  margin-bottom: 0.45rem;
+  box-shadow: 2px 2px 0 var(--ink, #282425);
+}
+
+.w-song-cooldown-text {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--ink, #282425);
+}
+
+.w-song-cooldown-text strong {
+  color: var(--ink, #282425);
+  font-weight: 700;
+}
+
+.w-song-cooldown-date {
+  font-family: var(--mono, monospace);
+  font-weight: 700;
+  color: var(--red-a, #bd1a21);
+  background: rgba(228, 35, 42, 0.08);
+  padding: 0.1rem 0.4rem;
+  border: 1px solid rgba(228, 35, 42, 0.3);
+  display: inline-block;
+}
+
+.w-cooldown-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--red-a, #bd1a21);
+  color: #ffffff;
+  font-family: var(--mono, monospace);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border: 1.5px solid var(--ink, #282425);
+  box-shadow: 1.5px 1.5px 0 var(--ink, #282425);
+}
+
+.w-song-explicit-box {
+  margin-top: 0.65rem;
+  padding: 0.65rem 0.9rem;
+  background: var(--white, #ffffff);
+  border: 2px solid var(--ink, #282425);
+  box-shadow: 3px 3px 0 var(--ink, #282425);
+  color: var(--ink, #282425);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+html[data-theme="dark"] .w-song-cooldown-box {
+  background: var(--dm-surface, #1e1b1c);
+  border-color: var(--dm-border-strong, #3f3a3b);
+  box-shadow: 4px 4px 0 var(--red, #e4232a);
+  color: var(--dm-text, #f5f1f1);
+}
+
+html[data-theme="dark"] .w-song-cooldown-text,
+html[data-theme="dark"] .w-song-cooldown-text strong {
+  color: var(--dm-text, #f5f1f1);
+}
+
+html[data-theme="dark"] .w-song-cooldown-date {
+  color: #ff6b70;
+  background: rgba(255, 107, 112, 0.12);
+  border-color: rgba(255, 107, 112, 0.35);
+}
+
+html[data-theme="dark"] .w-song-explicit-box {
+  background: var(--dm-surface, #1e1b1c);
+  border-color: var(--dm-border-strong, #3f3a3b);
+  color: var(--dm-text, #f5f1f1);
+  box-shadow: 3px 3px 0 var(--dm-border-strong, #3f3a3b);
 }
 
 .w-manifesto-in {
@@ -1860,14 +1977,14 @@ html[data-theme="dark"] .w-btn-ghost:hover {
 }
 
 html[data-theme="dark"] .w-btn-outline {
-  background: transparent;
-  color: var(--dm-text);
+  background: var(--dm-surface);
+  color: var(--dm-text) !important;
   border-color: var(--dm-border-strong);
   box-shadow: 3px 3px 0 var(--red);
 }
 html[data-theme="dark"] .w-btn-outline:hover {
   background: var(--red-a);
-  color: #ffffff;
+  color: #ffffff !important;
   border-color: #ffffff;
   box-shadow: 5px 5px 0 #ffffff;
 }
