@@ -1,5 +1,5 @@
 /* ==========================================================================
-   WAVE RÁDIO — MÓDULO DIRETORES DE TURMA (DT.html — Passo a Passo)
+   RÁDIO WAVE — MÓDULO DIRETORES DE TURMA (DT.html — Passo a Passo)
    Sugestão semanal de até 10 músicas por turma com fluxo guiado simples
    ========================================================================== */
 

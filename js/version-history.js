@@ -476,7 +476,7 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `wave-radio-historico-versoes-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `radio-wave-historico-versoes-${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(a);
     a.click();
     a.remove();

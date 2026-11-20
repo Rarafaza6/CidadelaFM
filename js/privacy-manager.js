@@ -1,5 +1,5 @@
 /* ==========================================================================
-   WAVE RÁDIO — GESTOR DE CONSENTIMENTO DE COOKIES & GOOGLE CONSENT MODE V2
+   RÁDIO WAVE — GESTOR DE CONSENTIMENTO DE COOKIES & GOOGLE CONSENT MODE V2
    Conformidade integral com RGPD (Regulamento Geral sobre a Proteção de Dados)
    e Diretiva ePrivacy da União Europeia.
    ========================================================================== */
@@ -102,7 +102,7 @@
         <span class="wave-cookie-badge">RGPD • UE</span>
       </div>
       <p class="wave-cookie-text">
-        A Wave Rádio utiliza cookies estritamente necessários para o funcionamento do site (como preferências de tema claro/escuro) e, com a tua autorização, <strong>cookies estatísticos anónimos do Google Analytics</strong> para saber quais as músicas, notícias e podcasts mais ouvidos da nossa escola.
+        A Rádio Wave utiliza cookies estritamente necessários para o funcionamento do site (como preferências de tema claro/escuro) e, com a tua autorização, <strong>cookies estatísticos anónimos do Google Analytics</strong> para saber quais as músicas, notícias e podcasts mais ouvidos da nossa escola.
       </p>
       <div class="wave-cookie-actions">
         <button type="button" class="wave-cookie-btn wave-cookie-btn-primary" id="waveCookieAcceptAll">
@@ -139,7 +139,7 @@
         </div>
         <div class="wave-cookie-modal-body">
           <p class="wave-cookie-lead">
-            Valorizamos a tua privacidade. Na Wave Rádio (EBS da Cidadela em parceria com a CMC), podes escolher que dados nos autorizas a recolher. Não utilizamos publicidade nem partilhamos dados com terceiros comerciais.
+            Valorizamos a tua privacidade. Na Rádio Wave (EBS da Cidadela em parceria com a CMC), podes escolher que dados nos autorizas a recolher. Não utilizamos publicidade nem partilhamos dados com terceiros comerciais.
           </p>
 
           <!-- Categoria 1: Necessários -->
@@ -178,7 +178,7 @@
           <!-- Informação Legal RGPD -->
           <div class="wave-cookie-legal-box">
             <strong>Informação Legal (RGPD &amp; Diretiva ePrivacy):</strong><br>
-            • <strong>Responsável:</strong> Wave Rádio / EBS da Cidadela (Cascais).<br>
+            • <strong>Responsável:</strong> Rádio Wave / EBS da Cidadela (Cascais).<br>
             • <strong>Base Legal:</strong> Consentimento livre e esclarecido (Art. 6.º, n.º 1, al. a) do RGPD).<br>
             • <strong>Direito de Revogação:</strong> Podes rever ou revogar a tua autorização em qualquer momento clicando no botão flutuante de cookies ou no rodapé do website.<br>
             • <strong>Contacto:</strong> <a href="mailto:Geral@RadioWave.pt" style="color:inherit;text-decoration:underline;">Geral@RadioWave.pt</a>.

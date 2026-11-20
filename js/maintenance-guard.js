@@ -1,5 +1,5 @@
 /* ==========================================================================
-   RÁDIO ESCOLAR / WAVE RÁDIO — BLOQUEIO DE MANUTENÇÃO (SINCRONIZADO COM ADMIN)
+   RÁDIO ESCOLAR / RÁDIO WAVE — BLOQUEIO DE MANUTENÇÃO (SINCRONIZADO COM ADMIN)
    Pode ser ativado/desativado a qualquer momento no Painel de Administração
    (admin.html) via Cloud Firestore, ou desbloqueado localmente pelo administrador
    com a chave "OlhaAOnda1@".

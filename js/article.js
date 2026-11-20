@@ -42,7 +42,7 @@ function renderArticle() {
     backLink.innerHTML = '<i class="ri-arrow-left-line" aria-hidden="true"></i> Voltar a Economia em Frequência';
   }
 
-  document.title = `${article.title} | ${isEconomia ? 'Economia em Frequência • ' : ''}Wave Rádio`;
+  document.title = `${article.title} | ${isEconomia ? 'Economia em Frequência • ' : ''}Rádio Wave`;
   const relatedPool = (isEconomia && typeof window.db.getEconomyAnnouncements === 'function')
     ? window.db.getEconomyAnnouncements()
     : window.db.getPublicAnnouncements();

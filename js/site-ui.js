@@ -1,5 +1,5 @@
 /* ==========================================================================
-   WAVE RÁDIO — INTERAÇÕES GLOBAIS DO SITE PÚBLICO
+   RÁDIO WAVE — INTERAÇÕES GLOBAIS DO SITE PÚBLICO
    Menu móvel, Modo Claro / Escuro (Dark & White Mode), visibilidade condicional
    do Nerd Alert (apenas quando ativo no Admin) e animações de revelação.
    ========================================================================== */

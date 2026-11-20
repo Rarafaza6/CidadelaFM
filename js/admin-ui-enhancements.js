@@ -1,5 +1,5 @@
 /* ==========================================================================
-   WAVE RÁDIO — INTERAÇÕES E MELHORIAS DE UI DO ADMIN V2 (2026)
+   RÁDIO WAVE — INTERAÇÕES E MELHORIAS DE UI DO ADMIN V2 (2026)
    Relógio de Estúdio, Command Palette (Ctrl+K), Menu Mobile e Atalhos.
    ========================================================================== */
 

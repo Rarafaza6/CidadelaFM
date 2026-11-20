@@ -1,5 +1,5 @@
 /* ==========================================================================
-   WAVE RÁDIO — PÁGINA DA EQUIPA (equipa.html)
+   RÁDIO WAVE — PÁGINA DA EQUIPA (equipa.html)
    Carrega os membros da equipa em tempo real a partir do Firestore (teamMembers),
    apresentando foto (ou avatar com iniciais), etiqueta de turma no canto inferior
    esquerdo da foto, nome, cargo e ligação opcional para rede social ao clicar no perfil.
@@ -22,7 +22,7 @@ document.addEventListener('radio-db-updated', (e) => {
 });
 
 function getMemberInitials(name) {
-  const parts = String(name || 'Wave Rádio')
+  const parts = String(name || 'Rádio Wave')
     .trim()
     .split(/\s+/)
     .filter(Boolean);
@@ -52,7 +52,7 @@ function renderTeamPage() {
       <div class="hv2-empty-state">
         <div class="hv2-empty-icon"><i class="ri-team-line"></i></div>
         <h3>A equipa está a ser atualizada</h3>
-        <p>Os membros e respetivas fotografias estão a ser carregados pela coordenação da Wave Rádio.</p>
+        <p>Os membros e respetivas fotografias estão a ser carregados pela coordenação da Rádio Wave.</p>
       </div>
     `;
     return;
@@ -61,7 +61,7 @@ function renderTeamPage() {
   grid.innerHTML = allMembers.map((member, index) => {
     const hasPhoto = Boolean(member.photo && String(member.photo).trim());
     const initials = getMemberInitials(member.name);
-    const roleLabel = String(member.role || 'Equipa Wave Rádio').trim();
+    const roleLabel = String(member.role || 'Equipa Rádio Wave').trim();
     const classTag = String(member.bio || member.studentClass || '').trim();
     const socialHref = member.socialEnabled ? normalizeSocialUrl(member.socialUrl) : '';
     const isClickable = Boolean(member.socialEnabled && socialHref);
@@ -78,12 +78,12 @@ function renderTeamPage() {
           >
           <div class="team-member-placeholder" style="display: none;" aria-hidden="true">
             <span class="team-member-initials">${escapeHtml(initials)}</span>
-            <span class="team-member-placeholder-badge"><i class="ri-mic-2-fill"></i> Wave Rádio</span>
+            <span class="team-member-placeholder-badge"><i class="ri-mic-2-fill"></i> Rádio Wave</span>
           </div>
         ` : `
           <div class="team-member-placeholder" aria-hidden="true">
             <span class="team-member-initials">${escapeHtml(initials)}</span>
-            <span class="team-member-placeholder-badge"><i class="ri-mic-2-fill"></i> Wave Rádio</span>
+            <span class="team-member-placeholder-badge"><i class="ri-mic-2-fill"></i> Rádio Wave</span>
           </div>
         `}
         ${classTag ? `<span class="team-member-role-badge">${escapeHtml(classTag)}</span>` : ''}

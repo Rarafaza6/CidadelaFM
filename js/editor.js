@@ -848,13 +848,13 @@ window.applyEditorialTemplate = function (type) {
       cat: 'Entrevista',
       vis: 'public',
       html: `
-        <p>Conversámos no estúdio da <strong>Wave Rádio</strong> com <em>[Nome do Entrevistado]</em> sobre o seu percurso e projetos na nossa escola.</p>
+        <p>Conversámos no estúdio da <strong>Rádio Wave</strong> com <em>[Nome do Entrevistado]</em> sobre o seu percurso e projetos na nossa escola.</p>
         <div class="article-qa-block">
-          <p class="article-qa-question">Wave Rádio: Como surgiu a ideia para este projeto?</p>
+          <p class="article-qa-question">Rádio Wave: Como surgiu a ideia para este projeto?</p>
           <p class="article-qa-answer"><strong>Entrevistado:</strong> Escreve aqui a resposta do convidado de forma clara e direta.</p>
         </div>
         <div class="article-qa-block">
-          <p class="article-qa-question">Wave Rádio: Que mensagem deixas aos alunos da EBS Cidadela?</p>
+          <p class="article-qa-question">Rádio Wave: Que mensagem deixas aos alunos da EBS Cidadela?</p>
           <p class="article-qa-answer"><strong>Entrevistado:</strong> Escreve aqui a segunda resposta ou conselho deixado em estúdio.</p>
         </div>
       `
@@ -872,7 +872,7 @@ window.applyEditorialTemplate = function (type) {
         <ul class="article-checklist">
           <li>Momento de abertura e boas-vindas</li>
           <li>Atividades práticas com as turmas</li>
-          <li>Encerramento com cobertura da Wave Rádio</li>
+          <li>Encerramento com cobertura da Rádio Wave</li>
         </ul>
       `
     },
@@ -895,12 +895,12 @@ window.applyEditorialTemplate = function (type) {
       html: `
         <p><strong>[ENTRA CAMA SONORA]</strong></p>
         <h2>Texto para o Locutor ler em Antena</h2>
-        <p>Bom dia, Cidadela! Aqui fala a equipa da Wave Rádio com um aviso importante para todas as turmas:</p>
+        <p>Bom dia, Cidadela! Aqui fala a equipa da Rádio Wave com um aviso importante para todas as turmas:</p>
         <ul>
           <li>Ponto curto e direto número 1;</li>
           <li>Ponto curto e direto número 2.</li>
         </ul>
-        <p><em>Fecho:</em> Continuem ligados à emissão da Wave Rádio!</p>
+        <p><em>Fecho:</em> Continuem ligados à emissão da Rádio Wave!</p>
       `
     }
   };
@@ -941,7 +941,7 @@ async function loadArticleFromQuery() {
     document.getElementById('articleTitle').value = eventItem ? `${eventItem.title} — Nota de Antena` : `Guião de Emissão (${briefDate})`;
     document.getElementById('articleCategory').value = 'Comunicado';
     document.getElementById('articleExcerpt').value = eventItem?.notes || 'Tópicos breves para leitura em antena.';
-    body.innerHTML = `<p><strong>Data da emissão:</strong> ${escapeHtml(briefDate)}</p><h2>Pontos para ler em antena</h2><ul><li>${escapeHtml(eventItem?.title || 'Efeméride ou destaque do dia')}</li><li>${escapeHtml(eventItem?.notes || 'Contextualizar em 2 a 3 frases claras para a comunidade escolar.')}</li></ul><p><em>Fecho sugerido:</em> Continuamos ligados na Wave Rádio da EBS Cidadela.</p>`;
+    body.innerHTML = `<p><strong>Data da emissão:</strong> ${escapeHtml(briefDate)}</p><h2>Pontos para ler em antena</h2><ul><li>${escapeHtml(eventItem?.title || 'Efeméride ou destaque do dia')}</li><li>${escapeHtml(eventItem?.notes || 'Contextualizar em 2 a 3 frases claras para a comunidade escolar.')}</li></ul><p><em>Fecho sugerido:</em> Continuamos ligados na Rádio Wave da EBS Cidadela.</p>`;
     onEditorMetaInput();
     updateExcerptCounter();
     updateStats();
@@ -1516,7 +1516,7 @@ window.insertChecklist = function () {
 window.insertInterviewBlock = function () {
   const html = `
     <div class="article-qa-block">
-      <p class="article-qa-question">Wave Rádio: Escreve aqui a pergunta da entrevista?</p>
+      <p class="article-qa-question">Rádio Wave: Escreve aqui a pergunta da entrevista?</p>
       <p class="article-qa-answer"><strong>Convidado:</strong> Escreve aqui a resposta do entrevistado.</p>
     </div>
     <p><br></p>
@@ -2557,7 +2557,7 @@ window.publishArticle = async function () {
       } else {
         viewLink.href = `artigo.html?id=${encodeURIComponent(saved.id)}`;
         viewLink.innerHTML = '<i class="ri-external-link-line"></i> Abrir Artigo no Site';
-        if (descEl) descEl.textContent = 'O teu artigo já se encontra publicado na Wave Rádio da EBS Cidadela.';
+        if (descEl) descEl.textContent = 'O teu artigo já se encontra publicado na Rádio Wave da EBS Cidadela.';
       }
     }
     openEditorModal('articlePublishedModal');

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   WAVE RÁDIO — DESIGN SYSTEM 2026 ("Cartaz de Rádio")
+   RÁDIO WAVE — DESIGN SYSTEM 2026 ("Cartaz de Rádio")
    Papel + tinta + vermelho Wave. Tipografia enorme, bordas duras,
    sombras sólidas, zero gradientes decorativos.
    Páginas públicas apenas (admin e vote.html continuam em styles.css).
@@ -2934,7 +2934,7 @@ html[data-theme="dark"] .w-404-tuner-box {
 }
 
 /* ==========================================================================
-   PÁGINA DE MANUTENÇÃO (manutencao.html — Wave Rádio 2026)
+   PÁGINA DE MANUTENÇÃO (manutencao.html — Rádio Wave 2026)
    ========================================================================== */
 .w-maint-wrap {
   flex: 1;

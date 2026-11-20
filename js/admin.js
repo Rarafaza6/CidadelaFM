@@ -641,7 +641,7 @@ window.exportSongsRankingCSV = function () {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `wave-radio-ranking-musicas-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `radio-wave-ranking-musicas-${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -5981,7 +5981,7 @@ window.renderAdminTeamMembers = function () {
               <span class="badge" style="font-size: 0.66rem; background: rgba(148, 163, 184, 0.14);">Ordem #${Number(member.order) || 10}</span>
             </div>
             <h4 style="margin: 0; font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(member.name)}</h4>
-            <div style="font-size: 0.82rem; color: #f472b6; font-weight: 600; margin-top: 0.15rem;">${escapeHtml(member.role || 'Equipa Wave Rádio')}</div>
+            <div style="font-size: 0.82rem; color: #f472b6; font-weight: 600; margin-top: 0.15rem;">${escapeHtml(member.role || 'Equipa Rádio Wave')}</div>
             ${member.socialEnabled && member.socialUrl ? `<div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><i class="ri-link"></i> ${escapeHtml(member.socialUrl)}</div>` : ''}
           </div>
         </div>
@@ -6593,7 +6593,7 @@ function renderAdminSabesQueSection() {
         <h3 style="margin: 0; font-size: 1.05rem; color: #ffffff;">${escapeHtml(item.title)}</h3>
         <p style="margin: 0; font-size: 0.86rem; color: var(--text-secondary); line-height: 1.5; flex: 1;">${escapeHtml(item.content.length > 180 ? item.content.slice(0, 177) + '...' : item.content)}</p>
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding-top: 0.65rem; border-top: 1px solid rgba(255,255,255,0.08);">
-          <small style="color: var(--text-muted);">${escapeHtml(item.author || 'Wave Rádio')}</small>
+          <small style="color: var(--text-muted);">${escapeHtml(item.author || 'Rádio Wave')}</small>
           <div style="display: flex; gap: 0.35rem;">
             <button type="button" class="btn-action" onclick="openSabesQueModal('${safeId}')"><i class="ri-edit-line"></i> Editar</button>
             <button type="button" class="btn-action" style="color: #ef4444;" onclick="deleteSabesQueItem('${safeId}')"><i class="ri-delete-bin-line"></i></button>

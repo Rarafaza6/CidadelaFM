@@ -840,12 +840,12 @@ window.changeVolume = function (val) {
 window.shareCurrentPodcast = function () {
   const pod = currentActivePodcastObj;
   const shareUrl = (pod && (pod.spotifyUrl || pod.originalUrl || pod.audioUrl)) || window.location.href;
-  const shareTitle = pod ? pod.title : 'Wave Rádio EBS Cidadela — Podcasts';
+  const shareTitle = pod ? pod.title : 'Rádio Wave EBS Cidadela — Podcasts';
 
   if (navigator.share) {
     navigator.share({
       title: shareTitle,
-      text: `Ouve este episódio da Wave Rádio da Cidadela: ${shareTitle}`,
+      text: `Ouve este episódio da Rádio Wave da Cidadela: ${shareTitle}`,
       url: shareUrl
     }).catch(() => {});
   } else {
@@ -913,7 +913,7 @@ window.loadAndPlayPodcast = function (audioOrSpotifyUrl, title, subtitle, podObj
 
   // ── Metadados ──────────────────────────────────────────────────────────
   if (titleEl)   titleEl.innerText  = title || 'Episódio';
-  if (subEl)     subEl.innerText    = subtitle || (podObj && podObj.date) || 'Wave Rádio • A Tua Rádio das 10:00!';
+  if (subEl)     subEl.innerText    = subtitle || (podObj && podObj.date) || 'Rádio Wave • A Tua Rádio das 10:00!';
   if (descEl)    descEl.innerText   = (podObj && podObj.description) || '';
   if (catBadge)  catBadge.innerText = (podObj && podObj.category) || 'Podcast';
   if (idleHint)  idleHint.style.display = 'none';
@@ -1108,7 +1108,7 @@ function renderFullPodcasts() {
       <div class="hv2-empty-state" style="grid-column: 1 / -1;">
         <div class="hv2-empty-icon"><i class="ri-headphones-line"></i></div>
         <h3>Ainda não foram adicionados podcasts</h3>
-        <p>A equipa da Wave Rádio está a preparar novos episódios. Fica atento às próximas emissões!</p>
+        <p>A equipa da Rádio Wave está a preparar novos episódios. Fica atento às próximas emissões!</p>
       </div>
     ` : `
       <div class="hv2-empty-state" style="grid-column: 1 / -1;">
@@ -1337,7 +1337,7 @@ function buildSabesQueCardHTML(item, options = {}) {
       <h3 class="sq-question">${escapeHtml(item.title || 'Curiosidade')}</h3>
       <p class="sq-body">${escapeHtml(item.content || '')}</p>
       <div class="sq-footer">
-        <span><i class="ri-user-3-line" aria-hidden="true"></i> ${escapeHtml(item.author || 'Wave Rádio')}</span>
+        <span><i class="ri-user-3-line" aria-hidden="true"></i> ${escapeHtml(item.author || 'Rádio Wave')}</span>
         <button type="button" class="sq-read-btn" onclick="openSabesQueModal('${safeId}')">
           Ler tudo <i class="ri-arrow-right-up-line" aria-hidden="true"></i>
         </button>
