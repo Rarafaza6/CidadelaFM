@@ -24,7 +24,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
-  <link rel="stylesheet" href="css/wave.css?v=20261027f">
+  <link rel="stylesheet" href="css/wave.css?v=20261119q">
   <link rel="stylesheet" href="css/cookie-consent.css?v=20261102">
   <script>document.documentElement.classList.add('js');try{var t=localStorage.getItem('wave_theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
   <!-- Google Consent Mode v2 & Google tag (gtag.js) -->
@@ -59,14 +59,14 @@
     });
   </script>
   <script src="js/cookie-consent.js?v=20261102" defer></script>
-  <script src="js/maintenance-guard.js?v=20261027cidadelafm"></script>
+  <script src="js/maintenance-guard.js?v=20261117m"></script>
 </head>
 <body>
 <a class="skip" href="#main">Saltar para o conteúdo</a>
 <header class="w-nav">
   <div class="w-nav-in">
     <a class="w-logo" href="index.html" aria-label="Wave Rádio — Página principal"><img src="assets/brand/logo-minima-positiva.png" alt="Wave Rádio" width="65" height="38"></a>
-    <nav class="w-navwrap" aria-label="Navegação principal"><ul class="w-links"><li><a href="index.html" class="active" aria-current="page">Início</a></li><li><a href="podcasts.html">Podcasts</a></li><li><a href="noticias.html">Notícias</a></li><li><a href="mensagem.html">Fala Connosco</a></li></ul></nav>
+    <nav class="w-navwrap" aria-label="Navegação principal"><ul class="w-links"><li><a href="index.html" class="active" aria-current="page">Início</a></li><li><a href="podcasts.html">Podcasts</a></li><li><a href="noticias.html">Notícias</a></li><li><a href="economia.html">Economia em Frequência</a></li><li><a href="mensagem.html">Fala Connosco</a></li></ul></nav>
     <div style="display: flex; align-items: center; gap: 0.75rem; margin-left: auto;">
       <button class="w-theme-toggle" id="themeToggleBtn" type="button" aria-label="Alternar entre modo claro e escuro" title="Alternar tema">
         <i class="ri-moon-clear-line" aria-hidden="true"></i>
@@ -92,7 +92,7 @@
 
 <div class="w-drawer" id="mobileMenu" aria-hidden="true">
   <div class="w-drawer-top"><img src="assets/brand/logo-minima-negativa.png" alt="Wave Rádio"><button class="w-drawer-close" id="mobileClose" type="button" aria-label="Fechar menu"><i class="ri-close-line" aria-hidden="true"></i></button></div>
-  <a class="w-d-link active" href="index.html">Início <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a><a class="w-d-link" href="podcasts.html">Podcasts <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a><a class="w-d-link" href="noticias.html">Notícias <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a><a class="w-d-link" href="mensagem.html">Fala Connosco <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a>
+  <a class="w-d-link active" href="index.html">Início <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a><a class="w-d-link" href="podcasts.html">Podcasts <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a><a class="w-d-link" href="noticias.html">Notícias <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a><a class="w-d-link" href="economia.html">Economia em Frequência <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a><a class="w-d-link" href="mensagem.html">Fala Connosco <i class="ri-arrow-right-up-line" aria-hidden="true"></i></a>
   <a class="w-btn w-btn-red w-btn-block" href="pedir-musica.html"><i class="ri-music-2-fill" aria-hidden="true"></i> Pedir música</a>
 </div>
 
@@ -113,7 +113,7 @@
 
 
 
-  <section class="w-sec" aria-labelledby="newsHeading">
+  <section class="w-sec" id="homeNewsSection" aria-labelledby="newsHeading">
     <div class="w-wrap">
       <header class="w-sec-head" data-reveal>
         <h2 class="w-sec-title" id="newsHeading"><span class="n"></span>Mural de notícias</h2>
@@ -127,7 +127,7 @@
     </div>
   </section>
 
-    <section class="w-sec alt" aria-labelledby="podcastsHeading">
+  <section class="w-sec alt" id="homePodcastsSection" aria-labelledby="podcastsHeading">
     <div class="w-wrap">
       <header class="w-sec-head" data-reveal>
        
@@ -144,7 +144,21 @@
 
   
 
-  <section class="w-manifesto" aria-label="Sobre a Wave Rádio">
+  <section class="w-sec" id="homeSabesQueSection" aria-labelledby="sabesQueHeading">
+    <div class="w-wrap">
+      <header class="w-sec-head" data-reveal>
+        <h2 class="w-sec-title" id="sabesQueHeading"><span class="n"></span>Sabias que...</h2>
+        <a href="sabes-que.html" class="w-link-arrow" id="seeAllSabesQue">Ver todas as disciplinas <i class="ri-arrow-right-line" aria-hidden="true"></i></a>
+      </header>
+      <div class="w-grid-3" id="homeSabesQueContainer" aria-live="polite">
+        <div class="w-skel-card" aria-hidden="true"><div class="w-skel-body"><div class="w-skel-line sm"></div><div class="w-skel-line lg"></div><div class="w-skel-line md"></div></div></div>
+        <div class="w-skel-card" aria-hidden="true"><div class="w-skel-body"><div class="w-skel-line sm"></div><div class="w-skel-line lg"></div><div class="w-skel-line md"></div></div></div>
+        <div class="w-skel-card" aria-hidden="true"><div class="w-skel-body"><div class="w-skel-line sm"></div><div class="w-skel-line lg"></div><div class="w-skel-line md"></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="w-manifesto" id="homeManifestoSection" aria-label="Sobre a Wave Rádio">
     <div class="w-wrap w-manifesto-in">
       <div>
         <p class="w-manifesto-text" data-reveal>Feita por alunos,<em><br> para <em>alunos.</em></p>
@@ -168,6 +182,8 @@
           <li><a href="DT.html">Diretores de Turma</a></li>
           <li><a href="podcasts.html">Podcasts</a></li>
           <li><a href="noticias.html">Notícias</a></li>
+          <li><a href="economia.html">Economia em Frequência</a></li>
+          <li><a href="sabes-que.html">Sabias que...</a></li>
           <li><a href="equipa.html">Equipa</a></li>
           <li><a href="mensagem.html">Fala Connosco</a></li>
           <li><a href="links.html">Links rápidos</a></li>
@@ -190,9 +206,9 @@
 </footer>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=20261101cidadelafm"></script>
-<script src="js/app.js?v=20261101cidadelafm"></script>
-<script src="js/site-ui.js?v=20261027cidadelafm"></script>
+<script src="js/firebase-config.js?v=20261117"></script>
+<script src="js/app.js?v=20261117k"></script>
+<script src="js/site-ui.js?v=20261117m"></script>
 </body>
 </html>
 

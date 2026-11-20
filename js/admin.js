@@ -337,6 +337,8 @@ function loadAdminDashboard() {
   try { renderAdminPollsTable(); } catch (e) { console.error('Erro em renderAdminPollsTable:', e); }
   try { if (typeof renderAdminNerdAlert === 'function') renderAdminNerdAlert(); } catch (e) { console.error('Erro em renderAdminNerdAlert:', e); }
   try { if (typeof renderAdminTeamMembers === 'function') renderAdminTeamMembers(); } catch (e) { console.error('Erro em renderAdminTeamMembers:', e); }
+  try { if (typeof renderAdminSabesQueSection === 'function') renderAdminSabesQueSection(); } catch (e) { console.error('Erro em renderAdminSabesQueSection:', e); }
+  try { if (typeof renderAdminEconomiaSection === 'function') renderAdminEconomiaSection(); } catch (e) { console.error('Erro em renderAdminEconomiaSection:', e); }
   try { renderAdminOverview(); } catch (e) { console.error('Erro em renderAdminOverview:', e); }
   try { renderAoVivo(); } catch (e) { console.error('Erro em renderAoVivo:', e); }
   try { initIntervalBellTimer(); } catch (e) { console.error('Erro em initIntervalBellTimer:', e); }
@@ -381,26 +383,50 @@ function updateKPIs() {
 /* ==========================================================================
    1. GESTÃO E RANKING DAS MÚSICAS MAIS SUGERIDAS
    ========================================================================== */
-let audioPreviewObj = new Audio();
+const audioPreviewObj = { paused: true };
 let audioPreviewRequest = 0;
+let activePreviewSongKey = null;
+let currentSongFilterState = {
+  status: 'all',
+  source: 'all',
+  safety: 'all',
+  sort: 'most_requested',
+  search: ''
+};
 
-function renderSongRankingTable(filterStatus = 'all') {
-  const tbody = document.getElementById('songRankingTbody');
-  if (!tbody) return;
-
-  const suggestions = window.db.getSuggestions();
-
-  if (!suggestions || suggestions.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">Nenhuma sugestão de música recebida.</td></tr>';
-    return;
+function formatSongRequestDate(latestTs, firstTs = 0, count = 1) {
+  const ts = Number(latestTs) || Number(firstTs) || 0;
+  if (!ts || ts <= 0) return null;
+  try {
+    const dt = new Date(ts);
+    if (isNaN(dt.getTime())) return null;
+    const d = String(dt.getDate()).padStart(2, '0');
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const y = dt.getFullYear();
+    const hh = String(dt.getHours()).padStart(2, '0');
+    const mm = String(dt.getMinutes()).padStart(2, '0');
+    const shortDate = `${d}/${m}/${y}`;
+    const label = `${shortDate} · ${hh}:${mm}`;
+    const fullPt = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(dt);
+    let tooltip = count > 1 ? `Último pedido: ${fullPt}` : `Pedida em: ${fullPt}`;
+    if (count > 1 && firstTs && firstTs !== latestTs) {
+      const fdt = new Date(Number(firstTs));
+      if (!isNaN(fdt.getTime())) {
+        const firstPt = new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(fdt);
+        tooltip += ` | 1º pedido: ${firstPt}`;
+      }
+    }
+    return { label, shortDate, tooltip };
+  } catch (_) {
+    return null;
   }
+}
+window.formatSongRequestDate = formatSongRequestDate;
 
+function buildGroupedSongsList(suggestions) {
   const map = new Map();
-
-  suggestions.forEach(item => {
+  (suggestions || []).forEach(item => {
     if (!item) return;
-    if (filterStatus !== 'all' && item.status !== filterStatus) return;
-
     const rawTitle = String(item.songTitle || item.title || '').trim();
     const rawArtist = String(item.artist || '').trim();
     if (!rawTitle && !rawArtist) return;
@@ -409,108 +435,167 @@ function renderSongRankingTable(filterStatus = 'all') {
     const displayArtist = rawArtist || 'Artista não especificado';
     const artwork = item.artwork || item.cover || 'assets/logo-radio.jpg';
     const previewUrl = item.previewUrl || '';
-
     const key = `${displayTitle.toLowerCase()}___${displayArtist.toLowerCase()}`;
+
     if (!map.has(key)) {
       map.set(key, {
+        key,
         songTitle: displayTitle,
         title: displayTitle,
         artist: displayArtist,
-        artwork: artwork,
+        artwork,
         cover: artwork,
-        previewUrl: previewUrl,
+        previewUrl,
         count: 0,
         ids: [],
         dtClasses: [],
-        status: item.status || 'pending'
+        studentIdentities: [],
+        hasWeb: false,
+        hasDT: false,
+        latestTimestamp: 0,
+        firstTimestamp: 0,
+        status: item.status || 'pending',
+        isExplicit: false,
+        explicitOverrides: []
       });
     }
 
     const group = map.get(key);
     group.count += 1;
     if (item.id) group.ids.push(item.id);
-    if (item.studentClass) {
-      const dtLabel = item.teacherName ? `${item.studentClass} (${item.teacherName})` : item.studentClass;
-      if (!group.dtClasses.includes(dtLabel)) group.dtClasses.push(dtLabel);
+    if (!group.previewUrl && previewUrl) group.previewUrl = previewUrl;
+    if (group.artwork === 'assets/logo-radio.jpg' && artwork !== 'assets/logo-radio.jpg') group.artwork = artwork;
+
+    const ts = Number(item.timestamp) || 0;
+    if (ts > group.latestTimestamp) group.latestTimestamp = ts;
+    if (ts > 0 && (!group.firstTimestamp || ts < group.firstTimestamp)) group.firstTimestamp = ts;
+
+    const isIdentifiedStudent = item.source === 'web' && (String(item.teacherName || '').startsWith('Aluno:') || item.studentClass);
+    if (isIdentifiedStudent) {
+      group.hasWeb = true;
+      const studentLabel = item.teacherName || `Aluno (${item.studentClass})`;
+      if (!group.studentIdentities.includes(studentLabel)) group.studentIdentities.push(studentLabel);
+    } else if (item.source === 'dt' || item.studentClass) {
+      group.hasDT = true;
+      if (item.studentClass) {
+        const dtLabel = item.teacherName ? `${item.studentClass} (${item.teacherName})` : item.studentClass;
+        if (!group.dtClasses.includes(dtLabel)) group.dtClasses.push(dtLabel);
+      }
+    } else {
+      group.hasWeb = true;
     }
+
+    if (typeof item.explicit === 'boolean') {
+      group.explicitOverrides.push(item.explicit);
+    }
+
+    // Se houver algum pedido pendente no grupo, mantém o estado pendente em destaque
+    if (item.status === 'pending') group.status = 'pending';
   });
 
-  const rankedList = Array.from(map.values()).sort((a, b) => b.count - a.count);
-
-  if (rankedList.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhuma música com o estado "${filterStatus}".</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = '';
-  rankedList.forEach((song, idx) => {
-    const tr = document.createElement('tr');
-    let statusBadgeClass = 'status-pending';
-    let statusLabel = 'Pendente';
-    if (song.status === 'played') { statusBadgeClass = 'status-played'; statusLabel = 'Tocado na Rádio'; }
-    if (song.status === 'archived') { statusBadgeClass = 'status-archived'; statusLabel = 'Arquivado'; }
-    const dtBadgeHtml = song.dtClasses.length
-      ? `<div style="margin-top: 0.25rem; display: flex; flex-wrap: wrap; gap: 0.3rem;">${song.dtClasses.map(c => `<span style="font-size: 0.7rem; background: rgba(56, 189, 248, 0.16); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 4px; padding: 0.1rem 0.4rem;"><i class="ri-Graduation-cap-line"></i> DT • ${escapeHtml(c)}</span>`).join('')}</div>`
-      : '';
-
-    tr.innerHTML = `
-      <td style="font-weight: 800; color: var(--cascais-blue); font-size: 1.1rem;">#${idx + 1}</td>
-      <td>
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <img src="${escapeHtml(song.artwork)}" alt="${escapeHtml(song.songTitle)}" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover;" onerror="this.onerror=null;this.src='assets/logo-radio.jpg';">
-          <div>
-            <strong style="display: block; color: white;">${escapeHtml(song.songTitle)}</strong>
-            <span style="font-size: 0.8rem; color: var(--text-muted);">${escapeHtml(song.artist)}</span>
-            ${dtBadgeHtml}
-          </div>
-        </div>
-      </td>
-      <td>
-        <span class="count-badge" style="background: rgba(245, 158, 11, 0.2); color: #fcd34d;"><i class="ri-fire-fill"></i> ${song.count} pedido${song.count > 1 ? 's' : ''}</span>
-      </td>
-      <td>
-        <span class="status-badge ${statusBadgeClass}">${statusLabel}</span>
-      </td>
-      <td>
-        ${song.previewUrl ? `<button class="btn-action" title="Ouvir Prévia" onclick="playAudioPreview('${escapeHtml(song.previewUrl)}')"><i class="ri-play-line"></i></button>` : ''}
-        <button class="btn-action" title="Marcar como Tocado" onclick="changeGroupStatus(['${song.ids.join("','")}'], 'played')"><i class="ri-checkbox-circle-line" style="color: #34d399;"></i> Tocado</button>
-        <button class="btn-action" title="Arquivar" onclick="changeGroupStatus(['${song.ids.join("','")}'], 'archived')"><i class="ri-archive-line"></i></button>
-      </td>
-    `;
-    tbody.appendChild(tr);
+  map.forEach(group => {
+    const dictExplicit = typeof window.isExplicitSong === 'function'
+      ? window.isExplicitSong(group.songTitle, group.artist)
+      : false;
+    group.isExplicit = group.trackExplicitness === 'explicit' || dictExplicit;
   });
+
+  return Array.from(map.values());
+}
+window.buildGroupedSongsList = buildGroupedSongsList;
+window.updateKPIs = updateKPIs;
+
+// A página 'Músicas Pedidas' vive agora em js/songs-hub.js (+ js/explicit-engine.js)
+function renderSongRankingTable() {
+  if (window.SongsHub) window.SongsHub.render();
 }
 
-window.playAudioPreview = function (url) {
-  const requestId = ++audioPreviewRequest;
-  if (audioPreviewObj.src === url && !audioPreviewObj.paused) {
-    audioPreviewObj.pause();
-  } else {
-    audioPreviewObj.pause();
-    audioPreviewObj.src = url;
-    const playRequest = audioPreviewObj.play();
-    if (playRequest) {
-      playRequest.catch(error => {
-        if (error.name !== 'AbortError' && requestId === audioPreviewRequest) {
-          console.error('Não foi possível reproduzir a prévia:', error);
-        }
-      });
-    }
-  }
+window.playAudioPreview = function (url, songKey = '') {
+  if (window.WavePlayer) window.WavePlayer.playKey(songKey || url, 'songs');
+};
+
+window.stopAudioPreview = function () {
+  if (window.WavePlayer) window.WavePlayer.stop();
 };
 
 window.changeGroupStatus = function (ids, newStatus) {
-  ids.forEach(id => window.db.updateSuggestionStatus(id, newStatus));
+  (ids || []).forEach(id => window.db.updateSuggestionStatus(id, newStatus));
   updateKPIs();
   renderSongRankingTable();
+  if (typeof renderAoVivoSongs === 'function') renderAoVivoSongs(currentAoVivoSongFilter);
 };
 
-window.filterSongsByStatus = function (status) {
-  renderSongRankingTable(status);
+window.deleteSongGroup = function (ids, songTitle) {
+  if (!confirm(`Eliminar os pedidos da música "${songTitle}"?`)) return;
+  (ids || []).forEach(id => {
+    if (window.db.cache && Array.isArray(window.db.cache.suggestions)) {
+      window.db.cache.suggestions = window.db.cache.suggestions.filter(s => s.id !== id);
+    }
+    window.db.remove('suggestions', id).catch(console.error);
+  });
+  updateKPIs();
+  renderSongRankingTable();
+  if (typeof renderAoVivoSongs === 'function') renderAoVivoSongs(currentAoVivoSongFilter);
+  showToast(`Pedidos de "${songTitle}" eliminados.`, 'info');
+};
+
+window.copyTopSongsPlaylist = function () {
+  const grouped = buildGroupedSongsList(window.db.getSuggestions())
+    .filter(s => s.status === 'pending')
+    .sort((a, b) => b.count - a.count);
+
+  if (grouped.length === 0) {
+    showToast('Não existem músicas pendentes para copiar.', 'warning');
+    return;
+  }
+
+  const text = grouped
+    .map((s, idx) => `${idx + 1}. ${s.songTitle} — ${s.artist} (${s.count}x)`)
+    .join('\n');
+
+  navigator.clipboard.writeText(text).then(() => {
+    showToast(`Alinhamento com ${grouped.length} música(s) pendentes copiado!`, 'success');
+  }).catch(() => {
+    showToast('Não foi possível copiar para a área de transferência.', 'error');
+  });
+};
+
+window.exportSongsRankingCSV = function () {
+  const grouped = buildGroupedSongsList(window.db.getSuggestions()).sort((a, b) => b.count - a.count);
+  if (grouped.length === 0) {
+    showToast('Não existem músicas para exportar.', 'warning');
+    return;
+  }
+
+  const escCsv = (val) => `"${String(val || '').replace(/"/g, '""')}"`;
+  const rows = [
+    ['Posicao', 'Titulo', 'Artista', 'Pedidos', 'Estado', 'Origem'],
+    ...grouped.map((s, idx) => [
+      idx + 1,
+      s.songTitle,
+      s.artist,
+      s.count,
+      s.status,
+      [s.hasWeb ? 'Alunos' : '', ...s.dtClasses.map(c => `DT ${c}`)].filter(Boolean).join(' | ')
+    ])
+  ];
+
+  const csv = '\uFEFF' + rows.map(r => r.map(escCsv).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `wave-radio-ranking-musicas-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Ranking exportado em CSV!', 'success');
 };
 
 window.clearAllSuggestions = function () {
   if (confirm('Tens a certeza de que queres eliminar TODAS as sugestões de música?')) {
+    stopAudioPreview();
     window.db.clearSuggestions();
     updateKPIs();
     renderSongRankingTable();
@@ -715,7 +800,7 @@ window.clearPodCoverImage = function () {
   updatePodThumbPreview('');
 };
 
-window.openPodcastModal = function (id = null) {
+window.openPodcastModal = function (id = null, defaultPortal = 'main', defaultCategory = '') {
   const modal = document.getElementById('addPodcastModal');
   const form = document.getElementById('addPodcastForm');
   const titleEl = document.getElementById('podcastModalTitle');
@@ -726,6 +811,8 @@ window.openPodcastModal = function (id = null) {
   document.getElementById('podIdInput').value = '';
   document.getElementById('podPreviewWrapper').style.display = 'none';
   document.getElementById('podPreviewFrameContainer').innerHTML = '';
+  const portalEl = document.getElementById('podPortalInput');
+  if (portalEl) portalEl.value = defaultPortal || 'main';
   updatePodThumbPreview('');
 
   if (id) {
@@ -738,6 +825,7 @@ window.openPodcastModal = function (id = null) {
       document.getElementById('podUrlInput').value = pod.spotifyUrl || pod.audioUrl || pod.originalUrl || '';
       document.getElementById('podTitleInput').value = pod.title || '';
       document.getElementById('podCategoryInput').value = pod.category || 'Geral';
+      if (portalEl) portalEl.value = pod.portal || 'main';
       document.getElementById('podHostsInput').value = pod.hosts || '';
       document.getElementById('podDateInput').value = pod.date || '';
       document.getElementById('podDurationInput').value = pod.duration || '';
@@ -756,14 +844,16 @@ window.openPodcastModal = function (id = null) {
     }
   }
 
-  if (titleEl) titleEl.innerText = 'Novo Episódio de Podcast';
+  if (titleEl) titleEl.innerText = defaultPortal === 'economia'
+    ? (defaultCategory ? `Novo Episódio — ${defaultCategory}` : 'Novo Podcast — Economia em Frequência')
+    : 'Novo Episódio de Podcast';
   if (deleteBtn) deleteBtn.style.display = 'none';
 
   // Data atual pré-preenchida
   const now = new Date();
   const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
   document.getElementById('podDateInput').value = `${now.getDate()} ${months[now.getMonth()]}, ${now.getFullYear()}`;
-  document.getElementById('podCategoryInput').value = 'Geral';
+  document.getElementById('podCategoryInput').value = defaultCategory || (defaultPortal === 'economia' ? 'Mito ou verdade' : 'Geral');
   const thumbInput = document.getElementById('podThumbnailInput');
   if (thumbInput) thumbInput.value = '';
   document.getElementById('podFeaturedInput').checked = false;
@@ -792,6 +882,7 @@ function renderAdminPodcastsTable() {
             <span class="blog-tag" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; font-size: 0.72rem; padding: 0.15rem 0.45rem; border-radius: 4px;">
               ${escapeHtml(pod.category || 'Podcast')}
             </span>
+            ${(pod.portal === 'economia' || pod.portal === 'both') ? `<span class="blog-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-size: 0.7rem; padding: 0.12rem 0.42rem; border-radius: 4px;">${pod.portal === 'both' ? 'Principal + Economia' : 'Economia em Frequência'}</span>` : ''}
             <strong style="color: #ffffff; font-size: 0.95rem;">${escapeHtml(pod.title)}</strong>
           </div>
           ${pod.hosts ? `<small style="color: var(--text-muted); font-size: 0.78rem;"><i class="ri-user-voice-line"></i> ${escapeHtml(pod.hosts)}</small>` : ''}
@@ -861,6 +952,7 @@ window.saveNewPodcast = function (e) {
   const description = document.getElementById('podDescInput')?.value?.trim() || '';
   const thumbEl = document.getElementById('podThumbnailInput');
   const thumbnail = thumbEl?.value?.trim() || '';
+  const portal = document.getElementById('podPortalInput')?.value || 'main';
   const featured = document.getElementById('podFeaturedInput').checked;
 
   if (!title || !rawUrl) {
@@ -872,6 +964,7 @@ window.saveNewPodcast = function (e) {
   const podcastData = {
     title,
     category,
+    portal,
     hosts,
     date,
     duration,
@@ -902,6 +995,7 @@ window.saveNewPodcast = function (e) {
   closeModal('addPodcastModal');
   updateKPIs();
   renderAdminPodcastsTable();
+  if (typeof renderAdminEconomiaSection === 'function') renderAdminEconomiaSection();
 };
 
 let activeAnnouncementFilter = 'all';
@@ -966,12 +1060,14 @@ function renderAdminAnnouncementsTable() {
             <small style="color: var(--text-muted); display: block; max-width: 420px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
               ${escapeHtml(ann.excerpt || '')}
             </small>
+            ${(ann.imageSource || ann.coverCredit) ? `<small style="color: #38bdf8; font-size: 0.72rem; display: block; margin-top: 0.15rem;"><i class="ri-camera-lens-line"></i> Foto: ${escapeHtml(ann.imageSource || ann.coverCredit)}</small>` : ''}
           </div>
         </div>
       </td>
       <td>
         <div style="display: flex; flex-direction: column; gap: 0.3rem; align-items: flex-start;">
           <span class="blog-tag">${escapeHtml(ann.category || ann.tag || 'Notícia')}</span>
+          ${(ann.portal === 'economia' || ann.portal === 'both') ? `<span class="blog-tag" style="background: rgba(16, 185, 129, 0.16); color: #34d399; font-size: 0.7rem;">${ann.portal === 'both' ? 'Principal + Economia' : 'Economia em Frequência'}</span>` : ''}
           <span class="status-badge ${isInternal ? 'status-pending' : 'status-played'}" style="font-size: 0.72rem;">
             ${isInternal ? '<i class="ri-mic-line"></i> Aviso em Antena' : '<i class="ri-global-line"></i> Público no Site'}
             ${isBase64 ? ' • Base64' : ''}
@@ -1114,19 +1210,23 @@ window.deleteMessageItem = function (id) {
   }
 };
 
-window.openAnnouncementModal = function (id = '') {
+window.openAnnouncementModal = function (id = '', defaultPortal = 'main') {
   const form = document.getElementById('addAnnouncementForm');
   if (!form) return;
   form.reset();
 
   const titleEl = document.getElementById('annModalTitle');
   const idInput = document.getElementById('annIdInput');
+  const portalEl = document.getElementById('annPortalInput');
+  const tagEl = document.getElementById('annTagInput');
   const todayStr = new Date().toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' });
 
   if (idInput) idInput.value = '';
   document.getElementById('annAuthorInput').value = 'Equipa da Rádio • EBS Cidadela';
   document.getElementById('annDateInput').value = todayStr;
   document.getElementById('annVisibilityInput').value = 'public';
+  if (portalEl) portalEl.value = defaultPortal || 'main';
+  if (tagEl && defaultPortal === 'economia') tagEl.value = 'Economia';
   document.getElementById('annImageInput').value = '';
   document.getElementById('annExcerptInput').value = '';
   updateAnnModalCoverPreview('');
@@ -1138,17 +1238,24 @@ window.openAnnouncementModal = function (id = '') {
       if (idInput) idInput.value = ann.id;
       document.getElementById('annTagInput').value = ann.category || ann.tag || 'Notícia';
       document.getElementById('annVisibilityInput').value = ann.visibility === 'internal' ? 'internal' : 'public';
+      if (portalEl) portalEl.value = ann.portal || 'main';
       document.getElementById('annTitleInput').value = ann.title || '';
       document.getElementById('annAuthorInput').value = ann.author || 'Equipa da Rádio • EBS Cidadela';
       document.getElementById('annDateInput').value = ann.date || todayStr;
       document.getElementById('annImageInput').value = ann.image || '';
+      const srcInput = document.getElementById('annImageSourceInput');
+      if (srcInput) srcInput.value = ann.imageSource || ann.coverCredit || ann.coverSource || '';
       document.getElementById('annExcerptInput').value = ann.excerpt || '';
       const plainContent = String(ann.content || '').replace(/<\/p>\s*<p>/gi, '\n\n').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>/g, '').trim();
       document.getElementById('annContentInput').value = plainContent || ann.excerpt || '';
       updateAnnModalCoverPreview(ann.image || '');
     }
-  } else if (titleEl) {
-    titleEl.textContent = 'Publicação Rápida de Artigo';
+  } else {
+    const srcInput = document.getElementById('annImageSourceInput');
+    if (srcInput) srcInput.value = '';
+    if (titleEl) {
+      titleEl.textContent = defaultPortal === 'economia' ? 'Publicação Rápida — Economia em Frequência' : 'Publicação Rápida de Artigo';
+    }
   }
 
   openModal('addAnnouncementModal');
@@ -1210,6 +1317,8 @@ window.openFullEditorFromModal = function () {
     window.location.href = `admin-editor.html?id=${encodeURIComponent(id)}`;
     return;
   }
+  const portalVal = document.getElementById('annPortalInput')?.value || 'main';
+  const visVal = document.getElementById('annVisibilityInput')?.value || 'public';
   // Guardar rascunho temporário para abrir diretamente no editor completo
   const draft = {
     title: document.getElementById('annTitleInput')?.value?.trim() || '',
@@ -1217,8 +1326,10 @@ window.openFullEditorFromModal = function () {
     author: document.getElementById('annAuthorInput')?.value?.trim() || 'Equipa da Rádio • EBS Cidadela',
     date: document.getElementById('annDateInput')?.value?.trim() || '',
     image: document.getElementById('annImageInput')?.value?.trim() || '',
+    imageSource: document.getElementById('annImageSourceInput')?.value?.trim() || '',
     excerpt: document.getElementById('annExcerptInput')?.value?.trim() || '',
-    visibility: document.getElementById('annVisibilityInput')?.value || 'public',
+    visibility: visVal === 'internal' ? 'internal' : (portalVal === 'economia' ? 'economia' : (portalVal === 'both' ? 'both' : 'public')),
+    portal: portalVal,
     content: (document.getElementById('annContentInput')?.value || '')
       .split(/\n\s*\n/)
       .filter(Boolean)
@@ -1229,7 +1340,7 @@ window.openFullEditorFromModal = function () {
   try {
     localStorage.setItem('wave_editor_draft_new', JSON.stringify(draft));
   } catch (_) {}
-  window.location.href = 'admin-editor.html';
+  window.location.href = portalVal === 'economia' ? 'admin-editor.html?portal=economia' : 'admin-editor.html';
 };
 
 window.saveNewAnnouncement = function (e) {
@@ -1237,10 +1348,12 @@ window.saveNewAnnouncement = function (e) {
   const id = document.getElementById('annIdInput')?.value?.trim() || '';
   const tag = document.getElementById('annTagInput').value.trim() || 'Notícia';
   const visibility = document.getElementById('annVisibilityInput')?.value || 'public';
+  const portal = document.getElementById('annPortalInput')?.value || 'main';
   const title = document.getElementById('annTitleInput').value.trim();
   const author = document.getElementById('annAuthorInput')?.value?.trim() || 'Equipa da Rádio • EBS Cidadela';
   const date = document.getElementById('annDateInput')?.value?.trim() || new Date().toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' });
   const image = document.getElementById('annImageInput')?.value?.trim() || 'assets/logo-radio.jpg';
+  const imageSource = document.getElementById('annImageSourceInput')?.value?.trim() || '';
   const excerptInput = document.getElementById('annExcerptInput')?.value?.trim() || '';
   const rawContent = document.getElementById('annContentInput').value.trim();
 
@@ -1262,12 +1375,15 @@ window.saveNewAnnouncement = function (e) {
     tag,
     category: tag,
     visibility,
+    portal,
     onAir: visibility === 'internal',
     broadcastDate: visibility === 'internal' ? localDateKey(new Date()) : '',
     title,
     author,
     date,
     image,
+    imageSource,
+    coverCredit: imageSource,
     excerpt,
     content: formattedHtml,
     readTime
@@ -1277,6 +1393,7 @@ window.saveNewAnnouncement = function (e) {
   document.getElementById('addAnnouncementForm').reset();
   closeModal('addAnnouncementModal');
   renderAdminAnnouncementsTable();
+  if (typeof renderAdminEconomiaSection === 'function') renderAdminEconomiaSection();
   renderAdminOverview();
   showToast(id ? 'Artigo atualizado com sucesso!' : 'Artigo publicado com sucesso!', 'success');
 };
@@ -2021,6 +2138,7 @@ document.addEventListener('radio-db-updated', event => {
   if (collection === 'calendarEvents') { renderSharedCalendar(); renderAdminOverview(); }
   if (collection === 'adminUsers') { renderAdminUsersTable(); renderSharedCalendar(); renderAdminOverview(); }
   if (collection === 'rundowns') {
+    if (typeof renderAoVivoRundown === 'function') renderAoVivoRundown(aoVivoSelectedDate);
     if (typeof loadAoVivoDailyScript === 'function') loadAoVivoDailyScript();
     if (typeof renderEditorialDailyScript === 'function') renderEditorialDailyScript();
     if (typeof renderRundownsList === 'function') renderRundownsList();
@@ -2057,9 +2175,12 @@ document.addEventListener('radio-db-updated', event => {
     updateKPIs();
   }
   if (collection === 'suggestions') {
-    renderSongRankingTable();
-    if (typeof renderAoVivoSongs === 'function') renderAoVivoSongs(currentAoVivoSongFilter);
-    updateKPIs();
+    clearTimeout(window._adminSuggestionsDebounceTimer);
+    window._adminSuggestionsDebounceTimer = setTimeout(() => {
+      renderSongRankingTable();
+      if (typeof renderAoVivoSongs === 'function') renderAoVivoSongs(currentAoVivoSongFilter);
+      updateKPIs();
+    }, 150);
   }
 });
 /* ===========================================================================
@@ -2213,6 +2334,7 @@ window.switchAdminMode = function (mode) {
   currentAdminMode = mode;
   const zoneEditorial = document.getElementById('zoneEditorial');
   const zoneAoVivo = document.getElementById('zoneAoVivo');
+  const adminTopbar = document.getElementById('adminTopbar');
   const btnEditorial = document.getElementById('btnModeEditorial');
   const btnAoVivo = document.getElementById('btnModeAoVivo');
 
@@ -2222,13 +2344,12 @@ window.switchAdminMode = function (mode) {
   });
 
   if (mode === 'aovivo') {
-    if (zoneEditorial) {
-      zoneEditorial.style.animation = 'fadeOut 0.2s ease forwards';
-      setTimeout(() => { zoneEditorial.style.display = 'none'; zoneEditorial.style.animation = ''; }, 200);
-    }
+    document.body.classList.add('mode-aovivo-active');
+    if (zoneEditorial) zoneEditorial.style.display = 'none';
+    if (adminTopbar) adminTopbar.style.display = 'none';
     if (zoneAoVivo) {
       zoneAoVivo.style.display = 'flex';
-      zoneAoVivo.style.animation = 'fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+      zoneAoVivo.style.animation = 'fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards';
     }
     if (btnEditorial) {
       btnEditorial.classList.remove('active');
@@ -2240,13 +2361,16 @@ window.switchAdminMode = function (mode) {
     }
     renderAoVivo();
   } else {
+    document.body.classList.remove('mode-aovivo-active');
+    if (zoneAoVivo) {
+      zoneAoVivo.style.display = 'none';
+    }
+    if (adminTopbar) {
+      adminTopbar.style.display = 'flex';
+    }
     if (zoneEditorial) {
       zoneEditorial.style.display = 'flex';
-      zoneEditorial.style.animation = 'fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards';
-    }
-    if (zoneAoVivo) {
-      zoneAoVivo.style.animation = 'fadeOut 0.2s ease forwards';
-      setTimeout(() => { zoneAoVivo.style.display = 'none'; zoneAoVivo.style.animation = ''; }, 200);
+      zoneEditorial.style.animation = 'fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards';
     }
     if (btnEditorial) {
       btnEditorial.classList.add('active');
@@ -2266,6 +2390,8 @@ window.switchAdminSection = function (target) {
     'sec-mensagens': 'manage_messages',
     'sec-calendario': 'manage_calendar',
     'sec-anuncios': 'manage_announcements',
+    'sec-sabes-que': 'manage_announcements',
+    'sec-economia': 'manage_announcements',
     'sec-podcasts': 'manage_podcasts',
     'sec-links': 'manage_links',
     'sec-tarefas': 'manage_tasks',
@@ -2306,6 +2432,8 @@ window.switchAdminSection = function (target) {
   if (target === 'sec-links') renderAdminLinksTable();
   if (target === 'sec-podcasts') renderAdminPodcastsTable();
   if (target === 'sec-anuncios') renderAdminAnnouncementsTable();
+  if (target === 'sec-sabes-que' && typeof renderAdminSabesQueSection === 'function') renderAdminSabesQueSection();
+  if (target === 'sec-economia' && typeof renderAdminEconomiaSection === 'function') renderAdminEconomiaSection();
   if (target === 'sec-utilizadores') renderAdminUsersTable();
   if (target === 'sec-tarefas') renderTasksView();
   if (target === 'sec-votacoes') renderAdminPollsTable();
@@ -2392,6 +2520,7 @@ function renderAoVivo() {
   if (datePicker) {
     datePicker.value = aoVivoSelectedDate;
   }
+  if (typeof renderAoVivoRundown === 'function') renderAoVivoRundown(aoVivoSelectedDate);
   loadAoVivoDailyScript();
   renderAoVivoSongs(currentAoVivoSongFilter);
 }
@@ -2405,6 +2534,7 @@ window.changeAoVivoDate = function (deltaDays) {
 
   const datePicker = document.getElementById('aoVivoDatePicker');
   if (datePicker) datePicker.value = aoVivoSelectedDate;
+  if (typeof renderAoVivoRundown === 'function') renderAoVivoRundown(aoVivoSelectedDate);
   loadAoVivoDailyScript();
 };
 
@@ -2412,12 +2542,14 @@ window.setAoVivoDateToday = function () {
   aoVivoSelectedDate = localDateKey(new Date());
   const datePicker = document.getElementById('aoVivoDatePicker');
   if (datePicker) datePicker.value = aoVivoSelectedDate;
+  if (typeof renderAoVivoRundown === 'function') renderAoVivoRundown(aoVivoSelectedDate);
   loadAoVivoDailyScript();
 };
 
 window.onAoVivoDatePickerChange = function (newDate) {
   if (!newDate) return;
   aoVivoSelectedDate = newDate;
+  if (typeof renderAoVivoRundown === 'function') renderAoVivoRundown(aoVivoSelectedDate);
   loadAoVivoDailyScript();
 };
 
@@ -2495,6 +2627,7 @@ function getCalendarTopicsForDate(dateKey) {
   relevantTopics.sort((a, b) => a.diffDays - b.diffDays);
   return relevantTopics;
 }
+window.getCalendarTopicsForDate = getCalendarTopicsForDate;
 
 function generateDefaultScriptTemplate(dateKey) {
   const topics = getCalendarTopicsForDate(dateKey);
@@ -2756,6 +2889,470 @@ window.adjustAoVivoFontSize = function (delta) {
 };
 
 // ==========================================================================
+// ALINHAMENTO AO VIVO (GUIÃO + MÚSICAS ESCOLHIDAS - TABELA OFICIAL WAVE)
+// ==========================================================================
+let aoVivoViewMode = 'table';
+
+window.setAoVivoViewMode = function (mode) {
+  aoVivoViewMode = mode;
+  const tabTable = document.getElementById('tabAoVivoTable');
+  const tabPrompter = document.getElementById('tabAoVivoTeleprompter');
+  const viewTable = document.getElementById('aoVivoTableView');
+  const viewPrompter = document.getElementById('aoVivoPrompterView');
+
+  if (tabTable) tabTable.classList.toggle('active', mode === 'table');
+  if (tabPrompter) tabPrompter.classList.toggle('active', mode === 'prompter');
+  if (viewTable) viewTable.style.display = mode === 'table' ? 'block' : 'none';
+  if (viewPrompter) viewPrompter.style.display = mode === 'prompter' ? 'block' : 'none';
+};
+
+function formatAoVivoEmissionDate(dateKey) {
+  try {
+    const [y, m, d] = dateKey.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    const months = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+    return `DIA DA EMISSÃO: ${d} de ${months[date.getMonth()]} ${y}`;
+  } catch (e) {
+    return `DIA DA EMISSÃO: ${dateKey}`;
+  }
+}
+
+function parseDurationSeconds(durStr) {
+  if (!durStr) return 0;
+  const clean = String(durStr).trim();
+  const parts = clean.split(':').map(p => parseInt(p, 10));
+  if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+    return (parts[0] * 60) + parts[1];
+  }
+  if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+    return (parts[0] * 3600) + (parts[1] * 60) + parts[2];
+  }
+  const numeric = parseInt(clean, 10);
+  return !isNaN(numeric) ? numeric : 0;
+}
+
+function formatDurationHuman(totalSec) {
+  if (!totalSec || totalSec <= 0) return '0:00';
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+window.renderAoVivoRundown = function (dateKey = aoVivoSelectedDate) {
+  const tbody = document.getElementById('aoVivoRundownTbody');
+  const titleEl = document.getElementById('aoVivoEmissionTitle');
+  const durationEl = document.getElementById('aoVivoRundownDuration');
+  const itemsCountEl = document.getElementById('aoVivoRundownItemsCount');
+
+  if (titleEl) {
+    titleEl.textContent = formatAoVivoEmissionDate(dateKey);
+  }
+
+  if (!tbody) return;
+
+  const rundown = (window.db && typeof window.db.getDailyRundown === 'function')
+    ? window.db.getDailyRundown(dateKey)
+    : { items: [] };
+
+  const items = Array.isArray(rundown?.items) ? rundown.items : [];
+
+  let totalSeconds = 0;
+  items.forEach(it => {
+    if (it.duration) {
+      totalSeconds += parseDurationSeconds(it.duration);
+    }
+  });
+
+  if (durationEl) {
+    durationEl.innerHTML = `<i class="ri-time-line"></i> Duração: ${formatDurationHuman(totalSeconds)}`;
+  }
+  if (itemsCountEl) {
+    const nonIntervalCount = items.filter(it => it.type !== 'interval').length;
+    itemsCountEl.innerHTML = `<i class="ri-list-check"></i> ${nonIntervalCount} ${nonIntervalCount === 1 ? 'item' : 'itens'}`;
+  }
+
+  if (items.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" style="text-align: center; padding: 2.5rem 1rem; color: #94a3b8;">
+          <div style="font-size: 2.4rem; color: #38bdf8; margin-bottom: 0.5rem;"><i class="ri-play-list-2-line"></i></div>
+          <p style="font-size: 1rem; font-weight: 700; color: #f1f5f9; margin: 0 0 0.4rem;">Sem alinhamento preparado para esta data</p>
+          <p style="font-size: 0.8rem; margin: 0 0 1.2rem; color: #64748b;">Adiciona músicas dos pedidos à direita com <strong>+ Guião</strong>, cria linhas ou carrega o modelo base.</p>
+          <div style="display: inline-flex; gap: 0.6rem; flex-wrap: wrap; justify-content: center;">
+            <button type="button" class="btn-action btn-sm" onclick="openAddRundownItemModal()"><i class="ri-add-line"></i> Linha / Item</button>
+            <button type="button" class="btn-action btn-sm" onclick="addRundownIntervalBlock()"><i class="ri-pause-circle-line"></i> Intervalo</button>
+            <button type="button" class="btn-action btn-sm" onclick="loadDefaultTemplateRundown()" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4);"><i class="ri-magic-line"></i> Carregar Modelo Oficial</button>
+          </div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = items.map((item, idx) => {
+    if (item.type === 'interval') {
+      return `
+        <tr class="rundown-interval-row rs-row" draggable="true" data-idx="${idx}">
+          <td colspan="4" class="rundown-interval-cell">
+            <div class="rundown-interval-wrap">
+              <span class="rs-drag-handle no-print" title="Arrastar para reordenar"><i class="ri-draggable"></i></span>
+              <span class="rundown-interval-title">${escapeHtml(item.title || 'Intervalo')}</span>
+              <div class="rundown-interval-actions no-print">
+                <button type="button" class="rundown-icon-btn" onclick="moveRundownItem(${idx}, -1)" title="Mover para cima" ${idx === 0 ? 'disabled style="opacity:0.3;"' : ''}><i class="ri-arrow-up-s-line"></i></button>
+                <button type="button" class="rundown-icon-btn" onclick="moveRundownItem(${idx}, 1)" title="Mover para baixo" ${idx === items.length - 1 ? 'disabled style="opacity:0.3;"' : ''}><i class="ri-arrow-down-s-line"></i></button>
+                <button type="button" class="rundown-icon-btn" onclick="openEditRundownItemModal(${idx})" title="Editar intervalo"><i class="ri-pencil-line"></i></button>
+                <button type="button" class="rundown-icon-btn" style="color:#f87171;" onclick="deleteRundownItem(${idx})" title="Eliminar"><i class="ri-delete-bin-line"></i></button>
+              </div>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+
+    const isOnAir = item.status === 'on_air';
+    const isPlayed = item.status === 'played';
+    const rowClass = isOnAir ? 'is-on-air-row' : (isPlayed ? 'is-played-row' : '');
+    const displayOrder = (item.order !== undefined && item.order !== null && String(item.order).trim() !== '') ? item.order : (idx + 1);
+
+    const titleText = String(item.title || '');
+    const subtitleText = String(item.artist || item.description || '');
+    const hasLiveHighlight = Boolean(item.highlightLive) || titleText.includes('(fazer live)') || subtitleText.includes('(fazer live)');
+
+    const cleanedTitle = titleText.replace(/\(?fazer live\)?/gi, '').trim();
+
+    let kindPill = '';
+    if (item.type === 'jingle') kindPill = '<span class="rundown-kind-pill is-jingle">Jingle</span>';
+    else if (item.type === 'talk') kindPill = '<span class="rundown-kind-pill is-talk">Fala</span>';
+    else if (item.type === 'rubrica') kindPill = '<span class="rundown-kind-pill is-rubrica">Rubrica</span>';
+    else kindPill = '<span class="rundown-kind-pill is-music">Música</span>';
+
+    let statusBtnHtml = '';
+    if (isOnAir) {
+      statusBtnHtml = `
+        <button type="button" class="rundown-status-toggle-btn is-on-air" onclick="toggleRundownItemStatus(${idx})" title="NO AR! Clique para marcar como Emitida">
+          <span class="aovivo-live-pulse" style="width:7px; height:7px;"></span> NO AR
+        </button>
+      `;
+    } else if (isPlayed) {
+      statusBtnHtml = `
+        <button type="button" class="rundown-status-toggle-btn is-played" onclick="toggleRundownItemStatus(${idx})" title="Emitida! Clique para reabrir">
+          <i class="ri-check-line"></i> Feito
+        </button>
+      `;
+    } else {
+      statusBtnHtml = `
+        <button type="button" class="rundown-status-toggle-btn is-pending" onclick="toggleRundownItemStatus(${idx})" title="Pendente. Clique para colocar NO AR">
+          <i class="ri-play-line"></i> Emitir
+        </button>
+      `;
+    }
+
+    const isExplicit = Boolean(item.isExplicit) || (typeof window.isExplicitSong === 'function' && window.isExplicitSong(item.title, item.artist));
+    const explicitBadge = isExplicit ? '<span class="song-explicit-tag live-explicit-tag" title="ALERTA: Conteúdo Explícito [E] — Não emitir em contexto escolar!">E</span>' : '';
+
+    return `
+      <tr class="rs-row ${rowClass}" draggable="true" data-idx="${idx}">
+        <td class="rundown-order-cell">
+          <div class="rs-order-wrap">
+            <span class="rs-drag-handle no-print" title="Arrastar linha"><i class="ri-draggable"></i></span>
+            <span>${escapeHtml(String(displayOrder))}</span>
+          </div>
+        </td>
+        <td class="rundown-desc-cell">
+          <div class="rundown-item-title-line">
+            ${kindPill}
+            ${explicitBadge}
+            <span class="rundown-item-name">${escapeHtml(cleanedTitle || item.title)}</span>
+            ${hasLiveHighlight ? '<span class="rundown-live-tag">(fazer live)</span>' : ''}
+          </div>
+          ${subtitleText ? `<div class="rundown-item-subtitle">${escapeHtml(subtitleText)}</div>` : ''}
+        </td>
+        <td class="rundown-duration-cell">${escapeHtml(item.duration || '')}</td>
+        <td class="rundown-actions-cell no-print">
+          <div class="rundown-row-btn-group">
+            ${statusBtnHtml}
+            <button type="button" class="rundown-icon-btn" onclick="moveRundownItem(${idx}, -1)" title="Subir" ${idx === 0 ? 'disabled style="opacity:0.3;"' : ''}><i class="ri-arrow-up-s-line"></i></button>
+            <button type="button" class="rundown-icon-btn" onclick="moveRundownItem(${idx}, 1)" title="Descer" ${idx === items.length - 1 ? 'disabled style="opacity:0.3;"' : ''}><i class="ri-arrow-down-s-line"></i></button>
+            <button type="button" class="rundown-icon-btn" onclick="openEditRundownItemModal(${idx})" title="Editar"><i class="ri-pencil-line"></i></button>
+            <button type="button" class="rundown-icon-btn" style="color:#f87171;" onclick="deleteRundownItem(${idx})" title="Eliminar"><i class="ri-delete-bin-line"></i></button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+};
+
+window.addSongToAoVivoRundown = function (songTitle, artist, isExplicit) {
+  const dateKey = aoVivoSelectedDate;
+  const rundown = window.db.getDailyRundown(dateKey);
+  const items = Array.isArray(rundown?.items) ? [...rundown.items] : [];
+
+  let maxOrder = 0;
+  items.forEach(it => {
+    const num = parseInt(it.order, 10);
+    if (!isNaN(num) && num > maxOrder) maxOrder = num;
+  });
+  const nextOrder = maxOrder > 0 ? (maxOrder + 1) : (items.length + 1);
+
+  const newItem = {
+    id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+    order: nextOrder,
+    type: 'music',
+    title: String(songTitle || '').trim(),
+    artist: String(artist || '').trim(),
+    description: '',
+    duration: '',
+    status: 'pending',
+    isExplicit: Boolean(isExplicit)
+  };
+
+  items.push(newItem);
+  window.db.saveDailyRundown(dateKey, items);
+  renderAoVivoRundown(dateKey);
+  showToast(`"${songTitle}" adicionada ao Alinhamento de ${formatDateHuman(dateKey)}!`, 'success');
+};
+
+window.openAddRundownItemModal = function () {
+  const form = document.getElementById('aoVivoRundownItemForm');
+  if (form) form.reset();
+  const editIdxInput = document.getElementById('rundownItemEditIndex');
+  if (editIdxInput) editIdxInput.value = '-1';
+  const modalTitle = document.getElementById('aoVivoRundownModalTitle');
+  if (modalTitle) modalTitle.textContent = 'Adicionar Linha ao Alinhamento';
+
+  const rundown = window.db.getDailyRundown(aoVivoSelectedDate);
+  const items = Array.isArray(rundown?.items) ? rundown.items : [];
+  let maxOrder = 0;
+  items.forEach(it => {
+    const num = parseInt(it.order, 10);
+    if (!isNaN(num) && num > maxOrder) maxOrder = num;
+  });
+  const orderInput = document.getElementById('rundownItemOrder');
+  if (orderInput) orderInput.value = maxOrder > 0 ? (maxOrder + 1) : (items.length + 1);
+
+  onRundownTypeChange('music');
+  openModal('aoVivoRundownItemModal');
+};
+
+window.openEditRundownItemModal = function (idx) {
+  const rundown = window.db.getDailyRundown(aoVivoSelectedDate);
+  const items = Array.isArray(rundown?.items) ? rundown.items : [];
+  const item = items[idx];
+  if (!item) return;
+
+  const form = document.getElementById('aoVivoRundownItemForm');
+  if (form) form.reset();
+
+  const editIdxInput = document.getElementById('rundownItemEditIndex');
+  if (editIdxInput) editIdxInput.value = String(idx);
+
+  const modalTitle = document.getElementById('aoVivoRundownModalTitle');
+  if (modalTitle) modalTitle.textContent = 'Editar Linha do Alinhamento';
+
+  const typeRadios = document.querySelectorAll('input[name="rundownItemType"]');
+  typeRadios.forEach(r => {
+    r.checked = r.value === (item.type || 'talk');
+  });
+
+  const titleInput = document.getElementById('rundownItemTitle');
+  if (titleInput) titleInput.value = item.title || '';
+
+  const artistInput = document.getElementById('rundownItemArtist');
+  if (artistInput) artistInput.value = item.artist || item.description || '';
+
+  const durationInput = document.getElementById('rundownItemDuration');
+  if (durationInput) durationInput.value = item.duration || '';
+
+  const orderInput = document.getElementById('rundownItemOrder');
+  if (orderInput) orderInput.value = item.order !== undefined ? item.order : (idx + 1);
+
+  const liveCheckbox = document.getElementById('rundownItemHighlightLive');
+  if (liveCheckbox) {
+    liveCheckbox.checked = Boolean(item.highlightLive) || String(item.title).includes('(fazer live)') || String(item.artist).includes('(fazer live)');
+  }
+
+  onRundownTypeChange(item.type || 'talk');
+  openModal('aoVivoRundownItemModal');
+};
+
+window.onRundownTypeChange = function (type) {
+  const groupSubtitle = document.getElementById('groupRundownSubtitle');
+  const groupDuration = document.getElementById('groupRundownDuration');
+  const groupLive = document.getElementById('groupRundownLiveHighlight');
+  const titleInput = document.getElementById('rundownItemTitle');
+
+  if (type === 'interval') {
+    if (groupSubtitle) groupSubtitle.style.display = 'none';
+    if (groupDuration) groupDuration.style.display = 'none';
+    if (groupLive) groupLive.style.display = 'none';
+    if (titleInput && (!titleInput.value || titleInput.value === 'Intervalo')) {
+      titleInput.value = '2º Intervalo';
+    }
+  } else {
+    if (groupSubtitle) groupSubtitle.style.display = 'block';
+    if (groupDuration) groupDuration.style.display = 'block';
+    if (groupLive) groupLive.style.display = 'block';
+  }
+};
+
+window.saveAoVivoRundownItemForm = function (e) {
+  if (e) e.preventDefault();
+  const editIdx = parseInt(document.getElementById('rundownItemEditIndex')?.value, 10);
+  const typeRadio = document.querySelector('input[name="rundownItemType"]:checked');
+  const type = typeRadio ? typeRadio.value : 'talk';
+  const title = (document.getElementById('rundownItemTitle')?.value || '').trim();
+  const artist = (document.getElementById('rundownItemArtist')?.value || '').trim();
+  const duration = (document.getElementById('rundownItemDuration')?.value || '').trim();
+  const orderVal = document.getElementById('rundownItemOrder')?.value;
+  const highlightLive = Boolean(document.getElementById('rundownItemHighlightLive')?.checked);
+
+  if (!title) {
+    alert('Por favor introduz o título da linha.');
+    return;
+  }
+
+  const dateKey = aoVivoSelectedDate;
+  const rundown = window.db.getDailyRundown(dateKey);
+  const items = Array.isArray(rundown?.items) ? [...rundown.items] : [];
+
+  const parsedOrder = (orderVal !== '' && !isNaN(parseInt(orderVal, 10)))
+    ? parseInt(orderVal, 10)
+    : (editIdx >= 0 ? items[editIdx].order : (items.length + 1));
+
+  const entry = {
+    id: editIdx >= 0 && items[editIdx] ? items[editIdx].id : `item-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+    order: parsedOrder,
+    type: type,
+    title: title,
+    artist: type === 'interval' ? '' : artist,
+    description: '',
+    duration: type === 'interval' ? '' : duration,
+    highlightLive: highlightLive,
+    status: editIdx >= 0 && items[editIdx] ? items[editIdx].status : 'pending',
+    isExplicit: editIdx >= 0 && items[editIdx] ? Boolean(items[editIdx].isExplicit) : false
+  };
+
+  if (editIdx >= 0 && editIdx < items.length) {
+    items[editIdx] = { ...items[editIdx], ...entry };
+  } else {
+    items.push(entry);
+  }
+
+  window.db.saveDailyRundown(dateKey, items);
+  renderAoVivoRundown(dateKey);
+  closeModal('aoVivoRundownItemModal');
+  showToast('Linha do alinhamento guardada com sucesso!', 'success');
+};
+
+window.addRundownIntervalBlock = function () {
+  const name = prompt('Nome do Intervalo:', '2º Intervalo');
+  if (name === null) return;
+  const cleanName = name.trim() || '2º Intervalo';
+
+  const dateKey = aoVivoSelectedDate;
+  const rundown = window.db.getDailyRundown(dateKey);
+  const items = Array.isArray(rundown?.items) ? [...rundown.items] : [];
+
+  items.push({
+    id: `item-${Date.now()}-interval`,
+    order: items.length + 1,
+    type: 'interval',
+    title: cleanName,
+    artist: '',
+    duration: '',
+    status: 'pending'
+  });
+
+  window.db.saveDailyRundown(dateKey, items);
+  renderAoVivoRundown(dateKey);
+  showToast(`Bloco "${cleanName}" adicionado ao alinhamento!`, 'info');
+};
+
+window.moveRundownItem = function (idx, direction) {
+  const dateKey = aoVivoSelectedDate;
+  const rundown = window.db.getDailyRundown(dateKey);
+  const items = Array.isArray(rundown?.items) ? [...rundown.items] : [];
+  const targetIdx = idx + direction;
+
+  if (targetIdx < 0 || targetIdx >= items.length) return;
+
+  const temp = items[idx];
+  items[idx] = items[targetIdx];
+  items[targetIdx] = temp;
+
+  window.db.saveDailyRundown(dateKey, items);
+  renderAoVivoRundown(dateKey);
+};
+
+window.toggleRundownItemStatus = function (idx) {
+  const dateKey = aoVivoSelectedDate;
+  const rundown = window.db.getDailyRundown(dateKey);
+  const items = Array.isArray(rundown?.items) ? [...rundown.items] : [];
+  const item = items[idx];
+  if (!item) return;
+
+  if (item.status === 'on_air') {
+    item.status = 'played';
+  } else if (item.status === 'played') {
+    item.status = 'pending';
+  } else {
+    items.forEach(it => {
+      if (it.status === 'on_air') it.status = 'played';
+    });
+    item.status = 'on_air';
+  }
+
+  window.db.saveDailyRundown(dateKey, items);
+  renderAoVivoRundown(dateKey);
+};
+
+window.deleteRundownItem = function (idx) {
+  if (!confirm('Eliminar esta linha do alinhamento?')) return;
+  const dateKey = aoVivoSelectedDate;
+  const rundown = window.db.getDailyRundown(dateKey);
+  const items = Array.isArray(rundown?.items) ? [...rundown.items] : [];
+  if (idx < 0 || idx >= items.length) return;
+
+  items.splice(idx, 1);
+  window.db.saveDailyRundown(dateKey, items);
+  renderAoVivoRundown(dateKey);
+  if (window.RundownStudio && typeof window.RundownStudio.render === 'function') window.RundownStudio.render();
+  showToast('Linha eliminada.', 'info');
+};
+
+window.clearAoVivoRundown = function () {
+  if (!confirm(`Tens a certeza de que queres limpar todo o alinhamento de ${formatDateHuman(aoVivoSelectedDate)}?`)) return;
+  try {
+    localStorage.setItem(`wave_rundown_cleared_${aoVivoSelectedDate}`, 'true');
+  } catch (_) {}
+  window.db.saveDailyRundown(aoVivoSelectedDate, []);
+  renderAoVivoRundown(aoVivoSelectedDate);
+  if (window.RundownStudio && typeof window.RundownStudio.render === 'function') window.RundownStudio.render();
+  showToast('Alinhamento limpo.', 'info');
+};
+
+window.printAoVivoRundown = function () {
+  window.print();
+};
+
+window.loadDefaultTemplateRundown = function () {
+  if (!confirm(`Carregar a estrutura base da emissão (apenas jingles, abertura e intervalo, sem músicas pré-definidas) em ${formatDateHuman(aoVivoSelectedDate)}?`)) return;
+
+  const templateItems = [
+    { order: 1, type: 'jingle', title: 'Jingle Rádio Wave', artist: '', duration: '1:43', highlightLive: false, status: 'pending' },
+    { order: 2, type: 'talk', title: 'Abertura da Emissão', artist: 'Boas-vindas e destaques do dia', duration: '1:00', highlightLive: true, status: 'pending' },
+    { order: 3, type: 'rubrica', title: 'Dica do dia', artist: 'Curiosidade ou efeméride escolar', duration: '0:25', highlightLive: false, status: 'pending' },
+    { order: '', type: 'interval', title: '2º Intervalo', artist: '', duration: '', highlightLive: false, status: 'pending' },
+    { order: 4, type: 'jingle', title: 'Fim da Emissão - Jingle', artist: '', duration: '0:30', highlightLive: false, status: 'pending' }
+  ];
+
+  window.db.saveDailyRundown(aoVivoSelectedDate, templateItems);
+  renderAoVivoRundown(aoVivoSelectedDate);
+  if (window.RundownStudio && typeof window.RundownStudio.render === 'function') window.RundownStudio.render();
+  showToast('Estrutura base carregada (sem músicas)! Agora podes adicionar as tuas músicas.', 'success');
+};
+
+// ==========================================================================
 // EDITORIAL SCRIPT MANAGEMENT
 // ==========================================================================
 let editorialSelectedDate = localDateKey(new Date());
@@ -2981,7 +3578,6 @@ function renderAoVivoSongs(filterStatus = 'pending') {
 
   suggestions.forEach(item => {
     if (!item) return;
-    if (filterStatus !== 'all' && item.status !== filterStatus) return;
 
     const rawTitle = String(item.songTitle || item.title || '').trim();
     const rawArtist = String(item.artist || '').trim();
@@ -2995,6 +3591,7 @@ function renderAoVivoSongs(filterStatus = 'pending') {
     const key = `${displayTitle.toLowerCase()}___${displayArtist.toLowerCase()}`;
     if (!map.has(key)) {
       map.set(key, {
+        key,
         songTitle: displayTitle,
         title: displayTitle,
         artist: displayArtist,
@@ -3004,45 +3601,88 @@ function renderAoVivoSongs(filterStatus = 'pending') {
         count: 0,
         ids: [],
         dtClasses: [],
-        status: item.status || 'pending'
+        latestTimestamp: 0,
+        firstTimestamp: 0,
+        status: item.status || 'pending',
+        isExplicit: false,
+        explicitOverrides: []
       });
     }
 
     const group = map.get(key);
     group.count += 1;
+    const ts = Number(item.timestamp) || 0;
+    if (ts > group.latestTimestamp) group.latestTimestamp = ts;
+    if (ts > 0 && (!group.firstTimestamp || ts < group.firstTimestamp)) group.firstTimestamp = ts;
+    if (!group.previewUrl && previewUrl) group.previewUrl = previewUrl;
     if (item.id) group.ids.push(item.id);
+    if (typeof item.explicit === 'boolean') group.explicitOverrides.push(item.explicit);
     if (item.studentClass && !group.dtClasses.includes(item.studentClass)) {
       group.dtClasses.push(item.studentClass);
     }
   });
 
-  const rankedList = Array.from(map.values()).sort((a, b) => b.count - a.count);
+  const rankedList = Array.from(map.values()).map(group => {
+    const dictExplicit = typeof window.isExplicitSong === 'function' ? window.isExplicitSong(group.songTitle, group.artist) : false;
+    const isExplicit = group.trackExplicitness === 'explicit' || dictExplicit;
+    return { ...group, isExplicit };
+  }).filter(song => {
+    if (filterStatus === 'clean') {
+      return song.status === 'pending' && !song.isExplicit;
+    }
+    if (filterStatus !== 'all' && song.status !== filterStatus) {
+      return false;
+    }
+    return true;
+  }).sort((a, b) => b.count - a.count);
 
   if (countEl) {
-    const pendingTotal = suggestions.filter(s => s && s.status === 'pending').length;
-    countEl.textContent = filterStatus === 'pending' ? pendingTotal : rankedList.length;
+    if (filterStatus === 'clean') {
+      countEl.textContent = rankedList.length;
+    } else if (filterStatus === 'pending') {
+      const pendingTotal = suggestions.filter(s => s && s.status === 'pending').length;
+      countEl.textContent = pendingTotal;
+    } else {
+      countEl.textContent = rankedList.length;
+    }
   }
 
   if (rankedList.length === 0) {
-    listEl.innerHTML = `<div class="aovivo-empty"><i class="ri-music-2-line"></i> Nenhuma música com estado "${filterStatus}"</div>`;
+    const emptyMsg = filterStatus === 'clean'
+      ? 'Nenhuma música pendente sem conteúdo explícito.'
+      : `Nenhuma música com estado "${filterStatus}"`;
+    listEl.innerHTML = `<div class="aovivo-empty"><i class="ri-music-2-line"></i> ${emptyMsg}</div>`;
     return;
   }
 
   listEl.innerHTML = rankedList.map((song, idx) => {
     const isPlayed = song.status === 'played';
+    const isExplicit = song.isExplicit;
     const dtTag = song.dtClasses.length ? ` · <span style="color:#38bdf8;">DT ${escapeHtml(song.dtClasses.join(', '))}</span>` : '';
+    const dateInfo = formatSongRequestDate(song.latestTimestamp, song.firstTimestamp, song.count);
+    const dateTag = dateInfo ? ` · <span style="color:#94a3b8;" title="${escapeHtml(dateInfo.tooltip)}"><i class="ri-calendar-line"></i> ${escapeHtml(dateInfo.shortDate)}</span>` : '';
     return `
-      <div class="musica-live-card ${isPlayed ? 'is-played' : ''}">
+      <div class="musica-live-card ${isPlayed ? 'is-played' : ''} ${isExplicit ? 'is-explicit-danger' : ''}" draggable="true" data-drag-type="song" data-pick-song="${escapeHtml(song.songTitle)}" data-pick-artist="${escapeHtml(song.artist)}" data-pick-exp="${isExplicit ? '1' : '0'}" data-pick-preview="${escapeHtml(song.previewUrl || '')}" data-pick-art="${escapeHtml(song.artwork || '')}" data-wp-row="${escapeHtml(song.key)}" title="Arrasta para a posição desejada na tabela ou clica em + Guião">
+        <span class="rs-card-grip no-print" aria-hidden="true"><i class="ri-draggable"></i></span>
         <div class="musica-live-rank">#${idx + 1}</div>
         <div class="musica-live-thumb">
-          ${song.artwork ? `<img src="${escapeHtml(song.artwork)}" alt="${escapeHtml(song.songTitle)}" style="width:100%; height:100%; border-radius:6px; object-fit:cover;" onerror="this.onerror=null;this.src='assets/logo-radio.jpg';" loading="lazy">` : '<i class="ri-music-2-line" style="color: #64748b;"></i>'}
+          <button type="button" class="wp-thumb-btn ${song.previewUrl ? '' : 'is-nopreview'}" data-wp-key="${escapeHtml(song.key)}" ${song.previewUrl ? `onclick="WavePlayer.playKey(this.dataset.wpKey, 'aovivo')"` : 'tabindex="-1"'} title="${song.previewUrl ? 'Ouvir prévia (30s)' : 'Sem prévia disponível'}">
+            <img src="${escapeHtml(song.artwork || 'assets/logo-radio.jpg')}" alt="${escapeHtml(song.songTitle)}" onerror="this.onerror=null;this.src='assets/logo-radio.jpg';" loading="lazy">
+            <i class="ri-play-fill"></i>
+          </button>
         </div>
         <div class="musica-live-info">
-          <span class="musica-live-title">${escapeHtml(song.songTitle)}</span>
-          <span class="musica-live-artist">${escapeHtml(song.artist)}${dtTag}</span>
+          <span class="musica-live-title" style="display: flex; align-items: center; gap: 0.25rem;">
+            ${isExplicit ? '<span class="song-explicit-tag live-explicit-tag" title="ALERTA: Conteúdo Explícito [E] — Não emitir em contexto escolar!">E</span>' : ''}
+            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(song.songTitle)}</span>
+          </span>
+          <span class="musica-live-artist">${escapeHtml(song.artist)}${dtTag}${dateTag}</span>
         </div>
         <div class="musica-live-actions">
           <span class="musica-live-votes"><i class="ri-fire-fill"></i> ${song.count}</span>
+          <button type="button" class="musica-live-btn-add-rundown" onclick="addSongToAoVivoRundown('${escapeHtml(song.songTitle).replace(/'/g, "\\'")}', '${escapeHtml(song.artist).replace(/'/g, "\\'")}', ${isExplicit})" title="Adicionar este pedido diretamente ao Alinhamento oficial da emissão">
+            <i class="ri-play-list-add-line"></i> + Guião
+          </button>
           <button class="musica-live-btn-play" onclick="toggleAoVivoSongStatus(['${song.ids.join("','")}'], '${isPlayed ? 'pending' : 'played'}')" title="${isPlayed ? 'Reabrir pedido' : 'Marcar como tocada no outro PC'}">
             <i class="${isPlayed ? 'ri-checkbox-circle-fill' : 'ri-play-circle-line'}"></i> ${isPlayed ? 'Tocada' : 'Tocar'}
           </button>
@@ -3050,6 +3690,12 @@ function renderAoVivoSongs(filterStatus = 'pending') {
       </div>
     `;
   }).join('');
+
+  if (window.WavePlayer) {
+    window.WavePlayer.setQueue('aovivo', rankedList.map(s => ({
+      key: s.key, url: s.previewUrl, title: s.songTitle, artist: s.artist, artwork: s.artwork, explicit: s.isExplicit
+    })));
+  }
 }
 
 window.filterAoVivoSongs = function (status) {
@@ -5615,15 +6261,501 @@ window.copyMaintenanceUnlockLink = function () {
   }
 };
 
+/* ==========================================================================
+   VISIBILIDADE DO SITE & GESTÃO DE PÁGINAS EM BETA (FEATURE FLAGS)
+   ========================================================================== */
+const ADMIN_CONFIGURABLE_PAGES = [
+  { key: 'economia.html', title: 'Economia em Frequência', desc: 'Canal temático com 3 podcasts e rubrica Sabias que... Economia', icon: 'ri-money-dollar-circle-line', colorClass: 'is-emerald' },
+  { key: 'sabes-que.html', title: 'Sabias que... (Disciplinas)', desc: 'Arquivo geral de curiosidades e factos educativos por disciplina', icon: 'ri-lightbulb-line', colorClass: 'is-amber' },
+  { key: 'podcasts.html', title: 'Podcasts Oficiais', desc: 'Catálogo geral de programas de rádio e leitor multimédia', icon: 'ri-headphone-line', colorClass: 'is-purple' },
+  { key: 'noticias.html', title: 'Notícias & Blog', desc: 'Mural de novidades escolares, artigos com capa e fontes', icon: 'ri-newspaper-line', colorClass: 'is-sky' },
+  { key: 'pedir-musica.html', title: 'Pedir Música (Alunos)', desc: 'Formulário aberto de sugestões de músicas para os intervalos', icon: 'ri-music-2-line', colorClass: 'is-amber' },
+  { key: 'DT.html', title: 'Diretores de Turma (DTs)', desc: 'Portal exclusivo para DTs enviarem as 10 músicas semanais da turma', icon: 'ri-graduation-cap-line', colorClass: 'is-sky' },
+  { key: 'vote.html', title: 'Votações & Sondagens', desc: 'Página pública de sondagens interativas da rádio', icon: 'ri-bar-chart-2-line', colorClass: 'is-purple' },
+  { key: 'nerd-alert.html', title: 'Alerta Nerd (Desafios)', desc: 'Página de resposta cronológica ao desafio ativo', icon: 'ri-flashlight-line', colorClass: 'is-amber' },
+  { key: 'equipa.html', title: 'Equipa da Rádio', desc: 'Apresentação dos alunos locutores, técnicos e coordenação', icon: 'ri-team-line', colorClass: 'is-emerald' },
+  { key: 'mensagem.html', title: 'Fala Connosco (Mensagens)', desc: 'Canal direto de envio de mensagens para o estúdio da rádio', icon: 'ri-chat-1-line', colorClass: 'is-sky' }
+];
+
+const ADMIN_CONFIGURABLE_SECTIONS = [
+  { key: 'home-news', title: 'Mural de Notícias na Homepage', desc: 'Grelha de artigos em destaque na página inicial (index.html)', page: 'index.html', icon: 'ri-newspaper-line' },
+  { key: 'home-podcasts', title: 'Últimos Episódios na Homepage', desc: 'Grelha dos episódios mais recentes na página inicial (index.html)', page: 'index.html', icon: 'ri-headphone-line' },
+  { key: 'home-sabias-que', title: 'Secção Sabias que... na Homepage', desc: 'Grelha de curiosidades rápidas na página inicial (index.html)', page: 'index.html', icon: 'ri-lightbulb-line' },
+  { key: 'home-manifesto', title: 'Manifesto "Feita por alunos"', desc: 'Bloco institucional no final da página inicial (index.html)', page: 'index.html', icon: 'ri-information-line' },
+  { key: 'econ-sabias-que', title: 'Rubrica Sabias que... Economia', desc: 'Secção de curiosidades na página de Economia em Frequência', page: 'economia.html', icon: 'ri-lightbulb-flash-line' },
+  { key: 'econ-podcasts', title: '3 Podcasts de Economia', desc: 'Bloco com as 3 séries temáticas de áudio em Economia', page: 'economia.html', icon: 'ri-mic-line' }
+];
+
+window.openSiteVisibilityModal = function () {
+  renderAdminVisibilityUI();
+  const modal = document.getElementById('siteVisibilityModal');
+  if (modal) modal.classList.add('active');
+};
+
+function renderAdminVisibilityUI() {
+  if (!window.db || typeof window.db.getSiteVisibility !== 'function') return;
+  const state = window.db.getSiteVisibility();
+  const pages = state.pages || {};
+  const sections = state.sections || {};
+
+  // 1. Atualizar botão e badge na Topbar
+  const hiddenPagesCount = Object.keys(pages).filter(k => pages[k] === false).length;
+  const topBadge = document.getElementById('topbarVisBadge');
+  if (topBadge) {
+    if (hiddenPagesCount > 0) {
+      topBadge.textContent = `${hiddenPagesCount} Beta`;
+      topBadge.style.display = 'inline-block';
+    } else {
+      topBadge.style.display = 'none';
+    }
+  }
+
+  // 2. Renderizar Grelha de Páginas
+  const pagesContainer = document.getElementById('visPagesGrid');
+  if (pagesContainer) {
+    pagesContainer.innerHTML = ADMIN_CONFIGURABLE_PAGES.map(item => {
+      const isVisible = pages[item.key] !== false;
+      return `
+        <div class="vis-item-card ${isVisible ? '' : 'is-hidden-beta'}">
+          <div class="vis-item-left">
+            <div class="vis-item-icon ${item.colorClass || ''}">
+              <i class="${item.icon || 'ri-file-line'}"></i>
+            </div>
+            <div class="vis-item-info">
+              <strong>${escapeHtml(item.title)}</strong>
+              <small>${escapeHtml(item.desc)} &bull; <code>${item.key}</code></small>
+            </div>
+          </div>
+          <div class="vis-item-actions">
+            <a href="${item.key}?preview=beta" target="_blank" rel="noopener" class="btn-action btn-sm" title="Testar página como administrador">
+              <i class="ri-external-link-line"></i> Testar
+            </a>
+            <span class="vis-badge ${isVisible ? 'is-public' : 'is-beta'}">
+              <i class="${isVisible ? 'ri-check-line' : 'ri-flask-line'}"></i>
+              ${isVisible ? 'Público' : 'Oculto (Beta)'}
+            </span>
+            <label class="vis-switch" title="${isVisible ? 'Clique para ocultar esta página do público geral (Modo Beta)' : 'Clique para tornar esta página pública para todos'}">
+              <input type="checkbox" ${isVisible ? 'checked' : ''} onchange="toggleAdminPageVisibility('${item.key}')">
+              <span class="vis-slider"></span>
+            </label>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // 3. Renderizar Grelha de Secções
+  const sectionsContainer = document.getElementById('visSectionsGrid');
+  if (sectionsContainer) {
+    sectionsContainer.innerHTML = ADMIN_CONFIGURABLE_SECTIONS.map(item => {
+      const isVisible = sections[item.key] !== false;
+      return `
+        <div class="vis-item-card ${isVisible ? '' : 'is-hidden-beta'}">
+          <div class="vis-item-left">
+            <div class="vis-item-icon">
+              <i class="${item.icon || 'ri-layout-line'}"></i>
+            </div>
+            <div class="vis-item-info">
+              <strong>${escapeHtml(item.title)}</strong>
+              <small>${escapeHtml(item.desc)} &bull; <code>${item.page}</code></small>
+            </div>
+          </div>
+          <div class="vis-item-actions">
+            <span class="vis-badge ${isVisible ? 'is-public' : 'is-beta'}">
+              <i class="${isVisible ? 'ri-check-line' : 'ri-eye-off-line'}"></i>
+              ${isVisible ? 'Visível' : 'Oculta'}
+            </span>
+            <label class="vis-switch" title="${isVisible ? 'Clique para ocultar esta secção' : 'Clique para mostrar esta secção'}">
+              <input type="checkbox" ${isVisible ? 'checked' : ''} onchange="toggleAdminSectionVisibility('${item.key}')">
+              <span class="vis-slider"></span>
+            </label>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // 4. Aviso de atualização
+  const notice = document.getElementById('visLastUpdatedNotice');
+  if (notice && state.updatedAt) {
+    const d = new Date(state.updatedAt);
+    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    notice.textContent = `Atualizado às ${timeStr} por ${state.updatedBy || 'Admin'}`;
+  }
+}
+
+window.toggleAdminPageVisibility = async function (pageKey) {
+  if (!window.db || typeof window.db.togglePageVisibility !== 'function') return;
+  const current = window.db.getSiteVisibility();
+  const willBeVisible = !(current.pages[pageKey] !== false);
+  const userEmail = window.firebaseServices?.auth?.currentUser?.email || 'Admin';
+
+  const pageDef = ADMIN_CONFIGURABLE_PAGES.find(p => p.key === pageKey);
+  const pageName = pageDef ? pageDef.title : pageKey;
+
+  const res = window.db.togglePageVisibility(pageKey, willBeVisible);
+  renderAdminVisibilityUI();
+
+  if (res && res._writePromise) {
+    try { await res._writePromise; } catch (_) {}
+  }
+
+  if (willBeVisible) {
+    showToast(`Página "${pageName}" agora está PÚBLICA e visível para todos no site!`, 'success');
+  } else {
+    showToast(`Página "${pageName}" está agora OCULTA (Modo Beta). Apenas administradores conseguem aceder.`, 'warning');
+  }
+};
+
+window.toggleAdminSectionVisibility = async function (sectionKey) {
+  if (!window.db || typeof window.db.toggleSectionVisibility !== 'function') return;
+  const current = window.db.getSiteVisibility();
+  const willBeVisible = !(current.sections[sectionKey] !== false);
+
+  const secDef = ADMIN_CONFIGURABLE_SECTIONS.find(s => s.key === sectionKey);
+  const secName = secDef ? secDef.title : sectionKey;
+
+  const res = window.db.toggleSectionVisibility(sectionKey, willBeVisible);
+  renderAdminVisibilityUI();
+
+  if (res && res._writePromise) {
+    try { await res._writePromise; } catch (_) {}
+  }
+
+  if (willBeVisible) {
+    showToast(`Secção "${secName}" agora está visível no site!`, 'success');
+  } else {
+    showToast(`Secção "${secName}" foi ocultada do site!`, 'info');
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(renderAdminMaintenanceUI, 300);
+  setTimeout(renderAdminVisibilityUI, 300);
 });
 document.addEventListener('radio-maintenance-updated', () => {
   renderAdminMaintenanceUI();
+});
+document.addEventListener('radio-visibility-updated', () => {
+  renderAdminVisibilityUI();
 });
 document.addEventListener('radio-db-updated', (e) => {
   const col = e && e.detail && e.detail.collection;
   if (!col || col === 'announcements' || col === 'siteMaintenance') {
     renderAdminMaintenanceUI();
   }
+  if (!col || col === 'announcements' || col === 'siteVisibility') {
+    renderAdminVisibilityUI();
+  }
+  if (!col || col === 'announcements' || col === 'sabesQue') {
+    if (typeof renderAdminSabesQueSection === 'function') renderAdminSabesQueSection();
+    if (typeof renderAdminEconomiaSection === 'function') renderAdminEconomiaSection();
+  }
+  if (!col || col === 'podcasts') {
+    if (typeof renderAdminEconomiaSection === 'function') renderAdminEconomiaSection();
+  }
 });
+
+/* ==========================================================================
+   GESTÃO DE "SABES QUE..." & "ECONOMIA EM FREQUÊNCIA"
+   ========================================================================== */
+function renderAdminSabesQueSection() {
+  const grid = document.getElementById('sabesQueAdminGrid');
+  const filterSelect = document.getElementById('sabesQueAdminDisciplineFilter');
+  const searchInput = document.getElementById('sabesQueAdminSearch');
+  if (!grid || !window.db || typeof window.db.getSabesQue !== 'function') return;
+
+  const disciplines = window.db.getSabesQueDisciplines ? window.db.getSabesQueDisciplines() : ['Economia'];
+  if (filterSelect) {
+    const prevVal = filterSelect.value || 'all';
+    filterSelect.innerHTML = '<option value="all">Todas as Disciplinas</option>' +
+      disciplines.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
+    if (Array.from(filterSelect.options).some(o => o.value === prevVal)) {
+      filterSelect.value = prevVal;
+    }
+  }
+
+  const activeDisc = filterSelect ? filterSelect.value : 'all';
+  const query = (searchInput?.value || '').trim().toLowerCase();
+  let list = window.db.getSabesQue(activeDisc === 'all' ? null : activeDisc);
+
+  if (query) {
+    list = list.filter(item =>
+      `${item.title} ${item.content} ${item.discipline} ${item.author}`.toLowerCase().includes(query)
+    );
+  }
+
+  if (list.length === 0) {
+    grid.innerHTML = `
+      <div class="card-panel" style="grid-column: 1 / -1; text-align: center; padding: 2.5rem;">
+        <i class="ri-lightbulb-flash-line" style="font-size: 2rem; color: #fbbf24; display: block; margin-bottom: 0.6rem;"></i>
+        <strong style="display: block; font-size: 1.05rem; margin-bottom: 0.3rem;">Ainda não existem curiosidades "Sabias que..."</strong>
+        <span style="color: var(--text-muted); font-size: 0.88rem;">Clica em "Novo Sabias que..." para adicionar a primeira curiosidade de Economia ou de qualquer outra disciplina.</span>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = list.map(item => {
+    const safeId = escapeHtml(item.id);
+    return `
+      <div class="card-panel" style="display: flex; flex-direction: column; gap: 0.65rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+          <span class="blog-tag" style="background: rgba(245, 158, 11, 0.16); color: #fbbf24;">
+            <i class="ri-lightbulb-flash-line"></i> Sabias que... ${escapeHtml(item.discipline)}
+          </span>
+          <small style="color: var(--text-muted); font-size: 0.76rem;">${escapeHtml(item.date || '')}</small>
+        </div>
+        ${item.image ? `<img src="${escapeHtml(item.image)}" alt="" style="width: 100%; height: 140px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);" onerror="this.style.display='none'">` : ''}
+        <h3 style="margin: 0; font-size: 1.05rem; color: #ffffff;">${escapeHtml(item.title)}</h3>
+        <p style="margin: 0; font-size: 0.86rem; color: var(--text-secondary); line-height: 1.5; flex: 1;">${escapeHtml(item.content.length > 180 ? item.content.slice(0, 177) + '...' : item.content)}</p>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; padding-top: 0.65rem; border-top: 1px solid rgba(255,255,255,0.08);">
+          <small style="color: var(--text-muted);">${escapeHtml(item.author || 'Wave Rádio')}</small>
+          <div style="display: flex; gap: 0.35rem;">
+            <button type="button" class="btn-action" onclick="openSabesQueModal('${safeId}')"><i class="ri-edit-line"></i> Editar</button>
+            <button type="button" class="btn-action" style="color: #ef4444;" onclick="deleteSabesQueItem('${safeId}')"><i class="ri-delete-bin-line"></i></button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.onSabesQueDisciplineSelectChange = function (val) {
+  const wrap = document.getElementById('sqCustomDisciplineWrap');
+  const input = document.getElementById('sqCustomDisciplineInput');
+  const isNew = val === '__new__';
+  if (wrap) wrap.style.display = isNew ? 'block' : 'none';
+  if (input) {
+    input.required = isNew;
+    if (isNew) input.focus();
+  }
+};
+
+window.openSabesQueModal = function (id = '', presetDiscipline = '') {
+  const form = document.getElementById('sabesQueForm');
+  const modalTitle = document.getElementById('sabesQueModalTitle');
+  const delBtn = document.getElementById('sqDeleteBtn');
+  const discSelect = document.getElementById('sqDisciplineSelect');
+  if (!form || !discSelect) return;
+
+  form.reset();
+  document.getElementById('sqIdInput').value = '';
+  document.getElementById('sqAuthorInput').value = 'Equipa da Rádio • EBS Cidadela';
+  onSabesQueDisciplineSelectChange('Economia');
+
+  const disciplines = window.db && window.db.getSabesQueDisciplines ? window.db.getSabesQueDisciplines() : ['Economia'];
+  discSelect.innerHTML = disciplines.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('') +
+    '<option value="__new__">+ Nova Disciplina...</option>';
+
+  if (id && window.db && window.db.getSabesQueById) {
+    const item = window.db.getSabesQueById(id);
+    if (item) {
+      if (modalTitle) modalTitle.textContent = 'Editar "Sabias que..."';
+      if (delBtn) delBtn.style.display = 'inline-flex';
+      document.getElementById('sqIdInput').value = item.id;
+      if (Array.from(discSelect.options).some(o => o.value === item.discipline)) {
+        discSelect.value = item.discipline;
+      } else {
+        const opt = document.createElement('option');
+        opt.value = item.discipline;
+        opt.textContent = item.discipline;
+        discSelect.insertBefore(opt, discSelect.lastElementChild);
+        discSelect.value = item.discipline;
+      }
+      document.getElementById('sqTitleInput').value = item.title || '';
+      document.getElementById('sqContentInput').value = item.content || '';
+      document.getElementById('sqAuthorInput').value = item.author || 'Equipa da Rádio • EBS Cidadela';
+      document.getElementById('sqSourceInput').value = item.source || '';
+      document.getElementById('sqImageInput').value = item.image || '';
+      openModal('sabesQueModal');
+      return;
+    }
+  }
+
+  if (modalTitle) modalTitle.textContent = presetDiscipline ? `Novo "Sabias que... ${presetDiscipline}"` : 'Novo "Sabias que..."';
+  if (delBtn) delBtn.style.display = 'none';
+  if (presetDiscipline && Array.from(discSelect.options).some(o => o.value === presetDiscipline)) {
+    discSelect.value = presetDiscipline;
+  }
+  openModal('sabesQueModal');
+};
+
+window.handleSabesQueImageUpload = async function (file) {
+  if (!file || typeof window.imageFileToBase64 !== 'function') return;
+  try {
+    const res = await window.imageFileToBase64(file, {
+      maxWidth: 1000,
+      maxHeight: 800,
+      quality: 0.82,
+      maxBase64Chars: 280000
+    });
+    const input = document.getElementById('sqImageInput');
+    if (input) input.value = res.dataUrl;
+    showToast(`Imagem convertida para Base64 (${res.sizeKB} KB).`, 'success');
+  } catch (err) {
+    showToast(err.message || 'Erro ao converter imagem.', 'error');
+  }
+};
+
+window.clearSabesQueImage = function () {
+  const input = document.getElementById('sqImageInput');
+  const fileInput = document.getElementById('sqImageFileInput');
+  if (input) input.value = '';
+  if (fileInput) fileInput.value = '';
+};
+
+window.saveSabesQueForm = async function (e) {
+  e.preventDefault();
+  const id = document.getElementById('sqIdInput')?.value?.trim() || '';
+  const discSelectVal = document.getElementById('sqDisciplineSelect')?.value || 'Economia';
+  const customDisc = document.getElementById('sqCustomDisciplineInput')?.value?.trim() || '';
+  const discipline = discSelectVal === '__new__' ? customDisc : discSelectVal;
+  const title = document.getElementById('sqTitleInput')?.value?.trim() || '';
+  const content = document.getElementById('sqContentInput')?.value?.trim() || '';
+  const author = document.getElementById('sqAuthorInput')?.value?.trim() || 'Equipa da Rádio • EBS Cidadela';
+  const source = document.getElementById('sqSourceInput')?.value?.trim() || '';
+  const image = document.getElementById('sqImageInput')?.value?.trim() || '';
+
+  if (!discipline || !title || !content) {
+    showToast('Preenche a disciplina, o título e a explicação.', 'warning');
+    return;
+  }
+
+  const saved = window.db.saveSabesQue({
+    id: id || undefined,
+    discipline,
+    title,
+    content,
+    author,
+    source,
+    image
+  });
+
+  if (saved && saved._writePromise) {
+    try { await saved._writePromise; } catch (_) {}
+  }
+
+  closeModal('sabesQueModal');
+  renderAdminSabesQueSection();
+  renderAdminEconomiaSection();
+  showToast(`"Sabias que... ${discipline}" guardado com sucesso!`, 'success');
+};
+
+window.deleteSabesQueItem = function (id) {
+  if (!confirm('Eliminar esta curiosidade "Sabias que..."?')) return;
+  window.db.deleteSabesQue(id);
+  renderAdminSabesQueSection();
+  renderAdminEconomiaSection();
+  showToast('Curiosidade eliminada.', 'info');
+};
+
+window.deleteOpenSabesQue = function () {
+  const id = document.getElementById('sqIdInput')?.value?.trim();
+  if (!id) return;
+  deleteSabesQueItem(id);
+  closeModal('sabesQueModal');
+};
+
+function renderAdminEconomiaSection() {
+  const mitoEl = document.getElementById('adminEconListMito');
+  const jovensEl = document.getElementById('adminEconListJovens');
+  const sustEl = document.getElementById('adminEconListSust');
+  const factsEl = document.getElementById('adminEconFactsList');
+  if (!window.db) return;
+
+  const facts = window.db.getSabesQue ? window.db.getSabesQue('Economia') : [];
+  const podcasts = window.db.getEconomyPodcasts ? window.db.getEconomyPodcasts() : [];
+
+  const normCat = (cat) => String(cat || '').trim().toLowerCase();
+
+  const mitoPods = podcasts.filter(p => normCat(p.category).includes('mito'));
+  const jovensPods = podcasts.filter(p => normCat(p.category).includes('jovens') || normCat(p.category).includes('dinheiro'));
+  const sustPods = podcasts.filter(p => normCat(p.category).includes('sustentab') || normCat(p.category).includes('verde'));
+
+  const fc = document.getElementById('adminEconFactsCount');
+  const fBadge = document.getElementById('adminEconFactsBadge');
+  const pcMito = document.getElementById('adminEconCountMito');
+  const pcJovens = document.getElementById('adminEconCountJovens');
+  const pcSust = document.getElementById('adminEconCountSust');
+
+  if (fc) fc.textContent = facts.length;
+  if (fBadge) fBadge.textContent = `${facts.length} curiosidade${facts.length === 1 ? '' : 's'}`;
+  if (pcMito) pcMito.textContent = mitoPods.length;
+  if (pcJovens) pcJovens.textContent = jovensPods.length;
+  if (pcSust) pcSust.textContent = sustPods.length;
+
+  const renderShowList = (el, showList, defaultCategory, iconClass, colorHex) => {
+    if (!el) return;
+    if (showList.length === 0) {
+      el.innerHTML = `
+        <div class="econ-admin-empty-state">
+          <div class="econ-admin-empty-icon" style="background: rgba(${colorHex}, 0.12); color: rgb(${colorHex});">
+            <i class="${iconClass}"></i>
+          </div>
+          <strong>Sem episódios gravados</strong>
+          <span>Ainda não foram publicados episódios nesta série.</span>
+          <button type="button" class="btn-action btn-sm" onclick="openPodcastModal(null, 'economia', '${defaultCategory}')" style="margin-top: 0.35rem;">
+            <i class="ri-add-line"></i> Adicionar Episódio
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    el.innerHTML = showList.map(p => `
+      <div class="econ-item-card">
+        <div class="econ-item-thumb">
+          ${p.thumbnail ? `<img src="${escapeHtml(p.thumbnail)}" alt="" onerror="this.onerror=null;this.src='assets/logo-radio.jpg';">` : `<div class="econ-item-thumb-placeholder" style="color: rgb(${colorHex});"><i class="${iconClass}"></i></div>`}
+        </div>
+        <div class="econ-item-info">
+          <strong class="econ-item-title" title="${escapeHtml(p.title)}">${escapeHtml(p.title)}</strong>
+          <div class="econ-item-meta">
+            <span>${escapeHtml(p.date || 'Recente')}</span>
+            ${p.duration ? `<span>• ${escapeHtml(p.duration)}</span>` : ''}
+          </div>
+        </div>
+        <div class="econ-item-actions">
+          ${(p.spotifyUrl || p.audioUrl) ? `<a href="${escapeHtml(p.spotifyUrl || p.audioUrl)}" target="_blank" rel="noopener" class="btn-action" title="Ouvir áudio"><i class="ri-play-fill"></i></a>` : ''}
+          <button type="button" class="btn-action" onclick="openPodcastModal('${escapeHtml(p.id)}')" title="Editar episódio"><i class="ri-edit-line"></i></button>
+          <button type="button" class="btn-action" style="color: #ef4444;" onclick="deletePodcastItem('${escapeHtml(p.id)}')" title="Eliminar"><i class="ri-delete-bin-line"></i></button>
+        </div>
+      </div>
+    `).join('');
+  };
+
+  renderShowList(mitoEl, mitoPods, 'Mito ou verdade', 'ri-scales-3-line', '52, 211, 153');
+  renderShowList(jovensEl, jovensPods, 'Jovens e dinheiro', 'ri-wallet-3-line', '56, 189, 248');
+  renderShowList(sustEl, sustPods, 'Economia e sustentabilidade', 'ri-leaf-line', '192, 132, 252');
+
+  // Curiosidades
+  if (factsEl) {
+    if (facts.length === 0) {
+      factsEl.innerHTML = `
+        <div class="econ-admin-empty-state is-full" style="grid-column: 1 / -1; width: 100%;">
+          <div class="econ-admin-empty-icon is-amber"><i class="ri-lightbulb-line"></i></div>
+          <strong>Sem curiosidades de Economia publicadas</strong>
+          <span>Clica no botão abaixo para adicionar a primeira curiosidade sobre finanças ou mercados.</span>
+          <button type="button" class="btn-action btn-sm" onclick="openSabesQueModal('', 'Economia')" style="margin-top: 0.35rem;">
+            <i class="ri-add-line"></i> Publicar 1ª Curiosidade
+          </button>
+        </div>
+      `;
+    } else {
+      factsEl.innerHTML = facts.map(f => `
+        <div class="econ-fact-card">
+          <div class="econ-fact-icon"><i class="ri-lightbulb-flash-fill"></i></div>
+          <div class="econ-fact-content">
+            <strong class="econ-fact-title">${escapeHtml(f.title)}</strong>
+            <p class="econ-fact-text">${escapeHtml(f.fact || f.description || '')}</p>
+            <small class="econ-fact-date">${escapeHtml(f.date || 'Recente')}</small>
+          </div>
+          <div class="econ-fact-actions">
+            <button type="button" class="btn-action" onclick="openSabesQueModal('${escapeHtml(f.id)}')" title="Editar"><i class="ri-edit-line"></i> Editar</button>
+            <button type="button" class="btn-action" style="color: #ef4444;" onclick="deleteSabesQueItem('${escapeHtml(f.id)}')" title="Eliminar"><i class="ri-delete-bin-line"></i></button>
+          </div>
+        </div>
+      `).join('');
+    }
+  }
+}

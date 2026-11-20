@@ -201,5 +201,11 @@ service cloud.firestore {
     match /tasks/{taskId} {
       allow read, write: if isAdmin();
     }
+
+    // Curiosidades "Sabes que..." por disciplina
+    match /sabesQue/{factId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }

@@ -3,24 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Estúdio Editorial de Artigos | Rádio EBS Cidadela</title>
+  <title>Wave Docs • Estúdio Editorial | Rádio EBS Cidadela</title>
   <meta name="robots" content="noindex, nofollow">
   <link rel="icon" type="image/png" href="assets/brand/favicon-negativa.png">
   <link rel="apple-touch-icon" href="assets/brand/favicon-negativa.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
-  <link rel="stylesheet" href="css/styles.css?v=20261027">
+  <link rel="stylesheet" href="css/styles.css?v=20261119m">
+  <link rel="stylesheet" href="css/wave-docs.css?v=20261119m">
 </head>
-<body class="word-app-container">
+<body class="word-app-container wdoc-paper-light">
 
-  <!-- MODAL DE AUTENTICAÇÃO (CASO A SESSÃO NÃO ESTEJA ATIVA) -->
+  <!-- MODAL DE AUTENTICAÇÃO -->
   <div class="modal-overlay" id="editorAuthModal">
     <div class="card-panel modal-window" style="max-width: 420px; text-align: center;">
       <div style="width: 56px; height: 56px; border-radius: 14px; background: rgba(228, 35, 42, 0.14); border: 1px solid rgba(228, 35, 42, 0.35); color: #ff545b; display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem;">
         <i class="ri-lock-2-line"></i>
       </div>
-      <h3 style="font-size: 1.35rem; margin-bottom: 0.35rem;">Iniciar Sessão Editorial</h3>
+      <h3 style="font-size: 1.35rem; margin-bottom: 0.35rem;">Iniciar Sessão no Wave Docs</h3>
       <p style="color: var(--text-muted); font-size: 0.86rem; margin-bottom: 1.25rem;">
-        Inicia sessão com a tua conta da equipa da rádio para guardar e publicar artigos.
+        Inicia sessão com a tua conta da equipa da rádio para sincronizar e publicar artigos na Cloud.
       </p>
       <form id="editorLoginForm" onsubmit="handleEditorLogin(event)" style="text-align: left;">
         <div class="form-field">
@@ -33,171 +34,476 @@
         </div>
         <div id="editorAuthAlert" style="min-height: 1.25rem; margin-bottom: 0.75rem; font-size: 0.84rem;"></div>
         <button type="submit" id="editorLoginBtn" class="btn-submit-main" style="width: 100%; justify-content: center;">
-          <i class="ri-login-box-line"></i> Entrar no Editor
+          <i class="ri-login-box-line"></i> Entrar no Wave Docs
         </button>
       </form>
     </div>
   </div>
 
-  <!-- BARRA DE TOPO DO ESTÚDIO EDITORIAL -->
-  <header class="word-top-bar">
-    <div class="word-doc-info">
-      <a class="btn-action" href="admin.html" title="Voltar ao Painel de Administração">
-        <i class="ri-arrow-left-line"></i> Painel Admin
-      </a>
-      <span class="word-doc-badge" id="editorModeBadge">Novo Artigo</span>
-      <span class="word-save-status" id="saveStatusText">
-        <i class="ri-checkbox-circle-line"></i> Pronto a editar
-      </span>
-      <button type="button" class="btn-action" id="restoreDraftBtn" style="display: none; border-color: rgba(245, 158, 11, 0.45); color: #fbbf24;" onclick="restoreLocalDraft()">
-        <i class="ri-history-line"></i> Recuperar Rascunho Local
-      </button>
+  <!-- CABEÇALHO UNIFICADO ESTILO GOOGLE DOCS / MICROSOFT WORD -->
+  <header class="wdoc-app-header">
+    <div class="wdoc-titlebar">
+      <div class="wdoc-titlebar-left">
+        <a class="wdoc-back-btn" href="admin.html" title="Voltar ao Painel de Administração">
+          <i class="ri-arrow-left-line"></i>
+        </a>
+        <div class="wdoc-doc-icon" title="Wave Docs • Estúdio Editorial">
+          <i class="ri-file-text-fill"></i>
+        </div>
+        <div class="wdoc-doc-meta-stack">
+          <div class="wdoc-doc-title-row">
+            <input type="text" id="topBarDocTitle" class="wdoc-inline-docname" placeholder="Documento sem título" oninput="syncTitleFromTopBar(this.value)" aria-label="Título do documento">
+            <span class="word-doc-badge" id="editorModeBadge">Novo Artigo</span>
+            <span class="wdoc-sync-pill is-saved" id="saveStatusText">
+              <i class="ri-checkbox-circle-line"></i> <span>Guardado no dispositivo</span>
+            </span>
+            <button type="button" class="btn-action" id="restoreDraftBtn" style="display: none; padding: 0.18rem 0.55rem; font-size: 0.73rem; border-color: rgba(245, 158, 11, 0.45); color: #fbbf24;" onclick="restoreLocalDraft()" title="Restaurar rascunho automático">
+              <i class="ri-history-line"></i> Recuperar Rascunho
+            </button>
+          </div>
+
+          <!-- BARRA DE MENUS CLÁSSICA (FICHEIRO, EDITAR, VER, INSERIR, FORMATAR, FERRAMENTAS) -->
+          <nav class="wdoc-menubar" aria-label="Menu principal do documento">
+            <!-- FICHEIRO -->
+            <div class="wdoc-menu-item">
+              <button type="button" class="wdoc-menu-trigger" onclick="toggleTopMenu(this)">Ficheiro</button>
+              <div class="wdoc-menu-dropdown">
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); resetEditor()">
+                  <span><i class="ri-file-add-line"></i> Novo documento</span>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); document.getElementById('importDocFileInput').click()">
+                  <span><i class="ri-folder-open-line"></i> Abrir / Importar ficheiro…</span>
+                </button>
+                <div class="wdoc-menu-sep"></div>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); saveLocalDraftExplicit()">
+                  <span><i class="ri-save-3-line"></i> Guardar rascunho agora</span>
+                  <kbd>Ctrl+S</kbd>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); openVersionHistoryModal()">
+                  <span><i class="ri-history-line"></i> Histórico de versões</span>
+                </button>
+                <div class="wdoc-menu-sep"></div>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); exportArticleAs('markdown')">
+                  <span><i class="ri-markdown-line"></i> Transferir Markdown (.md)</span>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); exportArticleAs('html')">
+                  <span><i class="ri-html5-line"></i> Transferir HTML (.html)</span>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); exportArticleAs('json')">
+                  <span><i class="ri-braces-line"></i> Backup Completo (.json)</span>
+                </button>
+                <div class="wdoc-menu-sep"></div>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); printArticleSheet()">
+                  <span><i class="ri-printer-line"></i> Imprimir / Guardar PDF</span>
+                  <kbd>Ctrl+P</kbd>
+                </button>
+              </div>
+            </div>
+
+            <!-- EDITAR -->
+            <div class="wdoc-menu-item">
+              <button type="button" class="wdoc-menu-trigger" onclick="toggleTopMenu(this)">Editar</button>
+              <div class="wdoc-menu-dropdown">
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); execCmd('undo')">
+                  <span><i class="ri-arrow-go-back-line"></i> Desfazer</span>
+                  <kbd>Ctrl+Z</kbd>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); execCmd('redo')">
+                  <span><i class="ri-arrow-go-forward-line"></i> Refazer</span>
+                  <kbd>Ctrl+Y</kbd>
+                </button>
+                <div class="wdoc-menu-sep"></div>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); selectAllDocumentText()">
+                  <span><i class="ri-cursor-line"></i> Selecionar tudo</span>
+                  <kbd>Ctrl+A</kbd>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); toggleFindReplaceBar(true)">
+                  <span><i class="ri-find-replace-line"></i> Localizar e substituir</span>
+                  <kbd>Ctrl+F</kbd>
+                </button>
+              </div>
+            </div>
+
+            <!-- VER -->
+            <div class="wdoc-menu-item">
+              <button type="button" class="wdoc-menu-trigger" onclick="toggleTopMenu(this)">Ver</button>
+              <div class="wdoc-menu-dropdown">
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); openPreviewModal()">
+                  <span><i class="ri-eye-line"></i> Pré-visualizar publicação</span>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); togglePaperTheme()">
+                  <span><i class="ri-contrast-2-line"></i> Alternar Papel Claro / Escuro</span>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); toggleWidePage()">
+                  <span><i class="ri-expand-left-right-line"></i> Alternar Largura A4 / Larga</span>
+                </button>
+                <div class="wdoc-menu-sep"></div>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); togglePanelVisibility('left')">
+                  <span><i class="ri-layout-left-line"></i> Mostrar/Ocultar Estrutura</span>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); togglePanelVisibility('right')">
+                  <span><i class="ri-layout-right-line"></i> Mostrar/Ocultar Inspetor</span>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); toggleZenMode()">
+                  <span><i class="ri-fullscreen-line"></i> Modo Foco (Ecrã Limpo)</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- INSERIR -->
+            <div class="wdoc-menu-item">
+              <button type="button" class="wdoc-menu-trigger" onclick="toggleTopMenu(this)">Inserir</button>
+              <div class="wdoc-menu-dropdown">
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); triggerInlineImageUpload()">
+                  <span><i class="ri-image-add-line"></i> Fotografia do computador</span>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); openImageUrlModal()">
+                  <span><i class="ri-image-line"></i> Fotografia por URL</span>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); openTableModal()">
+                  <span><i class="ri-table-2"></i> Tabela</span>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); openCalloutModal()">
+                  <span><i class="ri-chat-quote-line"></i> Caixa de Destaque / Aviso</span>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); insertInterviewBlock()">
+                  <span><i class="ri-question-answer-line"></i> Bloco de Entrevista (P&amp;R)</span>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); insertChecklist()">
+                  <span><i class="ri-list-check-2"></i> Lista de Verificação</span>
+                </button>
+                <div class="wdoc-menu-sep"></div>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); openLinkModal()">
+                  <span><i class="ri-link"></i> Hiperligação</span>
+                  <kbd>Ctrl+K</kbd>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); openEmbedModal()">
+                  <span><i class="ri-vidicon-line"></i> Vídeo YouTube / Spotify</span>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); insertDivider()">
+                  <span><i class="ri-separator"></i> Linha divisória</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- FORMATAR -->
+            <div class="wdoc-menu-item">
+              <button type="button" class="wdoc-menu-trigger" onclick="toggleTopMenu(this)">Formatar</button>
+              <div class="wdoc-menu-dropdown">
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); execCmd('bold')">
+                  <span><i class="ri-bold"></i> Negrito</span>
+                  <kbd>Ctrl+B</kbd>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); execCmd('italic')">
+                  <span><i class="ri-italic"></i> Itálico</span>
+                  <kbd>Ctrl+I</kbd>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); execCmd('underline')">
+                  <span><i class="ri-underline"></i> Sublinhado</span>
+                  <kbd>Ctrl+U</kbd>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); toggleHighlight()">
+                  <span><i class="ri-mark-pen-line"></i> Realçar com marcador</span>
+                </button>
+                <div class="wdoc-menu-sep"></div>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); setLineSpacing('1.5')">
+                  <span><i class="ri-line-height"></i> Espaçamento compacto (1.5)</span>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); setLineSpacing('1.85')">
+                  <span><i class="ri-line-height"></i> Espaçamento editorial (1.85)</span>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); setLineSpacing('2.1')">
+                  <span><i class="ri-line-height"></i> Espaçamento duplo (2.1)</span>
+                </button>
+                <div class="wdoc-menu-sep"></div>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); clearFormatting()">
+                  <span><i class="ri-format-clear"></i> Limpar formatação</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- FERRAMENTAS -->
+            <div class="wdoc-menu-item">
+              <button type="button" class="wdoc-menu-trigger" onclick="toggleTopMenu(this)">Ferramentas</button>
+              <div class="wdoc-menu-dropdown">
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); generateExcerptFromBody()">
+                  <span><i class="ri-magic-line"></i> Gerar resumo (Lead) automático</span>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); optimizeAllArticleImages()">
+                  <span><i class="ri-sparkling-2-line"></i> Comprimir peso das fotografias</span>
+                </button>
+                <button type="button" class="wdoc-menu-cmd" onclick="closeAllTopMenus(); cleanEntireDocumentFormatting()">
+                  <span><i class="ri-brush-2-line"></i> Normalizar estilos do documento</span>
+                </button>
+              </div>
+            </div>
+          </nav>
+        </div>
+      </div>
+
+      <!-- AÇÕES PRINCIPAIS DIREITA -->
+      <div class="wdoc-titlebar-actions">
+        <input type="file" id="importDocFileInput" accept=".md,.txt,.html,.htm,.json" style="display: none;" onchange="handleImportDocumentFile(this.files[0])">
+        <button class="btn-action" type="button" onclick="openVersionHistoryModal()" title="Histórico de versões e pontos de restauro">
+          <i class="ri-history-line"></i> Histórico
+        </button>
+        <button class="btn-action" type="button" onclick="openPreviewModal()" title="Ver como fica publicado no site">
+          <i class="ri-eye-line"></i> Pré-visualizar
+        </button>
+        <button class="btn-submit-main" type="button" id="publishArticleBtn" onclick="publishArticle()">
+          <i class="ri-send-plane-fill"></i> <span id="publishArticleBtnLabel">Guardar e Publicar</span>
+        </button>
+      </div>
     </div>
 
-    <div class="word-actions-group">
-      <button class="btn-action" type="button" onclick="saveLocalDraftExplicit()" title="Guardar rascunho no navegador (Ctrl+S)">
-        <i class="ri-save-3-line"></i> Guardar Rascunho
-      </button>
-      <button class="btn-action" type="button" onclick="openPreviewModal()" title="Ver como o artigo fica na página pública">
-        <i class="ri-eye-line"></i> Pré-visualizar
-      </button>
-      <button class="btn-action" type="button" onclick="resetEditor()" title="Limpar campos">
-        <i class="ri-refresh-line"></i> Limpar
-      </button>
-      <button class="btn-submit-main" type="button" id="publishArticleBtn" onclick="publishArticle()">
-        <i class="ri-send-plane-fill"></i> <span id="publishArticleBtnLabel">Guardar e Publicar</span>
-      </button>
+    <!-- RIBBON / BARRA DE FERRAMENTAS DE ESCRITA (ZERO SOBREPOSIÇÃO) -->
+    <div class="word-ribbon" role="toolbar" aria-label="Ferramentas de formatação">
+      <!-- Undo / Redo / Print -->
+      <div class="word-tool-group">
+        <button class="word-tool-btn" type="button" onclick="execCmd('undo')" title="Desfazer (Ctrl+Z)">
+          <i class="ri-arrow-go-back-line"></i>
+        </button>
+        <button class="word-tool-btn" type="button" onclick="execCmd('redo')" title="Refazer (Ctrl+Y)">
+          <i class="ri-arrow-go-forward-line"></i>
+        </button>
+        <button class="word-tool-btn" type="button" onclick="printArticleSheet()" title="Imprimir folha (Ctrl+P)">
+          <i class="ri-printer-line"></i>
+        </button>
+      </div>
+
+      <!-- Estilo de Bloco + Tipo de Letra -->
+      <div class="word-tool-group">
+        <select class="word-select-style" id="blockFormatSelect" onchange="formatBlock(this.value)" aria-label="Estilo de texto">
+          <option value="p">Texto normal</option>
+          <option value="h2">Título principal (H2)</option>
+          <option value="h3">Subtítulo (H3)</option>
+          <option value="h4">Intertítulo / Rubrica (H4)</option>
+          <option value="blockquote">Citação em destaque</option>
+        </select>
+        <select class="word-select-style" id="editorFontFamilySelect" onchange="setEditorFontFamily(this.value)" aria-label="Tipo de letra">
+          <option value="'Plus Jakarta Sans', 'Inter', sans-serif">Plus Jakarta Sans</option>
+          <option value="'Inter', system-ui, sans-serif">Inter Editorial</option>
+          <option value="Georgia, 'Times New Roman', serif">Georgia (Jornal)</option>
+          <option value="'DM Mono', monospace">DM Mono (Guião)</option>
+        </select>
+      </div>
+
+      <!-- Formatação Inline + Cor -->
+      <div class="word-tool-group">
+        <button class="word-tool-btn" type="button" data-cmd="bold" onclick="execCmd('bold')" title="Negrito (Ctrl+B)">
+          <i class="ri-bold"></i>
+        </button>
+        <button class="word-tool-btn" type="button" data-cmd="italic" onclick="execCmd('italic')" title="Itálico (Ctrl+I)">
+          <i class="ri-italic"></i>
+        </button>
+        <button class="word-tool-btn" type="button" data-cmd="underline" onclick="execCmd('underline')" title="Sublinhado (Ctrl+U)">
+          <i class="ri-underline"></i>
+        </button>
+        <button class="word-tool-btn" type="button" data-cmd="strikeThrough" onclick="execCmd('strikeThrough')" title="Rasurado">
+          <i class="ri-strikethrough"></i>
+        </button>
+        <span class="wdoc-color-btn-wrap" title="Cor do texto selecionado">
+          <button class="word-tool-btn" type="button"><i class="ri-font-color" style="border-bottom: 2px solid #e4232a;"></i></button>
+          <input type="color" class="wdoc-color-input" value="#e4232a" onchange="execCmd('foreColor', this.value)">
+        </span>
+        <button class="word-tool-btn" type="button" onclick="toggleHighlight()" title="Marcador de realce amarelo">
+          <i class="ri-mark-pen-line"></i>
+        </button>
+        <button class="word-tool-btn" type="button" onclick="clearFormatting()" title="Limpar formatação">
+          <i class="ri-format-clear"></i>
+        </button>
+      </div>
+
+      <!-- Alinhamento -->
+      <div class="word-tool-group">
+        <button class="word-tool-btn" type="button" data-cmd="justifyLeft" onclick="execCmd('justifyLeft')" title="Alinhar à esquerda">
+          <i class="ri-align-left"></i>
+        </button>
+        <button class="word-tool-btn" type="button" data-cmd="justifyCenter" onclick="execCmd('justifyCenter')" title="Centrar">
+          <i class="ri-align-center"></i>
+        </button>
+        <button class="word-tool-btn" type="button" data-cmd="justifyRight" onclick="execCmd('justifyRight')" title="Alinhar à direita">
+          <i class="ri-align-right"></i>
+        </button>
+        <button class="word-tool-btn" type="button" data-cmd="justifyFull" onclick="execCmd('justifyFull')" title="Justificar">
+          <i class="ri-align-justify"></i>
+        </button>
+      </div>
+
+      <!-- Listas & Blocos -->
+      <div class="word-tool-group">
+        <button class="word-tool-btn" type="button" data-cmd="insertUnorderedList" onclick="execCmd('insertUnorderedList')" title="Lista de pontos">
+          <i class="ri-list-unordered"></i>
+        </button>
+        <button class="word-tool-btn" type="button" data-cmd="insertOrderedList" onclick="execCmd('insertOrderedList')" title="Lista numerada">
+          <i class="ri-list-ordered"></i>
+        </button>
+        <button class="word-tool-btn" type="button" onclick="insertChecklist()" title="Lista de verificação">
+          <i class="ri-list-check-2"></i>
+        </button>
+        <button class="word-tool-btn" type="button" onclick="insertInterviewBlock()" title="Bloco Pergunta & Resposta">
+          <i class="ri-question-answer-line"></i>
+        </button>
+        <button class="word-tool-btn" type="button" onclick="openCalloutModal()" title="Caixa de Destaque / Aviso">
+          <i class="ri-chat-quote-line"></i>
+        </button>
+        <button class="word-tool-btn" type="button" onclick="openTableModal()" title="Inserir Tabela">
+          <i class="ri-table-2"></i>
+        </button>
+        <button class="word-tool-btn" type="button" onclick="insertDivider()" title="Linha divisória">
+          <i class="ri-separator"></i>
+        </button>
+      </div>
+
+      <!-- Multimédia & Links (Com espaçamento limpo, sem sobreposição) -->
+      <div class="word-tool-group">
+        <input type="file" id="inlineImageFileInput" accept="image/png,image/jpeg,image/webp,image/gif" multiple style="display: none;" onchange="handleInlineImageFiles(this.files)">
+        <button class="word-tool-btn word-tool-btn-wide word-tool-btn-accent" type="button" onclick="document.getElementById('coverFileInput').click()" title="Alterar fotografia de capa">
+          <i class="ri-camera-lens-line"></i> <span>Capa</span>
+        </button>
+        <button class="word-tool-btn word-tool-btn-wide" type="button" onclick="triggerInlineImageUpload()" title="Inserir fotografia no texto">
+          <i class="ri-image-add-line"></i> <span>Foto</span>
+        </button>
+        <button class="word-tool-btn" type="button" onclick="openImageUrlModal()" title="Inserir imagem por URL">
+          <i class="ri-image-line"></i>
+        </button>
+        <button class="word-tool-btn" type="button" onclick="openLinkModal()" title="Inserir hiperligação (Ctrl+K)">
+          <i class="ri-link"></i>
+        </button>
+        <button class="word-tool-btn" type="button" onclick="openEmbedModal()" title="Incorporar YouTube ou Spotify">
+          <i class="ri-vidicon-line"></i>
+        </button>
+      </div>
+
+      <!-- Controlo de Vista & Pesquisa -->
+      <div class="word-tool-group" style="margin-left: auto;">
+        <button class="word-tool-btn" type="button" id="toggleFindBarBtn" onclick="toggleFindReplaceBar()" title="Localizar e substituir (Ctrl+F)">
+          <i class="ri-find-replace-line"></i>
+        </button>
+        <button class="word-tool-btn active" type="button" id="togglePaperThemeBtn" onclick="togglePaperTheme()" title="Alternar Folha Clara / Escura">
+          <i class="ri-moon-line"></i>
+        </button>
+        <button class="word-tool-btn" type="button" id="toggleZenModeBtn" onclick="toggleZenMode()" title="Modo Foco (esconder barras laterais)">
+          <i class="ri-fullscreen-line"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- RÉGUA HORIZONTAL DE DOCUMENTO (ESTILO GOOGLE DOCS / WORD) -->
+    <div class="wdoc-ruler-bar" aria-hidden="true">
+      <div class="wdoc-ruler-track">
+        <span>0</span><span>2</span><span>4</span><span>6</span><span>8</span><span>10</span><span>12</span><span>14</span><span>16</span><span>18 cm</span>
+      </div>
     </div>
   </header>
 
-  <!-- RIBBON / BARRA DE FERRAMENTAS RICA -->
-  <div class="word-ribbon" role="toolbar" aria-label="Ferramentas de formatação do artigo">
-    <!-- Histórico -->
-    <div class="word-tool-group">
-      <button class="word-tool-btn" type="button" onclick="execCmd('undo')" title="Desfazer (Ctrl+Z)">
-        <i class="ri-arrow-go-back-line"></i>
-      </button>
-      <button class="word-tool-btn" type="button" onclick="execCmd('redo')" title="Refazer (Ctrl+Y)">
-        <i class="ri-arrow-go-forward-line"></i>
-      </button>
-    </div>
-
-    <!-- Formato de Bloco -->
-    <div class="word-tool-group">
-      <select class="word-select-style" id="blockFormatSelect" onchange="formatBlock(this.value)" aria-label="Estilo de bloco">
-        <option value="p">Parágrafo normal</option>
-        <option value="h2">Título principal (H2)</option>
-        <option value="h3">Subtítulo (H3)</option>
-        <option value="h4">Secção menor (H4)</option>
-        <option value="blockquote">Citação em destaque</option>
-      </select>
-    </div>
-
-    <!-- Formatação de Texto -->
-    <div class="word-tool-group">
-      <button class="word-tool-btn" type="button" data-cmd="bold" onclick="execCmd('bold')" title="Negrito (Ctrl+B)">
-        <i class="ri-bold"></i>
-      </button>
-      <button class="word-tool-btn" type="button" data-cmd="italic" onclick="execCmd('italic')" title="Itálico (Ctrl+I)">
-        <i class="ri-italic"></i>
-      </button>
-      <button class="word-tool-btn" type="button" data-cmd="underline" onclick="execCmd('underline')" title="Sublinhado (Ctrl+U)">
-        <i class="ri-underline"></i>
-      </button>
-      <button class="word-tool-btn" type="button" data-cmd="strikeThrough" onclick="execCmd('strikeThrough')" title="Rasurado">
-        <i class="ri-strikethrough"></i>
-      </button>
-      <button class="word-tool-btn" type="button" onclick="toggleHighlight()" title="Realçar texto (Marcador)">
-        <i class="ri-mark-pen-line"></i>
-      </button>
-      <button class="word-tool-btn" type="button" onclick="clearFormatting()" title="Limpar formatação">
-        <i class="ri-format-clear"></i>
-      </button>
-    </div>
-
-    <!-- Alinhamento -->
-    <div class="word-tool-group">
-      <button class="word-tool-btn" type="button" onclick="execCmd('justifyLeft')" title="Alinhar à esquerda">
-        <i class="ri-align-left"></i>
-      </button>
-      <button class="word-tool-btn" type="button" onclick="execCmd('justifyCenter')" title="Centrar texto">
-        <i class="ri-align-center"></i>
-      </button>
-      <button class="word-tool-btn" type="button" onclick="execCmd('justifyRight')" title="Alinhar à direita">
-        <i class="ri-align-right"></i>
-      </button>
-      <button class="word-tool-btn" type="button" onclick="execCmd('justifyFull')" title="Justificar texto">
-        <i class="ri-align-justify"></i>
-      </button>
-    </div>
-
-    <!-- Listas & Blocos -->
-    <div class="word-tool-group">
-      <button class="word-tool-btn" type="button" onclick="execCmd('insertUnorderedList')" title="Lista de pontos">
-        <i class="ri-list-unordered"></i>
-      </button>
-      <button class="word-tool-btn" type="button" onclick="execCmd('insertOrderedList')" title="Lista numerada">
-        <i class="ri-list-ordered"></i>
-      </button>
-      <button class="word-tool-btn" type="button" onclick="insertChecklist()" title="Inserir lista de verificação">
-        <i class="ri-list-check-2"></i>
-      </button>
-      <button class="word-tool-btn" type="button" onclick="openCalloutModal()" title="Inserir Caixa de Destaque / Aviso">
-        <i class="ri-Seedling-line ri-chat-quote-line"></i>
-      </button>
-      <button class="word-tool-btn" type="button" onclick="openTableModal()" title="Inserir Tabela">
-        <i class="ri-table-2"></i>
-      </button>
-      <button class="word-tool-btn" type="button" onclick="insertDivider()" title="Inserir linha divisória">
-        <i class="ri-separator"></i>
-      </button>
-    </div>
-
-    <!-- Fotografias Base64, Links e Embeds -->
-    <div class="word-tool-group word-tool-group-media">
-      <input type="file" id="inlineImageFileInput" accept="image/png,image/jpeg,image/webp,image/gif" multiple style="display: none;" onchange="handleInlineImageFiles(this.files)">
-      <button class="word-tool-btn word-tool-btn-wide word-tool-btn-accent" type="button" onclick="document.getElementById('coverFileInput').click()" title="Carregar fotografia de capa do artigo (aparece acima do texto)">
-        <i class="ri-camera-lens-line"></i> <span>Carregar Capa</span>
-      </button>
-      <button class="word-tool-btn" type="button" onclick="triggerInlineImageUpload()" title="Inserir fotografia adicional no corpo do artigo">
-        <i class="ri-image-add-line"></i>
-      </button>
-      <button class="word-tool-btn" type="button" onclick="openImageUrlModal()" title="Inserir imagem por URL">
-        <i class="ri-image-line"></i>
-      </button>
-      <button class="word-tool-btn" type="button" onclick="openLinkModal()" title="Inserir hiperligação (Ctrl+K)">
-        <i class="ri-link"></i>
-      </button>
-      <button class="word-tool-btn" type="button" onclick="openEmbedModal()" title="Incorporar YouTube ou Spotify">
-        <i class="ri-vidicon-line"></i>
-      </button>
-    </div>
+  <!-- BARRA FLUTUANTE DE SELEÇÃO RÁPIDA -->
+  <div id="floatingFormatBar" class="wdoc-floating-pop" role="toolbar" aria-label="Formatação rápida">
+    <button type="button" onmousedown="event.preventDefault(); execCmd('bold')" title="Negrito"><i class="ri-bold"></i></button>
+    <button type="button" onmousedown="event.preventDefault(); execCmd('italic')" title="Itálico"><i class="ri-italic"></i></button>
+    <button type="button" onmousedown="event.preventDefault(); execCmd('underline')" title="Sublinhado"><i class="ri-underline"></i></button>
+    <button type="button" onmousedown="event.preventDefault(); toggleHighlight()" title="Realçar"><i class="ri-mark-pen-line"></i></button>
+    <button type="button" onmousedown="event.preventDefault(); formatBlock('h2')" title="Título H2"><strong>H2</strong></button>
+    <button type="button" onmousedown="event.preventDefault(); formatBlock('h3')" title="Subtítulo H3"><strong>H3</strong></button>
+    <button type="button" onmousedown="event.preventDefault(); formatBlock('blockquote')" title="Citação"><i class="ri-double-quotes-l"></i></button>
+    <button type="button" onmousedown="event.preventDefault(); openLinkModal()" title="Link"><i class="ri-link"></i></button>
   </div>
 
-  <!-- WORKSPACE PRINCIPAL -->
+  <!-- MENU DE COMANDOS RÁPIDOS "/" (SLASH MENU) -->
+  <div id="slashCommandMenu" class="wdoc-slash-menu" role="menu" aria-label="Inserir bloco rápido">
+    <div class="wdoc-slash-header">Inserir Bloco Rápido</div>
+    <div id="slashCommandList"></div>
+  </div>
+
+  <!-- WORKSPACE PRINCIPAL (3 COLUNAS) -->
   <main class="word-workspace-grid">
-    <!-- FOLHA DE DOCUMENTO -->
+
+    <!-- COLUNA ESQUERDA: ÍNDICE DO DOCUMENTO, PRONTIDÃO & MODELOS -->
+    <aside class="wdoc-left-rail">
+      <div class="wdoc-rail-card">
+        <h5 class="wdoc-rail-title">
+          <span><i class="ri-node-tree"></i> Estrutura do Documento</span>
+          <small id="outlineCountBadge" style="color:#64748b; font-weight:600;">0 secções</small>
+        </h5>
+        <div id="docOutlineContainer" class="wdoc-outline-list">
+          <div class="wdoc-outline-empty">Os títulos (H2, H3, H4) que criares aparecem aqui para navegação rápida estilo Google Docs.</div>
+        </div>
+      </div>
+
+      <div class="wdoc-rail-card">
+        <h5 class="wdoc-rail-title">
+          <span><i class="ri-shield-check-line"></i> Qualidade Editorial</span>
+          <small id="qualityScoreBadge" style="color:#34d399; font-weight:700;">0/5</small>
+        </h5>
+        <ul class="wdoc-quality-list" id="editorialQualityList">
+          <li class="wdoc-quality-item" data-check="title"><i class="ri-checkbox-blank-circle-line"></i> Título apelativo (mín. 12 caract.)</li>
+          <li class="wdoc-quality-item" data-check="cover"><i class="ri-checkbox-blank-circle-line"></i> Fotografia de capa personalizada</li>
+          <li class="wdoc-quality-item" data-check="excerpt"><i class="ri-checkbox-blank-circle-line"></i> Resumo / Lead preenchido</li>
+          <li class="wdoc-quality-item" data-check="headings"><i class="ri-checkbox-blank-circle-line"></i> Subtítulos de secção (H2 / H3)</li>
+          <li class="wdoc-quality-item" data-check="length"><i class="ri-checkbox-blank-circle-line"></i> Desenvolvimento (&ge; 80 palavras)</li>
+        </ul>
+      </div>
+
+      <div class="wdoc-rail-card">
+        <h5 class="wdoc-rail-title">
+          <span><i class="ri-layout-masonry-line"></i> Modelos de Documento</span>
+        </h5>
+        <div class="wdoc-template-grid">
+          <button type="button" class="wdoc-template-btn" onclick="applyEditorialTemplate('noticia')">
+            <i class="ri-newspaper-line"></i> Notícia Escolar Padrão
+          </button>
+          <button type="button" class="wdoc-template-btn" onclick="applyEditorialTemplate('entrevista')">
+            <i class="ri-mic-2-line"></i> Entrevista (Pergunta / Resposta)
+          </button>
+          <button type="button" class="wdoc-template-btn" onclick="applyEditorialTemplate('evento')">
+            <i class="ri-calendar-event-line"></i> Cobertura de Evento
+          </button>
+          <button type="button" class="wdoc-template-btn" onclick="applyEditorialTemplate('economia')">
+            <i class="ri-funds-box-line"></i> Crónica de Economia
+          </button>
+          <button type="button" class="wdoc-template-btn" onclick="applyEditorialTemplate('antena')">
+            <i class="ri-broadcast-line"></i> Guião / Nota para Antena
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- COLUNA CENTRAL: FOLHA DE PAPEL DO DOCUMENTO -->
     <div class="word-sheet-wrapper">
       <div class="word-paper-sheet" id="editorPaperSheet">
 
+        <!-- BARRA DE LOCALIZAR E SUBSTITUIR -->
+        <div id="findReplaceBar" class="wdoc-find-bar">
+          <i class="ri-search-line" style="color:#38bdf8;"></i>
+          <input type="text" id="findInput" placeholder="Localizar no texto..." oninput="highlightFindMatches()">
+          <input type="text" id="replaceInput" placeholder="Substituir por...">
+          <button type="button" class="btn-action" style="padding: 0.28rem 0.6rem; font-size: 0.76rem;" onclick="replaceNextMatch()">Substituir</button>
+          <button type="button" class="btn-action" style="padding: 0.28rem 0.6rem; font-size: 0.76rem;" onclick="replaceAllMatches()">Substituir Tudo</button>
+          <span id="findMatchCount" style="font-size: 0.75rem; color: #94a3b8; margin-left: auto;"></span>
+          <button type="button" class="modal-close-icon-btn" style="width:26px;height:26px;" onclick="toggleFindReplaceBar(false)"><i class="ri-close-line"></i></button>
+        </div>
+
         <!-- CAPA DO ARTIGO ACIMA DE TUDO -->
-        <figure class="editor-sheet-cover-banner" id="sheetCoverFigure" onclick="document.getElementById('coverFileInput').click()" title="Clica para alterar a fotografia de capa (aparece acima de tudo)" style="margin: 0 0 1.5rem; border: 2px solid #282425; box-shadow: 4px 4px 0 #282425; background: #282425; position: relative; cursor: pointer; overflow: hidden;">
-          <img id="sheetCoverImg" src="assets/logo-radio.jpg" alt="Fotografia de capa do artigo" style="width: 100%; max-height: 340px; object-fit: cover; display: block;">
-          <figcaption style="position: absolute; right: 0.75rem; bottom: 0.75rem; background: rgba(40, 36, 37, 0.9); color: #f5f1f1; border: 1.5px solid #f5f1f1; padding: 0.35rem 0.75rem; font-family: monospace; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; display: inline-flex; align-items: center; gap: 0.4rem;">
-            <i class="ri-upload-cloud-2-line" style="color: #ff545b;"></i> Capa da Notícia (Acima de Tudo) — Clica para mudar
+        <figure class="editor-sheet-cover-banner" id="sheetCoverFigure" onclick="document.getElementById('coverFileInput').click()" title="Clica ou arrasta uma fotografia para alterar a capa da notícia" style="margin: 0 0 1.35rem; border: 2px solid #282425; box-shadow: 4px 4px 0 #282425; background: #282425; position: relative; cursor: pointer; overflow: hidden; border-radius: 6px;">
+          <img id="sheetCoverImg" src="assets/logo-radio.jpg" alt="Fotografia de capa do artigo" style="width: 100%; max-height: 330px; object-fit: cover; display: block;">
+          <figcaption id="sheetCoverCreditCaption" style="display: none; padding: 0.45rem 0.85rem; background: rgba(20, 24, 38, 0.95); color: #cbd5e1; font-family: monospace; font-size: 0.74rem; border-top: 1px solid rgba(255,255,255,0.12); align-items: center; gap: 0.45rem;">
+            <i class="ri-camera-lens-line" style="color: #ff545b;"></i> Fonte: <span id="sheetCoverCreditText"></span>
           </figcaption>
+          <div style="position: absolute; right: 0.75rem; bottom: 0.75rem; background: rgba(15, 21, 39, 0.9); color: #f5f1f1; border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 0.35rem 0.75rem; font-family: monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 0.4rem; pointer-events: none;">
+            <i class="ri-upload-cloud-2-line" style="color: #ff545b;"></i> Capa da Notícia — Clica ou arrasta foto
+          </div>
         </figure>
 
         <!-- META PREVIEW BAR -->
         <div class="editor-sheet-meta-bar">
           <span class="editor-sheet-cat-pill" id="sheetCategoryPill"><i class="ri-price-tag-3-line"></i> Notícia</span>
           <span class="editor-sheet-date-pill" id="sheetDatePill"><i class="ri-calendar-line"></i> Hoje</span>
-          <span class="editor-sheet-drop-hint"><i class="ri-camera-lens-line"></i> A capa aparece sempre no topo, acima de tudo</span>
+          <span class="editor-sheet-drop-hint"><i class="ri-keyboard-line"></i> Escreve <b>/</b> para blocos ou <b>##</b> para títulos</span>
         </div>
 
         <input id="articleTitle" class="word-doc-title-input" type="text" placeholder="Título principal do artigo..." oninput="onEditorMetaInput()">
 
-        <!-- BARRA DE CONTROLO DE IMAGEM SELECIONADA NO TEXTO -->
+        <!-- BARRA CONTEXTUAL DE IMAGEM SELECIONADA NO TEXTO -->
         <div id="inlineImageToolbar" class="inline-image-toolbar" style="display: none;">
           <span class="inline-img-toolbar-label"><i class="ri-image-edit-line"></i> Fotografia selecionada:</span>
           <div class="inline-img-toolbar-btns">
@@ -209,8 +515,21 @@
             <button type="button" onclick="alignSelectedInlineImage('center')" title="Centrar imagem"><i class="ri-align-center"></i></button>
             <button type="button" onclick="alignSelectedInlineImage('right')" title="Alinhar à direita"><i class="ri-align-right"></i></button>
             <span class="inline-img-sep"></span>
+            <button type="button" onclick="replaceSelectedInlineImage()" title="Substituir esta fotografia"><i class="ri-image-2-line"></i> Trocar</button>
             <button type="button" onclick="editSelectedInlineImageCaption()" title="Adicionar ou editar legenda"><i class="ri-text"></i> Legenda</button>
             <button type="button" class="danger" onclick="removeSelectedInlineImage()" title="Remover fotografia"><i class="ri-delete-bin-line"></i></button>
+          </div>
+        </div>
+
+        <!-- BARRA CONTEXTUAL DE TABELAS -->
+        <div id="inlineTableToolbar" class="wdoc-table-toolbar">
+          <span class="wdoc-table-toolbar-label"><i class="ri-table-2"></i> Ferramentas de Tabela:</span>
+          <div class="inline-img-toolbar-btns">
+            <button type="button" onclick="tableAction('addRowAfter')" title="Adicionar linha abaixo"><i class="ri-insert-row-bottom"></i> + Linha</button>
+            <button type="button" onclick="tableAction('addColAfter')" title="Adicionar coluna à direita"><i class="ri-insert-column-right"></i> + Coluna</button>
+            <button type="button" onclick="tableAction('delRow')" title="Remover linha atual"><i class="ri-delete-row"></i> - Linha</button>
+            <button type="button" onclick="tableAction('delCol')" title="Remover coluna atual"><i class="ri-delete-column"></i> - Coluna</button>
+            <button type="button" class="danger" onclick="tableAction('delTable')" title="Eliminar tabela"><i class="ri-delete-bin-line"></i></button>
           </div>
         </div>
 
@@ -219,10 +538,10 @@
       </div>
     </div>
 
-    <!-- BARRA LATERAL DE DEFINIÇÕES E UPLOAD BASE64 -->
+    <!-- COLUNA DIREITA: INSPETOR DE PROPRIEDADES & METADADOS -->
     <aside class="word-sidebar-panel">
 
-      <!-- CARTÃO 1: IMAGEM DE CAPA (UPLOAD PNG/JPG BASE64 GRATUITO) -->
+      <!-- CARTÃO 1: IMAGEM DE CAPA -->
       <div class="word-side-card">
         <h4><i class="ri-camera-lens-line" style="color: #ff545b;"></i> Fotografia de Capa</h4>
 
@@ -230,8 +549,8 @@
 
         <div class="editor-cover-dropzone" id="coverDropzone" onclick="document.getElementById('coverFileInput').click()">
           <i class="ri-upload-cloud-2-line"></i>
-          <strong>Carregar foto (PNG / JPG)</strong>
-          <small>Alojamento 100% gratuito via Base64 otimizado (arrasta ou clica aqui)</small>
+          <strong>Carregar foto (PNG / JPG / WebP)</strong>
+          <small>Compressão inteligente em Base64 (arrasta ou clica aqui)</small>
         </div>
 
         <div class="word-cover-preview-box" id="coverPreviewBox">
@@ -247,6 +566,13 @@
         <div class="form-group" style="margin-top: 0.85rem;">
           <label for="articleImage" style="font-size: 0.78rem; color: var(--text-muted);">Ou colar URL / Base64 da capa</label>
           <input id="articleImage" class="form-input-lg" type="text" placeholder="https://... ou data:image/..." oninput="updateCoverPreview(this.value)">
+        </div>
+
+        <div class="form-group" style="margin-top: 0.85rem;">
+          <label for="articleImageSource" style="font-size: 0.8rem; font-weight: 600; color: #ffffff; display: flex; align-items: center; gap: 0.35rem;">
+            <i class="ri-camera-lens-line" style="color: #ff545b;"></i> Fonte / Créditos da Capa (Opcional)
+          </label>
+          <input id="articleImageSource" class="form-input-lg" type="text" placeholder="Ex: Foto: Maria Silva / Arquivo Escolar" oninput="onCoverCreditInput(this.value)">
         </div>
 
         <div style="margin-top: 0.65rem;">
@@ -266,7 +592,9 @@
         <div class="form-group" style="margin-bottom: 0.9rem;">
           <label for="articleVisibility">Destino do Conteúdo</label>
           <select id="articleVisibility" class="form-input-lg" onchange="toggleBroadcastDateVisibility()">
-            <option value="public">Publicar no site (Notícias)</option>
+            <option value="public">Publicar no Site Principal (Notícias)</option>
+            <option value="economia">Publicar em Economia em Frequência (Blog)</option>
+            <option value="both">Publicar em Ambos (Site Principal + Economia)</option>
             <option value="internal">Aviso interno para ler em antena</option>
           </select>
         </div>
@@ -289,6 +617,7 @@
           <label for="articleCategory">Categoria Editorial</label>
           <select id="articleCategory" class="form-input-lg" onchange="onEditorMetaInput()">
             <option value="Notícia">Notícia</option>
+            <option value="Economia">Economia</option>
             <option value="Evento Escolar">Evento Escolar</option>
             <option value="Desporto">Desporto</option>
             <option value="Cultura & Música">Cultura &amp; Música</option>
@@ -302,7 +631,7 @@
         <div class="form-group" style="margin-bottom: 0.9rem;">
           <label for="articleDatePicker">Data da Publicação</label>
           <input id="articleDatePicker" class="form-input-lg" type="date" onchange="onArticleDatePickerChange(this.value)">
-          <input id="articleDate" class="form-input-lg" type="text" placeholder="Ex: 27 de outubro de 2026" style="margin-top: 0.45rem; font-size: 0.84rem;" oninput="onEditorMetaInput()">
+          <input id="articleDate" class="form-input-lg" type="text" placeholder="Ex: 19 de novembro de 2026" style="margin-top: 0.45rem; font-size: 0.84rem;" oninput="onEditorMetaInput()">
         </div>
 
         <div class="form-group" style="margin-bottom: 0.9rem;">
@@ -323,7 +652,7 @@
       <div class="word-side-card">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
           <h4 style="margin-bottom: 0;"><i class="ri-file-text-line" style="color: #a78bfa;"></i> Resumo / Lead</h4>
-          <button type="button" class="btn-action" style="padding: 0.2rem 0.55rem; font-size: 0.74rem;" onclick="generateExcerptFromBody()" title="Extrair resumo do primeiro parágrafo">
+          <button type="button" class="btn-action" style="padding: 0.2rem 0.55rem; font-size: 0.74rem;" onclick="generateExcerptFromBody()" title="Extrair resumo automaticamente do primeiro parágrafo">
             <i class="ri-magic-line"></i> Gerar do texto
           </button>
         </div>
@@ -334,47 +663,119 @@
         </div>
       </div>
 
-      <!-- CARTÃO 4: DIAGNÓSTICO E CAPACIDADE BASE64 -->
+      <!-- CARTÃO 4: DIAGNÓSTICO E CAPACIDADE CLOUD -->
       <div class="word-side-card">
-        <h4><i class="ri-database-2-line" style="color: #34d399;"></i> Métricas &amp; Capacidade</h4>
+        <h4><i class="ri-database-2-line" style="color: #34d399;"></i> Métricas &amp; Capacidade Cloud</h4>
         <div class="editor-stats-list">
           <div class="editor-stat-row">
-            <span>Palavras no artigo</span>
-            <strong id="sideStatWords">0</strong>
+            <span>Palavras / Parágrafos</span>
+            <strong id="sideStatWords">0 • 0 par.</strong>
           </div>
           <div class="editor-stat-row">
-            <span>Tempo de leitura</span>
-            <strong id="sideStatReadTime">1 min</strong>
+            <span>Leitura silenciosa / Em antena</span>
+            <strong id="sideStatReadTime">1 min • 0:30</strong>
           </div>
           <div class="editor-stat-row">
             <span>Fotografias no artigo</span>
             <strong id="sideStatImages">0</strong>
           </div>
           <div class="editor-stat-row">
-            <span>Peso total (Texto + Base64)</span>
+            <span>Peso Cloud (Texto + Base64)</span>
             <strong id="sideStatSize">2 KB / 900 KB</strong>
           </div>
         </div>
-        <div class="editor-quota-bar-track" title="Capacidade do documento na base de dados gratuita">
+        <div class="editor-quota-bar-track" title="Capacidade do documento no Cloud Firestore">
           <div class="editor-quota-bar-fill" id="sideStatQuotaFill" style="width: 1%;"></div>
         </div>
-        <small style="display: block; margin-top: 0.45rem; font-size: 0.73rem; color: var(--text-muted); line-height: 1.4;">
-          As fotos PNG/JPG são comprimidas automaticamente em Base64 para carregamento rápido e alojamento 100% gratuito.
-        </small>
+        <div style="display:flex; gap:0.4rem; margin-top:0.65rem;">
+          <button type="button" class="btn-action" style="width:100%; justify-content:center; font-size:0.75rem; padding:0.35rem 0.5rem;" onclick="optimizeAllArticleImages()" title="Re-otimizar todas as imagens do artigo para poupar espaço na Cloud">
+            <i class="ri-sparkling-2-line"></i> Otimizar peso das imagens
+          </button>
+        </div>
       </div>
 
     </aside>
   </main>
 
-  <!-- BARRA DE ESTADO INFERIOR -->
+  <!-- BARRA DE ESTADO INFERIOR (COM CONTROLO DE ZOOM E ESTADO DE LIGAÇÃO) -->
   <footer class="word-bottom-statusbar">
-    <span id="wordCountDisplay">0 palavras • 0 caracteres</span>
-    <span id="readTimeDisplay">Tempo estimado: 1 min de leitura</span>
+    <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+      <span id="wordCountDisplay">0 palavras • 0 caracteres</span>
+      <span id="readTimeDisplay">Leitura: 1 min • Locução em antena: ~0:30</span>
+    </div>
+    <span id="connectionStatusDisplay" style="display:inline-flex;align-items:center;gap:0.35rem;color:#34d399;">
+      <i class="ri-shield-check-line"></i> Cloud + Proteção Local IndexedDB Ativa
+    </span>
+    <div class="wdoc-status-zoom">
+      <button type="button" class="wdoc-zoom-btn" onclick="changePaperZoom(-10)" title="Reduzir zoom">-</button>
+      <span id="paperZoomLabel" style="min-width:42px;text-align:center;font-family:monospace;">100%</span>
+      <button type="button" class="wdoc-zoom-btn" onclick="changePaperZoom(10)" title="Aumentar zoom">+</button>
+      <button type="button" class="wdoc-zoom-btn" onclick="changePaperZoom(0)" title="Repor 100%">100%</button>
+    </div>
   </footer>
 
   <!-- ============================================================ -->
-  <!-- MODAIS DO EDITOR DE ARTIGOS                                   -->
+  <!-- MODAIS DO WAVE DOCS                                          -->
   <!-- ============================================================ -->
+
+  <!-- MODAL: HISTÓRICO DE VERSÕES -->
+  <div class="modal-overlay" id="editorHistoryModal">
+    <div class="card-panel modal-window" style="max-width: 560px;">
+      <div class="modal-header-bar">
+        <div class="modal-header-left">
+          <div class="modal-header-icon"><i class="ri-history-line"></i></div>
+          <div class="modal-header-text">
+            <h3>Histórico de Versões</h3>
+            <p>Pontos de restauro guardados automaticamente neste dispositivo.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="closeEditorModal('editorHistoryModal')"><i class="ri-close-line"></i></button>
+      </div>
+      <div id="versionHistoryList" class="wdoc-history-list"></div>
+      <div class="modal-actions" style="margin-top: 1rem;">
+        <button type="button" class="btn-action" onclick="createManualVersionSnapshot()"><i class="ri-save-line"></i> Criar Ponto Agora</button>
+        <button type="button" class="btn-submit-main" onclick="closeEditorModal('editorHistoryModal')">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: IMPORTAR / EXPORTAR DOCUMENTO -->
+  <div class="modal-overlay" id="editorExportModal">
+    <div class="card-panel modal-window" style="max-width: 500px;">
+      <div class="modal-header-bar">
+        <div class="modal-header-left">
+          <div class="modal-header-icon"><i class="ri-file-transfer-line"></i></div>
+          <div class="modal-header-text">
+            <h3>Importar &amp; Exportar Artigo</h3>
+            <p>Guarda uma cópia de segurança no computador ou importa um texto externo.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="closeEditorModal('editorExportModal')"><i class="ri-close-line"></i></button>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 1rem;">
+        <button type="button" class="btn-action" style="justify-content: flex-start; padding: 0.75rem;" onclick="exportArticleAs('markdown')">
+          <i class="ri-markdown-line" style="font-size:1.2rem;color:#38bdf8;"></i> Exportar Markdown (.md)
+        </button>
+        <button type="button" class="btn-action" style="justify-content: flex-start; padding: 0.75rem;" onclick="exportArticleAs('html')">
+          <i class="ri-html5-line" style="font-size:1.2rem;color:#f97316;"></i> Exportar HTML (.html)
+        </button>
+        <button type="button" class="btn-action" style="justify-content: flex-start; padding: 0.75rem;" onclick="exportArticleAs('json')">
+          <i class="ri-braces-line" style="font-size:1.2rem;color:#34d399;"></i> Backup Completo (.json)
+        </button>
+        <button type="button" class="btn-action" style="justify-content: flex-start; padding: 0.75rem;" onclick="printArticleSheet()">
+          <i class="ri-printer-line" style="font-size:1.2rem;color:#a78bfa;"></i> Imprimir / Guardar PDF
+        </button>
+      </div>
+      <div class="editor-cover-dropzone" onclick="document.getElementById('importDocFileInput').click()">
+        <i class="ri-folder-upload-line"></i>
+        <strong>Importar ficheiro do computador (.md, .txt, .html, .json)</strong>
+        <small>Clica para carregar um texto ou restaurar um backup completo</small>
+      </div>
+      <div class="modal-actions" style="margin-top: 1rem;">
+        <button type="button" class="btn-action" onclick="closeEditorModal('editorExportModal')">Fechar</button>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL: INSERIR HIPERLIGAÇÃO -->
   <div class="modal-overlay" id="editorLinkModal">
@@ -557,13 +958,40 @@
     </div>
   </div>
 
+  <!-- MODAL: SUCESSO DE PUBLICAÇÃO -->
+  <div class="modal-overlay" id="articlePublishedModal">
+    <div class="card-panel modal-window" style="max-width: 520px; text-align: center; padding: 2.25rem 2rem;">
+      <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(34, 197, 94, 0.16); color: #22c55e; display: inline-flex; align-items: center; justify-content: center; font-size: 2.2rem; margin: 0 auto 1rem;">
+        <i class="ri-checkbox-circle-fill"></i>
+      </div>
+      <h3 style="font-size: 1.4rem; color: #ffffff; margin-bottom: 0.4rem;" id="publishedModalTitle">Artigo Publicado com Sucesso!</h3>
+      <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.5; margin-bottom: 1.5rem;" id="publishedModalDesc">
+        O teu artigo já se encontra guardado na base de dados da rádio e disponível no site.
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+        <a id="publishedViewLink" href="#" target="_blank" class="btn-submit-main" style="justify-content: center; font-size: 1.05rem;">
+          <i class="ri-external-link-line"></i> Abrir Artigo no Site
+        </a>
+        <div style="display: flex; gap: 0.65rem;">
+          <button type="button" class="btn-action" style="flex: 1; justify-content: center;" onclick="closeEditorModal('articlePublishedModal')">
+            <i class="ri-edit-2-line"></i> Continuar a Editar
+          </button>
+          <a href="admin.html" class="btn-action" style="flex: 1; justify-content: center;">
+            <i class="ri-list-check-2"></i> Gestão de Artigos
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST CONTAINER -->
   <div id="toastContainer" class="toast-container"></div>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="js/firebase-config.js?v=20261027cidadelafm"></script>
-  <script src="js/editor.js"></script>
+  <script src="js/firebase-config.js?v=20261119n"></script>
+  <script src="js/version-history.js?v=20261119n"></script>
+  <script src="js/editor.js?v=20261119n"></script>
 </body>
 </html>

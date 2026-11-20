@@ -16,8 +16,10 @@ document.addEventListener('radio-db-updated', (e) => {
 function renderArticle() {
   const target = document.getElementById('articleContent');
   const id = new URLSearchParams(window.location.search).get('id');
-  const publicArticles = window.db.getPublicAnnouncements();
-  const article = id ? publicArticles.find(item => item.id === id || item.slug === id) || null : null;
+  const allPublic = typeof window.db.getAllPublicAnnouncements === 'function'
+    ? window.db.getAllPublicAnnouncements()
+    : window.db.getPublicAnnouncements();
+  const article = id ? allPublic.find(item => item.id === id || item.slug === id) || null : null;
 
   if (!article) {
     target.innerHTML = `
@@ -33,8 +35,18 @@ function renderArticle() {
     return;
   }
 
-  document.title = `${article.title} | Wave Rádio`;
-  const related = publicArticles.filter(item => item.id !== article.id).slice(0, 3);
+  const isEconomia = article.portal === 'economia' || article.category === 'Economia' || article.tag === 'Economia';
+  const backLink = document.querySelector('.article-page .w-back');
+  if (backLink && isEconomia && article.portal === 'economia') {
+    backLink.href = 'economia.html#econBlog';
+    backLink.innerHTML = '<i class="ri-arrow-left-line" aria-hidden="true"></i> Voltar a Economia em Frequência';
+  }
+
+  document.title = `${article.title} | ${isEconomia ? 'Economia em Frequência • ' : ''}Wave Rádio`;
+  const relatedPool = (isEconomia && typeof window.db.getEconomyAnnouncements === 'function')
+    ? window.db.getEconomyAnnouncements()
+    : window.db.getPublicAnnouncements();
+  const related = relatedPool.filter(item => item.id !== article.id).slice(0, 3);
   const canonicalUrl = window.location.href;
   const rawContent = article.content || `<p>${escapeHtml(article.excerpt || '')}</p>`;
   let safeContent = String(rawContent)
@@ -71,8 +83,16 @@ function renderArticle() {
     !plainBody.toLowerCase().startsWith(cleanExcerptPrefix.toLowerCase())
   );
 
+  const coverCredit = (article.imageSource || article.coverCredit || article.coverSource || '').trim();
+  const coverCaptionHTML = coverCredit
+    ? `<figcaption class="article-cover-caption"><i class="ri-camera-lens-line" aria-hidden="true"></i> Fonte da fotografia: <span>${escapeHtml(coverCredit)}</span></figcaption>`
+    : '';
+
   target.innerHTML = `
-    <figure class="article-cover-wrapper"><img class="article-cover-img" src="${escapeHtml(coverImg)}" alt="${escapeHtml(article.title)}" onerror="this.onerror=null;this.src='assets/logo-radio.jpg';"></figure>
+    <figure class="article-cover-wrapper">
+      <img class="article-cover-img" src="${escapeHtml(coverImg)}" alt="${escapeHtml(article.title)}" onerror="this.onerror=null;this.src='assets/logo-radio.jpg';">
+      ${coverCaptionHTML}
+    </figure>
     <header class="article-header">
       <span class="article-category-badge"><i class="ri-price-tag-3-line"></i> ${escapeHtml(article.category || article.tag || 'Notícia')}</span>
       <h1 class="article-main-title">${escapeHtml(article.title)}</h1>

@@ -1,0 +1,930 @@
+/* ==========================================================================
+   WAVE DOCS PRO — ESTÚDIO EDITORIAL (GOOGLE DOCS / MICROSOFT WORD GRADE)
+   Interface ultra-limpa, barra de menus, ribbon sem sobreposições, régua,
+   controlo de zoom, documento paginado e painel inspetor colapsável.
+   ========================================================================== */
+
+:root {
+  --wdoc-bg: #0b0f19;
+  --wdoc-chrome: #111827;
+  --wdoc-chrome-2: #182135;
+  --wdoc-chrome-hover: rgba(255, 255, 255, 0.08);
+  --wdoc-border: rgba(255, 255, 255, 0.09);
+  --wdoc-border-strong: rgba(255, 255, 255, 0.16);
+  --wdoc-accent: #e4232a;
+  --wdoc-accent-soft: rgba(228, 35, 42, 0.18);
+  --wdoc-blue: #38bdf8;
+  --wdoc-green: #22c55e;
+  --wdoc-amber: #f59e0b;
+  --wdoc-text: #f1f5f9;
+  --wdoc-muted: #94a3b8;
+}
+
+body.word-app-container {
+  background: var(--wdoc-bg) !important;
+  color: var(--wdoc-text) !important;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+}
+
+/* ==========================================================================
+   1. CABEÇALHO ESTILO GOOGLE DOCS / WORD (TÍTULO INLINE + BARRA DE MENUS)
+   ========================================================================== */
+.wdoc-app-header {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: var(--wdoc-chrome);
+  border-bottom: 1px solid var(--wdoc-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.wdoc-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 1.15rem 0.35rem;
+  flex-wrap: wrap;
+}
+
+.wdoc-titlebar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.wdoc-back-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--wdoc-border);
+  color: #cbd5e1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+.wdoc-back-btn:hover {
+  background: rgba(228, 35, 42, 0.18);
+  border-color: rgba(228, 35, 42, 0.45);
+  color: #fff;
+}
+
+.wdoc-doc-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #e4232a, #b91c1c);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(228, 35, 42, 0.35);
+}
+
+.wdoc-doc-meta-stack {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.wdoc-doc-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.wdoc-inline-docname {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: #ffffff;
+  font-size: 1.02rem;
+  font-weight: 700;
+  padding: 0.12rem 0.45rem;
+  margin-left: -0.45rem;
+  min-width: 200px;
+  max-width: 440px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.wdoc-inline-docname:hover {
+  border-color: var(--wdoc-border-strong);
+}
+.wdoc-inline-docname:focus {
+  background: #0b0f19;
+  border-color: var(--wdoc-blue);
+}
+
+.word-doc-badge {
+  background: rgba(228, 35, 42, 0.18);
+  color: #ff6b72;
+  border: 1px solid rgba(228, 35, 42, 0.35);
+  padding: 0.15rem 0.5rem;
+  border-radius: 5px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.wdoc-sync-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.18rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--wdoc-border);
+  font-size: 0.74rem;
+  color: #cbd5e1;
+  white-space: nowrap;
+}
+.wdoc-sync-pill.is-saving { border-color: rgba(56, 189, 248, 0.45); color: #7dd3fc; }
+.wdoc-sync-pill.is-saved { border-color: rgba(34, 197, 94, 0.35); color: #86efac; }
+.wdoc-sync-pill.is-dirty { border-color: rgba(245, 158, 11, 0.45); color: #fcd34d; }
+.wdoc-sync-pill.is-offline { border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; background: rgba(239, 68, 68, 0.12); }
+
+/* Barra de Menus Clássica (Ficheiro, Editar, Ver, Inserir, Formatar, Ferramentas) */
+.wdoc-menubar {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  margin-top: 0.1rem;
+  flex-wrap: wrap;
+}
+
+.wdoc-menu-item {
+  position: relative;
+}
+
+.wdoc-menu-trigger {
+  background: transparent;
+  border: none;
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.wdoc-menu-trigger:hover,
+.wdoc-menu-item.is-open .wdoc-menu-trigger {
+  background: var(--wdoc-chrome-hover);
+  color: #ffffff;
+}
+
+.wdoc-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 500;
+  min-width: 235px;
+  background: #141c2e;
+  border: 1px solid var(--wdoc-border-strong);
+  border-radius: 8px;
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.75);
+  padding: 0.35rem;
+  display: none;
+}
+.wdoc-menu-item.is-open .wdoc-menu-dropdown {
+  display: block;
+}
+
+.wdoc-menu-cmd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.42rem 0.65rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  text-align: left;
+  cursor: pointer;
+}
+.wdoc-menu-cmd span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.wdoc-menu-cmd i {
+  color: #94a3b8;
+  font-size: 0.95rem;
+  width: 16px;
+  text-align: center;
+}
+.wdoc-menu-cmd kbd {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.68rem;
+  color: #64748b;
+}
+.wdoc-menu-cmd:hover {
+  background: rgba(228, 35, 42, 0.22);
+  color: #ffffff;
+}
+.wdoc-menu-cmd:hover i {
+  color: #ff6b72;
+}
+.wdoc-menu-sep {
+  height: 1px;
+  background: var(--wdoc-border);
+  margin: 0.3rem 0.2rem;
+}
+
+.wdoc-titlebar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   2. RIBBON DE FORMATAÇÃO (SEM SOBREPOSIÇÃO DE BOTÕES)
+   ========================================================================== */
+.word-ribbon {
+  position: static !important;
+  background: var(--wdoc-chrome-2) !important;
+  border-top: 1px solid var(--wdoc-border);
+  border-bottom: none !important;
+  padding: 0.4rem 1.15rem !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+  flex-wrap: wrap !important;
+  box-shadow: none !important;
+}
+
+.word-tool-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.2rem !important;
+  background: rgba(11, 15, 25, 0.45) !important;
+  border: 1px solid var(--wdoc-border) !important;
+  border-radius: 7px !important;
+  padding: 0.18rem 0.3rem !important;
+  flex-shrink: 0;
+}
+
+/* Correção crítica: botões largos nunca encolhem para 32px nem sobrepõem vizinhos */
+.word-tool-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: #cbd5e1 !important;
+  min-width: 30px !important;
+  width: auto !important;
+  height: 30px !important;
+  padding: 0 0.4rem !important;
+  border-radius: 5px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.35rem !important;
+  cursor: pointer !important;
+  font-size: 0.95rem !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  position: relative;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.word-tool-btn:hover {
+  background: rgba(255, 255, 255, 0.09) !important;
+  color: #ffffff !important;
+}
+.word-tool-btn.active {
+  background: var(--wdoc-accent) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.word-tool-btn.word-tool-btn-wide {
+  padding: 0 0.65rem !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+}
+.word-tool-btn.word-tool-btn-accent {
+  background: rgba(228, 35, 42, 0.18) !important;
+  color: #ff8086 !important;
+  border-color: rgba(228, 35, 42, 0.4) !important;
+}
+.word-tool-btn.word-tool-btn-accent:hover {
+  background: var(--wdoc-accent) !important;
+  color: #ffffff !important;
+}
+
+.word-select-style {
+  background: #0e1422 !important;
+  border: 1px solid var(--wdoc-border-strong) !important;
+  color: #f1f5f9 !important;
+  border-radius: 5px !important;
+  padding: 0 0.5rem !important;
+  height: 30px !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  outline: none;
+}
+.word-select-style:hover,
+.word-select-style:focus {
+  border-color: var(--wdoc-blue) !important;
+}
+
+/* Color Picker Swatches inline */
+.wdoc-color-btn-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.wdoc-color-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   3. RÉGUA HORIZONTAL ESTILO WORD / GOOGLE DOCS
+   ========================================================================== */
+.wdoc-ruler-bar {
+  background: #0d1320;
+  border-bottom: 1px solid var(--wdoc-border);
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+}
+.wdoc-ruler-track {
+  width: 100%;
+  max-width: 850px;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 3.5rem;
+  color: #475569;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.58rem;
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.14) 0px,
+    rgba(255, 255, 255, 0.14) 1px,
+    transparent 1px,
+    transparent 24px
+  );
+  background-size: 100% 6px;
+  background-repeat: no-repeat;
+  background-position: bottom;
+}
+
+/* ==========================================================================
+   4. WORKSPACE DE 3 COLUNAS + ZOOM + PAPEL A4 REAL
+   ========================================================================== */
+.word-workspace-grid {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr) 330px;
+  gap: 1.5rem;
+  max-width: 1620px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem;
+  align-items: start;
+  flex: 1;
+}
+
+body.wdoc-hide-left .wdoc-left-rail { display: none !important; }
+body.wdoc-hide-right .word-sidebar-panel { display: none !important; }
+body.wdoc-hide-left:not(.wdoc-hide-right) .word-workspace-grid {
+  grid-template-columns: minmax(0, 1fr) 330px;
+}
+body.wdoc-hide-right:not(.wdoc-hide-left) .word-workspace-grid {
+  grid-template-columns: 240px minmax(0, 1fr);
+}
+body.wdoc-hide-left.wdoc-hide-right .word-workspace-grid,
+body.wdoc-zen-mode .word-workspace-grid {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 980px;
+}
+body.wdoc-zen-mode .wdoc-left-rail,
+body.wdoc-zen-mode .word-sidebar-panel {
+  display: none !important;
+}
+
+/* ---------- Coluna Esquerda (Navegação, Qualidade, Modelos) ---------- */
+.wdoc-left-rail {
+  position: sticky;
+  top: 130px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  max-height: calc(100vh - 175px);
+  overflow-y: auto;
+  padding-right: 0.2rem;
+}
+
+.wdoc-rail-card {
+  background: var(--wdoc-chrome);
+  border: 1px solid var(--wdoc-border);
+  border-radius: 10px;
+  padding: 0.95rem;
+}
+
+.wdoc-rail-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #94a3b8;
+  margin: 0 0 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+.wdoc-rail-title i {
+  color: #ff6b72;
+  font-size: 0.92rem;
+}
+
+.wdoc-outline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+}
+.wdoc-outline-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.34rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wdoc-outline-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+.wdoc-outline-item.is-h3 { padding-left: 1.05rem; font-size: 0.75rem; color: #94a3b8; }
+.wdoc-outline-item.is-h4 { padding-left: 1.55rem; font-size: 0.72rem; color: #64748b; }
+.wdoc-outline-tag {
+  font-family: monospace;
+  font-size: 0.64rem;
+  padding: 0.08rem 0.28rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+.wdoc-outline-empty {
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.wdoc-quality-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wdoc-quality-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.76rem;
+  color: #94a3b8;
+}
+.wdoc-quality-item i { font-size: 0.9rem; color: #475569; flex-shrink: 0; }
+.wdoc-quality-item.is-done { color: #e2e8f0; }
+.wdoc-quality-item.is-done i { color: var(--wdoc-green); }
+
+.wdoc-template-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.wdoc-template-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--wdoc-border);
+  color: #cbd5e1;
+  font-size: 0.77rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.14s ease;
+}
+.wdoc-template-btn i { color: #38bdf8; font-size: 0.95rem; }
+.wdoc-template-btn:hover {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #fff;
+}
+
+/* ---------- Folha Central de Documento (Estilo Google Docs / Word) ---------- */
+.word-sheet-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  overflow-x: auto;
+}
+
+.word-paper-sheet {
+  background: #121829;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 4px;
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.65);
+  width: 100%;
+  max-width: 850px;
+  min-height: 1060px; /* Proporção A4 real */
+  padding: 3rem 4rem 4.5rem;
+  position: relative;
+  transform-origin: top center;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, max-width 0.2s ease;
+}
+
+body.wdoc-wide-page .word-paper-sheet {
+  max-width: 1080px;
+}
+
+/* Papel Claro (Padrão Google Docs / Word) */
+body.wdoc-paper-light .word-paper-sheet {
+  background: #ffffff;
+  color: #1e293b;
+  border-color: #cbd5e1;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+body.wdoc-paper-light .word-doc-title-input {
+  color: #0f172a;
+  border-bottom-color: #e2e8f0;
+}
+body.wdoc-paper-light .word-doc-title-input::placeholder {
+  color: #94a3b8;
+}
+body.wdoc-paper-light .word-editable-body {
+  color: #1e293b;
+}
+body.wdoc-paper-light .word-editable-body h2,
+body.wdoc-paper-light .word-editable-body h3,
+body.wdoc-paper-light .word-editable-body h4 {
+  color: #0f172a;
+}
+body.wdoc-paper-light .word-editable-body h2 {
+  border-bottom-color: #e2e8f0;
+}
+body.wdoc-paper-light .word-editable-body blockquote {
+  color: #1e293b;
+  background: #fef2f2;
+  border-left-color: #e4232a;
+}
+body.wdoc-paper-light .word-editable-body table.article-table th,
+body.wdoc-paper-light .word-editable-body table.article-table td {
+  border-color: #cbd5e1;
+  color: #1e293b;
+}
+body.wdoc-paper-light .word-editable-body table.article-table th {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+body.wdoc-paper-light .word-editable-body .article-callout-title {
+  color: #0f172a;
+}
+body.wdoc-paper-light .editor-sheet-meta-bar {
+  border-bottom-color: #e2e8f0;
+}
+
+.word-doc-title-input {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: clamp(1.8rem, 2.7vw, 2.4rem);
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  padding: 0.35rem 0 0.85rem;
+  margin-bottom: 1.4rem;
+  border-bottom: 2px solid var(--wdoc-border);
+}
+
+.word-editable-body {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 1.08rem;
+  line-height: 1.82;
+  min-height: 680px;
+  outline: none;
+}
+.word-editable-body p { margin: 0 0 1.15rem; }
+.word-editable-body h2 {
+  font-size: 1.62rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  margin: 2rem 0 0.75rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.word-editable-body h3 {
+  font-size: 1.28rem;
+  font-weight: 700;
+  margin: 1.55rem 0 0.5rem;
+}
+.word-editable-body h4 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #e4232a;
+  margin: 1.3rem 0 0.45rem;
+}
+
+/* Blocos Especiais (Entrevista P&R, Checklist, Callout, Tabelas) */
+.word-editable-body .article-qa-block,
+.article-body-preview-content .article-qa-block,
+.article-body-text .article-qa-block {
+  margin: 1.35rem 0;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  background: rgba(56, 189, 248, 0.07);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-left: 4px solid #0284c7;
+}
+.article-qa-question {
+  font-weight: 800;
+  color: #38bdf8;
+  margin-bottom: 0.45rem !important;
+  display: block;
+}
+body.wdoc-paper-light .article-qa-question,
+.article-body-preview-content .article-qa-question,
+.article-body-text .article-qa-question {
+  color: #0369a1;
+}
+.article-qa-answer { margin: 0 !important; }
+
+.word-editable-body ul.article-checklist,
+.article-body-preview-content ul.article-checklist,
+.article-body-text ul.article-checklist {
+  list-style: none;
+  margin-left: 0.25rem;
+  padding-left: 0;
+}
+.word-editable-body ul.article-checklist li,
+.article-body-preview-content ul.article-checklist li,
+.article-body-text ul.article-checklist li {
+  position: relative;
+  padding-left: 1.75rem;
+  margin-bottom: 0.45rem;
+}
+.word-editable-body ul.article-checklist li::before,
+.article-body-preview-content ul.article-checklist li::before,
+.article-body-text ul.article-checklist li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  top: 0.15rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 5px;
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  color: #16a34a;
+  font-size: 0.75rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* ---------- Barra Flutuante de Seleção & Slash Menu ---------- */
+.wdoc-floating-pop {
+  position: fixed;
+  z-index: 1200;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 9px;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.65);
+  padding: 0.28rem;
+  display: none;
+  align-items: center;
+  gap: 0.18rem;
+}
+.wdoc-floating-pop.active { display: inline-flex; }
+.wdoc-floating-pop button {
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  width: 29px;
+  height: 29px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+.wdoc-floating-pop button:hover {
+  background: rgba(228, 35, 42, 0.25);
+  color: #fff;
+}
+
+.wdoc-slash-menu {
+  position: fixed;
+  z-index: 1250;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 11px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.75);
+  width: 280px;
+  max-height: 330px;
+  overflow-y: auto;
+  padding: 0.4rem;
+  display: none;
+}
+.wdoc-slash-menu.active { display: block; }
+.wdoc-slash-header {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  padding: 0.35rem 0.55rem 0.25rem;
+}
+.wdoc-slash-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  text-align: left;
+  cursor: pointer;
+}
+.wdoc-slash-item:hover,
+.wdoc-slash-item.is-active {
+  background: rgba(228, 35, 42, 0.22);
+  color: #fff;
+}
+.wdoc-slash-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.98rem;
+  color: #ff6b72;
+  flex-shrink: 0;
+}
+.wdoc-slash-text strong { display: block; font-size: 0.8rem; font-weight: 700; }
+.wdoc-slash-text small { display: block; font-size: 0.69rem; color: #94a3b8; }
+
+/* ---------- Barras Contextuais (Tabelas e Localizar) ---------- */
+.wdoc-table-toolbar,
+.wdoc-find-bar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border-radius: 9px;
+  padding: 0.5rem 0.85rem;
+  margin-bottom: 1rem;
+}
+.wdoc-table-toolbar {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.38);
+}
+.wdoc-find-bar {
+  background: #131c2e;
+  border: 1px solid rgba(56, 189, 248, 0.38);
+  color: #e2e8f0;
+}
+.wdoc-table-toolbar.active,
+.wdoc-find-bar.active {
+  display: flex;
+}
+.wdoc-table-toolbar-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #10b981;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.wdoc-find-bar input {
+  background: #0b101d;
+  border: 1px solid var(--wdoc-border-strong);
+  border-radius: 6px;
+  color: #fff;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  min-width: 145px;
+}
+
+/* ---------- Statusbar Inferior (Com Zoom e Estado de Rede) ---------- */
+.word-bottom-statusbar {
+  background: var(--wdoc-chrome) !important;
+  border-top: 1px solid var(--wdoc-border) !important;
+  padding: 0.4rem 1.25rem !important;
+  font-size: 0.77rem !important;
+  color: #94a3b8 !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.wdoc-status-zoom {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.wdoc-zoom-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--wdoc-border);
+  color: #cbd5e1;
+  border-radius: 4px;
+  padding: 0.1rem 0.42rem;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.wdoc-zoom-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+/* ---------- Histórico de Versões ---------- */
+.wdoc-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.wdoc-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--wdoc-border);
+}
+.wdoc-history-meta strong { display: block; font-size: 0.85rem; color: #f8fafc; }
+.wdoc-history-meta small { display: block; font-size: 0.74rem; color: #94a3b8; margin-top: 0.15rem; }
+
+/* ---------- Responsividade ---------- */
+@media (max-width: 1280px) {
+  .word-workspace-grid { grid-template-columns: 1fr 320px; }
+  .wdoc-left-rail { display: none; }
+}
+@media (max-width: 960px) {
+  .word-workspace-grid { grid-template-columns: 1fr; }
+  .word-paper-sheet { padding: 1.75rem 1.35rem 2.5rem; min-height: 600px; }
+  .wdoc-ruler-bar { display: none; }
+}

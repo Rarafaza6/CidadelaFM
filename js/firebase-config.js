@@ -146,6 +146,7 @@ class RadioDatabase {
         this.loadCollection('polls', [])
       ]);
       this.syncMaintenanceState();
+      this.syncSiteVisibilityState();
       this.watchCollections(['podcasts', 'announcements', 'links', 'nerdChallenges', 'teamMembers', 'polls']);
       this.clearLegacyStorage(['radio_podcasts', 'radio_announcements', 'radio_links']);
     } catch (error) {
@@ -218,6 +219,8 @@ class RadioDatabase {
           }
           if (name === 'announcements') {
             this.syncMaintenanceState();
+            this.syncSiteVisibilityState();
+            document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'sabesQue' } }));
           }
           document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: name } }));
         }, error => {
@@ -256,6 +259,27 @@ class RadioDatabase {
     return firestore.collection(name).doc(id).delete();
   }
 
+  // DETETOR AUTOMÁTICO DE CONTEÚDO EXPLÍCITO / IMPRÓPRIO PARA CONTEXTO ESCOLAR [E]
+  static isExplicitSong(title, artist) {
+    if (!title && !artist) return false;
+    if (typeof window !== 'undefined' && window.ExplicitEngine && typeof window.ExplicitEngine.isExplicit === 'function') {
+      return window.ExplicitEngine.isExplicit(title, artist);
+    }
+    const full = `${title || ''} ${artist || ''}`;
+    let norm = '';
+    try {
+      norm = full.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    } catch (e) {
+      norm = full.toLowerCase();
+    }
+    const titleTagRegex = /\b(explicit(\s*version)?|dirty(\s*version)?|uncensored|parental advisory|sem censura|versao explicita|versão explícita|explicit lyrics|versao proibidona|proibidona|proibidao|18\+)\b/i;
+    if (titleTagRegex.test(norm) || titleTagRegex.test(full)) return true;
+
+    const explicitRegex = /\b(foda|foder|foda-se|fodasse|fodeu|fodido|fodida|fode|fodendo|fodam-se|foderam|fodi|fudido|fudida|fuder|fudendo|fode-te|caralho|caralhos|caralhada|puta|putas|putedo|putaria|vadia|vadias|vagabunda|vagabundo|fdp|merda|merdas|cabrao|cabroes|cona|conas|coninhas|paneleiro|paneleiros|panisga|pqp|vsf|vtnc|krl|buceta|bucetas|bct|xoxota|xoxotas|xereca|piroca|pirocas|grelo|arrombado|arrombada|cuzao|cuzinho|pirocao|pissa|porra|cacete|boquete|punheta|siririca|masturbar|masturbacao|orgasmo|tesao|suruba|menage|orgia|prostituta|stripper|rabao|tcheca|ppk|pepeca|perereca|cocaina|cocaine|heroina|heroin|metanfetamina|ecstasy|mdma|ketamina|maconha|marijuana|ganza|haxixe|baseado|overdose|traficante|suicidio|suicide|homicidio|assassinar|tiroteio|estupro|estuprar|violacao|fuck|fucking|fucked|fucker|fuckin|motherfucker|motherfucking|shit|shitty|bullshit|bitch|bitches|asshole|assholes|dick|dicks|dickhead|cunt|cunts|pussy|pussies|nigga|niggas|nigger|niggers|slut|sluts|whore|whores|bastard|bastards|cock|cocks|cocksucker|blowjob|handjob|deepthroat|cum|cumshot|orgasm|horny|hooker|thot|thots|hoes|dildo|porn|porno|onlyfans|hentai|twerk|twerking|milf|weed|blunt|blunts|bong|meth|xanax|percocet|fentanyl|glock|ak47|ar15|headshot|murder|rape|rapist|faggot|retard|twat|mierda|culero|pendejo|pendeja|coño|chingar|chingado|cabron|cabrona|perreo|bellaqueo|follar|verga|mamaguevo|hijueputa|merde|putain|connard|salope)\b|filho[s]? da puta|vai tomar no cu|tomar no cu|enfia[ -]no[ -]cu|vai-te foder|dar o cu|levar no cu|hijo[s]? de puta|pau duro|quica na|senta na|f\*+ck|s\*+t|b\*+tch|n\*+gga/i;
+    const accentedRegex = /\b(cabr[aã]o|cabr[oõ]es|piça|piças|cuz[aã]o|coño|tes[aã]o|coca[ií]na|hero[ií]na|suic[ií]dio|viola[cç][aã]o)\b/i;
+    return explicitRegex.test(norm) || accentedRegex.test(full);
+  }
+
   // SUGGESTIONS
   getSuggestions() {
     return (this.cache.suggestions || []).map(item => {
@@ -263,6 +287,15 @@ class RadioDatabase {
       const title = String(item.songTitle || item.title || 'Música').trim();
       const artist = String(item.artist || 'Artista Não Especificado').trim();
       const cover = item.artwork || item.cover || 'assets/logo-radio.jpg';
+      const isExplicit = (item.trackExplicitness === 'explicit') || RadioDatabase.isExplicitSong(title, artist);
+      let ts = 0;
+      if (typeof item.timestamp === 'number' && item.timestamp > 0) ts = item.timestamp;
+      else if (item.timestamp && typeof item.timestamp.toMillis === 'function') ts = item.timestamp.toMillis();
+      else if (typeof item.createdAt === 'number' && item.createdAt > 0) ts = item.createdAt;
+      else if (typeof item.id === 'string') {
+        const m = item.id.match(/(\d{12,14})/);
+        if (m) ts = parseInt(m[1], 10);
+      }
       return {
         ...item,
         title,
@@ -270,10 +303,113 @@ class RadioDatabase {
         cover,
         artwork: cover,
         artist,
+        explicit: isExplicit,
+        isExplicit: isExplicit,
         status: item.status || 'pending',
-        timestamp: item.timestamp || Date.now()
+        timestamp: ts
       };
     }).filter(Boolean);
+  }
+
+  // COOLDOWN DE MÚSICAS: BLOQUEIO DE 4 MESES PARA A MESMA PESSOA/DISPOSITIVO
+  // =========================================================================
+  normalizeSongKey(title, artist) {
+    const cleanTitle = String(title || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/\b(feat\.?|ft\.?|remix|radio edit|original mix|version|audio|video|oficial|official)\b/gi, '')
+      .replace(/[^a-z0-9]/g, '')
+      .trim();
+
+    const cleanArtist = String(artist || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '')
+      .trim();
+
+    if (!cleanArtist || cleanArtist === 'naoespecificado') {
+      return cleanTitle;
+    }
+    return `${cleanTitle}___${cleanArtist}`;
+  }
+
+  getSongRequestHistory() {
+    try {
+      const raw = localStorage.getItem('wave_user_song_history');
+      const list = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(list)) return [];
+      const now = Date.now();
+      return list.filter(item => {
+        if (!item || !item.timestamp) return false;
+        const cooldownDate = new Date(item.timestamp);
+        cooldownDate.setMonth(cooldownDate.getMonth() + 4);
+        return now < cooldownDate.getTime();
+      });
+    } catch (_) {
+      return [];
+    }
+  }
+
+  saveSongRequestHistory(list) {
+    try {
+      localStorage.setItem('wave_user_song_history', JSON.stringify(list));
+    } catch (_) {}
+  }
+
+  checkSongRequestCooldown(title, artist) {
+    const key = this.normalizeSongKey(title, artist);
+    const cleanTitle = this.normalizeSongKey(title, '');
+    if (!key && !cleanTitle) return null;
+
+    const history = this.getSongRequestHistory();
+    const found = history.find(entry => {
+      const entryKey = entry.key || this.normalizeSongKey(entry.songTitle || entry.title, entry.artist);
+      const entryCleanTitle = entry.cleanTitle || this.normalizeSongKey(entry.songTitle || entry.title, '');
+      return (key && entryKey === key) || (cleanTitle && cleanTitle.length >= 4 && entryCleanTitle === cleanTitle);
+    });
+
+    if (!found) return null;
+
+    const cooldownDate = new Date(found.timestamp);
+    cooldownDate.setMonth(cooldownDate.getMonth() + 4);
+
+    if (Date.now() < cooldownDate.getTime()) {
+      return {
+        isBlocked: true,
+        requestedAt: found.timestamp,
+        cooldownUntil: cooldownDate.getTime(),
+        cooldownDate: cooldownDate,
+        songTitle: found.songTitle || title,
+        artist: found.artist || artist
+      };
+    }
+
+    return null;
+  }
+
+  recordSongRequest(title, artist) {
+    const key = this.normalizeSongKey(title, artist);
+    const cleanTitle = this.normalizeSongKey(title, '');
+    if (!key && !cleanTitle) return null;
+
+    const history = this.getSongRequestHistory();
+    const entry = {
+      key,
+      cleanTitle,
+      songTitle: String(title || '').trim(),
+      artist: String(artist || '').trim(),
+      timestamp: Date.now(),
+      dateIso: new Date().toISOString()
+    };
+    const filtered = history.filter(item => {
+      const itemKey = item.key || this.normalizeSongKey(item.songTitle || item.title, item.artist);
+      return itemKey !== key;
+    });
+    filtered.unshift(entry);
+    this.saveSongRequestHistory(filtered);
+    return entry;
   }
 
   addSuggestion(suggestion) {
@@ -284,9 +420,15 @@ class RadioDatabase {
     const newId = suggestion.id || `sug-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const status = suggestion.status || 'pending';
     const timestamp = suggestion.timestamp || Date.now();
+    const isExplicit = Boolean(suggestion.explicit || RadioDatabase.isExplicitSong(rawTitle, rawArtist));
+
+    // Regista no histórico de 4 meses do utilizador/dispositivo caso não seja ação de admin
+    if (suggestion.source !== 'admin') {
+      this.recordSongRequest(rawTitle, rawArtist);
+    }
 
     // Cumpre estritamente as regras de segurança do Cloud Firestore:
-    // keys permitidas: id, title, artist, cover, previewUrl, status, timestamp (+ studentClass, teacherName, weekKey, source)
+    // keys permitidas: id, title, artist, cover, previewUrl, status, timestamp, explicit (+ studentClass, teacherName, weekKey, source)
     const firestoreData = {
       id: newId,
       title: rawTitle || 'Música',
@@ -294,7 +436,8 @@ class RadioDatabase {
       cover: rawCover,
       previewUrl: rawPreview,
       status: status,
-      timestamp: timestamp
+      timestamp: timestamp,
+      explicit: Boolean(isExplicit)
     };
     if (suggestion.studentClass) firestoreData.studentClass = String(suggestion.studentClass).trim().slice(0, 40);
     if (suggestion.teacherName) firestoreData.teacherName = String(suggestion.teacherName).trim().slice(0, 120);
@@ -304,7 +447,8 @@ class RadioDatabase {
     const memoryEntry = {
       ...firestoreData,
       songTitle: firestoreData.title,
-      artwork: firestoreData.cover
+      artwork: firestoreData.cover,
+      isExplicit: Boolean(isExplicit)
     };
 
     if (!this.cache.suggestions) this.cache.suggestions = [];
@@ -341,6 +485,42 @@ class RadioDatabase {
     if (index !== -1) {
       this.cache.suggestions[index].status = status;
       this.write('suggestions', id, { status }).catch(console.error);
+      document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'suggestions' } }));
+    }
+  }
+
+  updateSuggestionExplicit(id, explicit, silent = false) {
+    const isExp = Boolean(explicit);
+    const index = this.cache.suggestions.findIndex(s => s && s.id === id);
+    if (index !== -1) {
+      if (this.cache.suggestions[index].explicit === isExp && this.cache.suggestions[index].isExplicit === isExp) {
+        return; // Nada mudou: evita loop e flickering desnecessário
+      }
+      this.cache.suggestions[index].explicit = isExp;
+      this.cache.suggestions[index].isExplicit = isExp;
+      this.write('suggestions', id, { explicit: isExp }).catch(console.error);
+      if (!silent) {
+        document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'suggestions' } }));
+      }
+    }
+  }
+
+  updateSuggestionsExplicitBatch(ids, explicit) {
+    if (!Array.isArray(ids) || ids.length === 0) return;
+    const isExp = Boolean(explicit);
+    let hasChanges = false;
+    ids.forEach(id => {
+      const index = this.cache.suggestions.findIndex(s => s && s.id === id);
+      if (index !== -1) {
+        if (this.cache.suggestions[index].explicit !== isExp || this.cache.suggestions[index].isExplicit !== isExp) {
+          this.cache.suggestions[index].explicit = isExp;
+          this.cache.suggestions[index].isExplicit = isExp;
+          this.write('suggestions', id, { explicit: isExp }).catch(console.error);
+          hasChanges = true;
+        }
+      }
+    });
+    if (hasChanges) {
       document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'suggestions' } }));
     }
   }
@@ -430,7 +610,28 @@ class RadioDatabase {
 
   // PODCASTS
   getPodcasts() {
-    return [...this.cache.podcasts].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    return [...this.cache.podcasts]
+      .map(p => ({ ...p, portal: p.portal || 'main' }))
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  }
+
+  getMainPodcasts() {
+    return this.getPodcasts().filter(p => p.portal !== 'economia');
+  }
+
+  getEconomyPodcasts() {
+    const economyCategories = new Set([
+      'economia',
+      'economia em frequência',
+      'mito ou verdade',
+      'jovens e dinheiro',
+      'economia e sustentabilidade'
+    ]);
+    return this.getPodcasts().filter(p =>
+      p.portal === 'economia' ||
+      p.portal === 'both' ||
+      economyCategories.has(String(p.category || '').trim().toLowerCase())
+    );
   }
 
   getPodcast(id) {
@@ -438,7 +639,7 @@ class RadioDatabase {
   }
 
   addPodcast(podcast) {
-    const newEntry = { id: 'pod-' + Date.now(), createdAt: Date.now(), ...podcast };
+    const newEntry = { id: 'pod-' + Date.now(), createdAt: Date.now(), portal: 'main', ...podcast };
     this.cache.podcasts.unshift(newEntry);
     const writePromise = this.write('podcasts', newEntry.id, newEntry);
     writePromise.catch(console.error);
@@ -474,10 +675,11 @@ class RadioDatabase {
   // ANNOUNCEMENTS / NOTÍCIAS & ARTIGOS
   getAnnouncements() {
     return [...this.cache.announcements]
-      .filter(a => a && a.id !== 'system_maintenance' && a.id !== '__system_maintenance__' && a.isSystemConfig !== true)
+      .filter(a => a && a.id !== 'system_maintenance' && a.id !== '__system_maintenance__' && a.id !== 'system_visibility' && a.id !== '__system_visibility__' && a.isSystemConfig !== true && a.recordType !== 'sabes_que')
       .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
       .map(announcement => ({
         ...announcement,
+        portal: announcement.portal || 'main',
         category: announcement.category || announcement.tag || 'Notícia',
         tag: announcement.tag || announcement.category || 'Notícia',
         visibility: announcement.visibility === 'internal' || announcement.onAir === true || Boolean(announcement.broadcastDate)
@@ -540,12 +742,248 @@ class RadioDatabase {
     return this._attachWritePromise(entry, writePromise);
   }
 
-  getPublicAnnouncements() {
+  // ============================================================
+  // VISIBILIDADE DE PÁGINAS & SECÇÕES DO SITE (FEATURE FLAGS / MODO BETA)
+  // Permite esconder páginas ou secções que estejam em teste/beta sem necessidade de página de manutenção
+  // ============================================================
+  getSiteVisibility() {
+    const defaultPages = {
+      'economia.html': true,
+      'sabes-que.html': true,
+      'podcasts.html': true,
+      'noticias.html': true,
+      'pedir-musica.html': true,
+      'DT.html': true,
+      'vote.html': true,
+      'nerd-alert.html': true,
+      'equipa.html': true,
+      'mensagem.html': true
+    };
+    const defaultSections = {
+      'home-news': true,
+      'home-podcasts': true,
+      'home-sabias-que': true,
+      'home-services': true,
+      'home-manifesto': true,
+      'econ-sabias-que': true,
+      'econ-podcasts': true
+    };
+
+    let localCache = null;
+    try {
+      localCache = JSON.parse(localStorage.getItem('wave_site_visibility') || 'null');
+    } catch (_) {}
+
+    const doc = (this.cache.announcements || []).find(a => a && (a.id === 'system_visibility' || a.id === '__system_visibility__'));
+    const docPages = (doc && typeof doc.pages === 'object') ? doc.pages : {};
+    const docSections = (doc && typeof doc.sections === 'object') ? doc.sections : {};
+
+    const pages = {
+      ...defaultPages,
+      ...(localCache && localCache.pages ? localCache.pages : {}),
+      ...docPages
+    };
+    const sections = {
+      ...defaultSections,
+      ...(localCache && localCache.sections ? localCache.sections : {}),
+      ...docSections
+    };
+
+    const updatedAt = Number((doc && doc.updatedAt) || (localCache && localCache.updatedAt)) || 0;
+    const updatedBy = String((doc && doc.updatedBy) || (localCache && localCache.updatedBy) || 'Admin').trim();
+
+    return { pages, sections, updatedAt, updatedBy };
+  }
+
+  syncSiteVisibilityState() {
+    const state = this.getSiteVisibility();
+    try {
+      localStorage.setItem('wave_site_visibility', JSON.stringify({
+        pages: state.pages,
+        sections: state.sections,
+        updatedAt: state.updatedAt,
+        updatedBy: state.updatedBy
+      }));
+    } catch (_) {}
+    document.dispatchEvent(new CustomEvent('radio-visibility-updated', { detail: state }));
+    return state;
+  }
+
+  setSiteVisibility(pages, sections, options = {}) {
+    const id = 'system_visibility';
+    const current = this.getSiteVisibility();
+    const nextPages = { ...current.pages, ...(pages || {}) };
+    const nextSections = { ...current.sections, ...(sections || {}) };
+    const entry = {
+      id,
+      isSystemConfig: true,
+      visibility: 'internal',
+      pages: nextPages,
+      sections: nextSections,
+      updatedBy: String(options.updatedBy || 'Admin').trim(),
+      updatedAt: Date.now()
+    };
+
+    if (!this.cache.announcements) this.cache.announcements = [];
+    const idx = this.cache.announcements.findIndex(a => a && (a.id === id || a.id === '__system_visibility__'));
+    if (idx === -1) {
+      this.cache.announcements.push(entry);
+    } else {
+      this.cache.announcements[idx] = { ...this.cache.announcements[idx], ...entry, id };
+    }
+
+    this.syncSiteVisibilityState();
+    const writePromise = this.write('announcements', id, entry);
+    writePromise.catch(console.error);
+    this.write('siteSettings', 'visibility', entry).catch(() => {});
+    document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'siteVisibility' } }));
+    return this._attachWritePromise(entry, writePromise);
+  }
+
+  togglePageVisibility(pageKey, forceValue) {
+    const current = this.getSiteVisibility();
+    const currentVal = current.pages[pageKey] !== false;
+    const nextVal = typeof forceValue === 'boolean' ? forceValue : !currentVal;
+    return this.setSiteVisibility({ [pageKey]: nextVal }, null);
+  }
+
+  toggleSectionVisibility(sectionKey, forceValue) {
+    const current = this.getSiteVisibility();
+    const currentVal = current.sections[sectionKey] !== false;
+    const nextVal = typeof forceValue === 'boolean' ? forceValue : !currentVal;
+    return this.setSiteVisibility(null, { [sectionKey]: nextVal });
+  }
+
+  getAllPublicAnnouncements() {
     return this.getAnnouncements().filter(item => item.visibility !== 'internal' && item.onAir !== true && !item.broadcastDate);
+  }
+
+  getPublicAnnouncements() {
+    return this.getAllPublicAnnouncements().filter(item => item.portal !== 'economia');
+  }
+
+  getEconomyAnnouncements() {
+    return this.getAllPublicAnnouncements().filter(item =>
+      item.portal === 'economia' ||
+      item.portal === 'both' ||
+      item.category === 'Economia' ||
+      item.tag === 'Economia'
+    );
   }
 
   getInternalAnnouncements() {
     return this.getAnnouncements().filter(item => item.visibility === 'internal' || item.onAir === true || Boolean(item.broadcastDate));
+  }
+
+  // ============================================================
+  // SABES QUE... (CURIOSIDADES POR DISCIPLINA)
+  // ============================================================
+  getSabesQue(discipline = null) {
+    const rawList = (this.cache.announcements || []).filter(a => a && a.recordType === 'sabes_que');
+    const normalized = rawList
+      .map(item => ({
+        ...item,
+        discipline: String(item.discipline || 'Economia').trim(),
+        title: String(item.title || '').trim(),
+        content: String(item.content || '').trim(),
+        author: String(item.author || 'Equipa da Rádio • EBS Cidadela').trim(),
+        date: String(item.date || '').trim(),
+        source: String(item.source || '').trim(),
+        image: String(item.image || '').trim(),
+        createdAt: Number(item.createdAt) || 0
+      }))
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+    if (discipline && discipline !== 'all') {
+      const target = String(discipline).trim().toLowerCase();
+      return normalized.filter(item => item.discipline.toLowerCase() === target);
+    }
+    return normalized;
+  }
+
+  getSabesQueById(id) {
+    return this.getSabesQue().find(item => String(item.id) === String(id)) || null;
+  }
+
+  getLatestSabesQueByDiscipline() {
+    const all = this.getSabesQue();
+    const map = new Map();
+    all.forEach(item => {
+      const key = item.discipline.toLowerCase();
+      if (!map.has(key)) {
+        map.set(key, item);
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  }
+
+  getSabesQueDisciplines() {
+    const set = new Map();
+    set.set('economia', 'Economia');
+    this.getSabesQue().forEach(item => {
+      const disc = String(item.discipline || '').trim();
+      if (disc && !set.has(disc.toLowerCase())) {
+        set.set(disc.toLowerCase(), disc);
+      }
+    });
+    return Array.from(set.values()).sort((a, b) => {
+      if (a.toLowerCase() === 'economia') return -1;
+      if (b.toLowerCase() === 'economia') return 1;
+      return a.localeCompare(b, 'pt');
+    });
+  }
+
+  saveSabesQue(item) {
+    const id = item.id || `sq-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`;
+    if (!this.cache.announcements) this.cache.announcements = [];
+    const existingIdx = this.cache.announcements.findIndex(a => a && String(a.id) === String(id));
+    const existing = existingIdx !== -1 ? this.cache.announcements[existingIdx] : {};
+    const entry = {
+      ...existing,
+      ...item,
+      id,
+      recordType: 'sabes_que',
+      visibility: 'public',
+      discipline: String(item.discipline || existing.discipline || 'Economia').trim(),
+      title: String(item.title || '').trim(),
+      content: String(item.content || '').trim(),
+      author: String(item.author || existing.author || 'Equipa da Rádio • EBS Cidadela').trim(),
+      date: String(item.date || existing.date || new Date().toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' })).trim(),
+      source: String(item.source !== undefined ? item.source : (existing.source || '')).trim(),
+      image: String(item.image !== undefined ? item.image : (existing.image || '')).trim(),
+      createdAt: existing.createdAt || item.createdAt || Date.now(),
+      updatedAt: Date.now()
+    };
+
+    if (existingIdx === -1) {
+      this.cache.announcements.unshift(entry);
+    } else {
+      this.cache.announcements[existingIdx] = entry;
+    }
+
+    const writePromise = this.write('announcements', id, entry);
+    writePromise.catch(console.error);
+    this.write('sabesQue', id, entry).catch(() => {});
+    document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'sabesQue' } }));
+    return this._attachWritePromise(entry, writePromise);
+  }
+
+  async saveSabesQueAsync(item) {
+    const saved = this.saveSabesQue(item);
+    if (saved && saved._writePromise) {
+      await saved._writePromise;
+    }
+    return saved;
+  }
+
+  deleteSabesQue(id) {
+    if (this.cache.announcements) {
+      this.cache.announcements = this.cache.announcements.filter(a => String(a.id) !== String(id));
+    }
+    const p = this.remove('announcements', id).catch(console.error);
+    this.remove('sabesQue', id).catch(() => {});
+    document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'sabesQue' } }));
+    return p;
   }
 
   getAnnouncementById(id) {
@@ -773,6 +1211,89 @@ class RadioDatabase {
     return entry;
   }
 
+  // ============================================================
+  // ALINHAMENTO DIÁRIO OFICIAL (GUIÃO + MÚSICAS ESCOLHIDAS AO VIVO)
+  // ============================================================
+  isLegacyDemoRundown(items) {
+    if (!Array.isArray(items) || items.length === 0) return false;
+    const titles = items.map(it => String(it && it.title || '').toLowerCase());
+    return titles.some(t => t.includes('back on 74')) && titles.some(t => t.includes('faith no more'));
+  }
+
+  getDailyRundown(dateKey) {
+    if (!this.cache.rundowns) this.cache.rundowns = [];
+    const found = this.cache.rundowns.find(r => r.date === dateKey || r.id === `rundown-${dateKey}` || r.id === `script-${dateKey}`);
+    if (found && Array.isArray(found.items) && found.items.length > 0 && !this.isLegacyDemoRundown(found.items)) {
+      return found;
+    }
+    // Tenta carregar do armazenamento local
+    try {
+      const local = JSON.parse(localStorage.getItem(`wave_rundown_${dateKey}`) || 'null');
+      if (local && Array.isArray(local.items) && local.items.length > 0) {
+        if (this.isLegacyDemoRundown(local.items)) {
+          localStorage.removeItem(`wave_rundown_${dateKey}`);
+        } else {
+          return local;
+        }
+      }
+    } catch (_) {}
+
+    // Por defeito, o guião começa totalmente vazio para ser o utilizador a adicionar as músicas
+    return {
+      id: `rundown-${dateKey}`,
+      date: dateKey,
+      title: `Alinhamento de ${dateKey}`,
+      items: [],
+      updatedAt: Date.now()
+    };
+  }
+
+  saveDailyRundown(dateKey, items, title = '') {
+    const id = `rundown-${dateKey}`;
+    try {
+      if (Array.isArray(items) && items.length > 0) {
+        localStorage.removeItem(`wave_rundown_cleared_${dateKey}`);
+      }
+    } catch (_) {}
+    const cleanItems = (Array.isArray(items) ? items : []).map((item, idx) => ({
+      id: item.id || `item-${Date.now()}-${idx}`,
+      order: item.order !== undefined ? item.order : (idx + 1),
+      type: item.type || 'talk',
+      title: String(item.title || '').trim(),
+      artist: String(item.artist || '').trim(),
+      description: String(item.description || '').trim(),
+      duration: String(item.duration || '').trim(),
+      highlightLive: Boolean(item.highlightLive),
+      previewUrl: String(item.previewUrl || '').trim(),
+      artwork: String(item.artwork || '').trim(),
+      status: item.status || 'pending',
+      isExplicit: Boolean(item.isExplicit)
+    }));
+
+    const entry = {
+      id,
+      date: dateKey,
+      title: title || `Alinhamento • ${dateKey}`,
+      items: cleanItems,
+      blocks: cleanItems,
+      updatedAt: Date.now()
+    };
+
+    if (!this.cache.rundowns) this.cache.rundowns = [];
+    const index = this.cache.rundowns.findIndex(item => item.id === id || item.date === dateKey);
+    if (index === -1) this.cache.rundowns.unshift(entry);
+    else this.cache.rundowns[index] = { ...this.cache.rundowns[index], ...entry };
+
+    try {
+      localStorage.setItem(`wave_rundown_${dateKey}`, JSON.stringify(entry));
+    } catch (_) {}
+
+    const writePromise = this.write('rundowns', id, entry);
+    writePromise.catch(console.error);
+    document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'rundowns', date: dateKey } }));
+    return this._attachWritePromise(entry, writePromise);
+  }
+
   deleteRundown(id) {
     this.cache.rundowns = (this.cache.rundowns || []).filter(r => r.id !== id);
     this.remove('rundowns', id).catch(console.error);
@@ -814,6 +1335,89 @@ class RadioDatabase {
     else this.cache.rundowns[index] = { ...this.cache.rundowns[index], ...entry };
     this.write('rundowns', id, entry).catch(console.error);
     return entry;
+  }
+
+  // ============================================================
+  // ALINHAMENTO DIÁRIO OFICIAL (GUIÃO + MÚSICAS ESCOLHIDAS AO VIVO)
+  // ============================================================
+  isLegacyDemoRundown(items) {
+    if (!Array.isArray(items) || items.length === 0) return false;
+    const titles = items.map(it => String(it && it.title || '').toLowerCase());
+    return titles.some(t => t.includes('back on 74')) && titles.some(t => t.includes('faith no more'));
+  }
+
+  getDailyRundown(dateKey) {
+    if (!this.cache.rundowns) this.cache.rundowns = [];
+    const found = this.cache.rundowns.find(r => r.date === dateKey || r.id === `rundown-${dateKey}` || r.id === `script-${dateKey}`);
+    if (found && Array.isArray(found.items) && found.items.length > 0 && !this.isLegacyDemoRundown(found.items)) {
+      return found;
+    }
+    // Tenta carregar do armazenamento local
+    try {
+      const local = JSON.parse(localStorage.getItem(`wave_rundown_${dateKey}`) || 'null');
+      if (local && Array.isArray(local.items) && local.items.length > 0) {
+        if (this.isLegacyDemoRundown(local.items)) {
+          localStorage.removeItem(`wave_rundown_${dateKey}`);
+        } else {
+          return local;
+        }
+      }
+    } catch (_) {}
+
+    // Por defeito, o guião começa totalmente vazio para ser o utilizador a adicionar as músicas
+    return {
+      id: `rundown-${dateKey}`,
+      date: dateKey,
+      title: `Alinhamento de ${dateKey}`,
+      items: [],
+      updatedAt: Date.now()
+    };
+  }
+
+  saveDailyRundown(dateKey, items, title = '') {
+    const id = `rundown-${dateKey}`;
+    try {
+      if (Array.isArray(items) && items.length > 0) {
+        localStorage.removeItem(`wave_rundown_cleared_${dateKey}`);
+      }
+    } catch (_) {}
+    const cleanItems = (Array.isArray(items) ? items : []).map((item, idx) => ({
+      id: item.id || `item-${Date.now()}-${idx}`,
+      order: item.order !== undefined ? item.order : (idx + 1),
+      type: item.type || 'talk',
+      title: String(item.title || '').trim(),
+      artist: String(item.artist || '').trim(),
+      description: String(item.description || '').trim(),
+      duration: String(item.duration || '').trim(),
+      highlightLive: Boolean(item.highlightLive),
+      previewUrl: String(item.previewUrl || '').trim(),
+      artwork: String(item.artwork || '').trim(),
+      status: item.status || 'pending',
+      isExplicit: Boolean(item.isExplicit)
+    }));
+
+    const entry = {
+      id,
+      date: dateKey,
+      title: title || `Alinhamento • ${dateKey}`,
+      items: cleanItems,
+      blocks: cleanItems,
+      updatedAt: Date.now()
+    };
+
+    if (!this.cache.rundowns) this.cache.rundowns = [];
+    const index = this.cache.rundowns.findIndex(item => item.id === id || item.date === dateKey);
+    if (index === -1) this.cache.rundowns.unshift(entry);
+    else this.cache.rundowns[index] = { ...this.cache.rundowns[index], ...entry };
+
+    try {
+      localStorage.setItem(`wave_rundown_${dateKey}`, JSON.stringify(entry));
+    } catch (_) {}
+
+    const writePromise = this.write('rundowns', id, entry);
+    writePromise.catch(console.error);
+    document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'rundowns', date: dateKey } }));
+    return this._attachWritePromise(entry, writePromise);
   }
 
   // MURAL DE RECADOS DA EQUIPA (RECADOS DA EQUIPA)
@@ -1169,6 +1773,7 @@ class RadioDatabase {
 
 // Instância Global da Base de Dados
 window.db = new RadioDatabase();
+window.isExplicitSong = RadioDatabase.isExplicitSong;
 
 function getAnnouncementExcerpt(content) {
   const plainText = String(content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();

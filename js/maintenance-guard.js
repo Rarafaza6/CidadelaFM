@@ -208,6 +208,27 @@
     return;
   }
 
+  // 1.1 Verificação de Páginas em Modo Beta (Ocultas do público sem página de manutenção)
+  try {
+    var rawVis = localStorage.getItem('wave_site_visibility');
+    if (rawVis) {
+      var visData = JSON.parse(rawVis);
+      if (visData && visData.pages) {
+        var currentFile = (currentPath.split('/').pop() || 'index.html').toLowerCase();
+        var isHiddenBeta = false;
+        Object.keys(visData.pages).forEach(function (k) {
+          if (k.toLowerCase() === currentFile && visData.pages[k] === false) {
+            isHiddenBeta = true;
+          }
+        });
+        if (isHiddenBeta && !isUnlocked() && !isExemptPath(currentPath)) {
+          window.location.replace('index.html');
+          return;
+        }
+      }
+    }
+  } catch (_) {}
+
   document.addEventListener('DOMContentLoaded', function () {
     renderAdminUnlockedBadge();
   });

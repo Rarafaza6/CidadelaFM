@@ -10,11 +10,17 @@
   <meta name="theme-color" content="#070913">
   <link rel="icon" type="image/png" href="assets/brand/favicon-negativa.png">
   <link rel="apple-touch-icon" href="assets/brand/favicon-negativa.png">
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
-  <link rel="stylesheet" href="css/styles.css?v=20261027">
-  <link rel="stylesheet" href="css/admin-v2.css?v=20261027">
-  <script src="js/maintenance-guard.js?v=20261027cidadelafm"></script>
+  <link rel="stylesheet" href="css/styles.css?v=20261117L">
+  <link rel="stylesheet" href="css/admin-v2.css?v=20261119q">
+  <link rel="stylesheet" href="css/preview-player.css?v=20261119q">
+  <link rel="stylesheet" href="css/songs-hub.css?v=20261119q">
+  <link rel="stylesheet" href="css/rundown-studio.css?v=20261119q">
+  <link rel="stylesheet" href="css/version-history.css?v=20261119q">
+  <script src="js/maintenance-guard.js?v=20261117m"></script>
 </head>
 
 <body class="admin-page">
@@ -68,7 +74,8 @@
       </div>
 
       <!-- BUSCA RÁPIDA / COMMAND PALETTE (CTRL+K) -->
-      <button type="button" class="adm-command-trigger" id="btnOpenCommandPalette" aria-label="Abrir pesquisa e comandos (Ctrl+K)">
+      <button type="button" class="adm-command-trigger" id="btnOpenCommandPalette"
+        aria-label="Abrir pesquisa e comandos (Ctrl+K)">
         <i class="ri-search-2-line"></i>
         <span>Pesquisar secção, atalhos ou ações...</span>
         <kbd>Ctrl+K</kbd>
@@ -97,18 +104,39 @@
         </div>
 
         <!-- Botão Abrir Site Público -->
-        <a href="index.html" target="_blank" rel="noopener noreferrer" class="btn-action" title="Abrir site público numa nova aba" style="text-decoration: none;">
+        <a href="index.html" target="_blank" rel="noopener noreferrer" class="btn-action"
+          title="Abrir site público numa nova aba" style="text-decoration: none;">
           <i class="ri-external-link-line"></i> <span>Ver Site</span>
         </a>
 
         <!-- Botão Manutenção -->
-        <button type="button" id="btnTopbarMaintenance" class="btn-action" onclick="openSiteMaintenanceModal()" title="Gerir Modo de Manutenção do Site" style="display: inline-flex; align-items: center; gap: 0.45rem;">
-          <span id="topbarMaintDot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;"></span>
+        <button type="button" id="btnTopbarMaintenance" class="btn-action" onclick="openSiteMaintenanceModal()"
+          title="Gerir Modo de Manutenção do Site" style="display: inline-flex; align-items: center; gap: 0.45rem;">
+          <span id="topbarMaintDot"
+            style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;"></span>
           <span id="topbarMaintLabel">Site Online</span>
         </button>
 
-        <button id="btnLogout" class="btn-action" title="Terminar sessão"><i
-            class="ri-logout-box-r-line"></i> Sair</button>
+        <!-- Botão Visibilidade do Site / Modo Beta -->
+        <button type="button" id="btnTopbarVisibility" class="btn-action" onclick="openSiteVisibilityModal()"
+          title="Gerir Visibilidade de Páginas e Secções (Modo Beta)"
+          style="display: inline-flex; align-items: center; gap: 0.45rem;">
+          <i class="ri-eye-line" style="color: #38bdf8;"></i>
+          <span id="topbarVisLabel">Páginas &amp; Beta</span>
+          <span id="topbarVisBadge"
+            style="display: none; font-size: 0.65rem; background: #f59e0b; color: #000; font-weight: 800; padding: 0.1rem 0.42rem; border-radius: 999px;"></span>
+        </button>
+
+        <!-- Botão Histórico Global de Versões (Time Machine) -->
+        <button type="button" id="btnTopbarHistory" class="btn-action" onclick="WaveTimeMachine.openModal('all')"
+          title="Histórico de Versões Global de Todo o Site (Restaurar alterações ou itens eliminados)"
+          style="display: inline-flex; align-items: center; gap: 0.45rem; border-color: rgba(168, 85, 247, 0.4);">
+          <i class="ri-history-line" style="color: #c084fc;"></i>
+          <span>Histórico</span>
+        </button>
+
+        <button id="btnLogout" class="btn-action" title="Terminar sessão"><i class="ri-logout-box-r-line"></i>
+          Sair</button>
       </div>
     </header>
 
@@ -222,10 +250,23 @@
             </button>
           </li>
           <li>
-            <button class="sidebar-nav-item" data-target="sec-equipa"
-              onclick="switchAdminSection('sec-equipa')">
+            <button class="sidebar-nav-item" data-target="sec-equipa" onclick="switchAdminSection('sec-equipa')">
               <i class="ri-user-star-line" style="color: #ec4899;"></i>
               <span>Equipa do Site</span>
+            </button>
+          </li>
+          <li>
+            <button class="sidebar-nav-item" data-target="sec-sabes-que" data-permission="manage_announcements"
+              onclick="switchAdminSection('sec-sabes-que')">
+              <i class="ri-lightbulb-flash-line" style="color: #fbbf24;"></i>
+              <span>Sabias que...</span>
+            </button>
+          </li>
+          <li>
+            <button class="sidebar-nav-item" data-target="sec-economia" data-permission="manage_announcements"
+              onclick="switchAdminSection('sec-economia')">
+              <i class="ri-line-chart-line" style="color: #10b981;"></i>
+              <span>Economia em Frequência</span>
             </button>
           </li>
         </ul>
@@ -262,6 +303,14 @@
               onclick="switchAdminSection('sec-utilizadores')">
               <i class="ri-shield-user-line" style="color: #f43f5e;"></i>
               <span>Utilizadores &amp; Perfis</span>
+            </button>
+          </li>
+          <li>
+            <button class="sidebar-nav-item" data-target="sec-historico"
+              onclick="switchAdminSection('sec-historico'); if(window.WaveTimeMachine) WaveTimeMachine.render();">
+              <i class="ri-history-line" style="color: #c084fc;"></i>
+              <span>Histórico de Versões</span>
+              <span class="sidebar-badge" id="sideNavBadgeHistory"></span>
             </button>
           </li>
         </ul>
@@ -354,122 +403,112 @@
           </div>
         </section>
 
-        <!-- SECÇÃO: GUIÃO & NOTAS DA EMISSÃO DIÁRIA -->
+        <!-- SECÇÃO: ESTÚDIO DE GUIÕES & ALINHAMENTO -->
         <section id="sec-guioes" class="admin-section" style="display: none;">
-          <div class="admin-section-heading">
+          <div class="admin-section-heading no-print">
             <div>
-              <h2>Guião &amp; Avisos da Emissão</h2>
-              <p>Caderno diário com os keypoints, avisos e notas para ler na rádio.</p>
+              <h2>Estúdio de Guiões &amp; Alinhamento</h2>
+              <p>Prepara o guião e as músicas antes da emissão. Clica em qualquer título, texto ou duração para editar diretamente na tabela.</p>
             </div>
-            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-              <button class="btn-action" onclick="resetEditorialToTemplate()"
-                title="Recarregar template padrão baseado nos eventos deste dia"><i class="ri-restart-line"></i> Repor
-                Template</button>
-              <button class="btn-action"
-                style="background: rgba(14, 165, 233, 0.15); border-color: rgba(14, 165, 233, 0.4); color: #38bdf8;"
-                onclick="saveEditorialScriptExplicit()"><i class="ri-save-3-line"></i> Guardar Guião</button>
-              <button class="btn-submit-main" onclick="switchAdminMode('aovivo')"><i class="ri-broadcast-line"></i>
-                Abrir no Painel Ao Vivo</button>
+            <div class="rs-header-actions">
+              <button type="button" class="btn-action" data-rs-act="duplicate" title="Copiar este guião para outra data">
+                <i class="ri-file-copy-2-line"></i> Duplicar
+              </button>
+              <button type="button" class="btn-action" onclick="printAoVivoRundown()" title="Imprimir folha oficial de estúdio">
+                <i class="ri-printer-line"></i> Imprimir
+              </button>
+              <button type="button" class="btn-action" onclick="loadDefaultTemplateRundown()" title="Carregar alinhamento modelo oficial">
+                <i class="ri-magic-line"></i> Modelo Base
+              </button>
+              <button type="button" class="btn-submit-main" onclick="switchAdminMode('aovivo')">
+                <i class="ri-broadcast-line"></i> Abrir no Ao Vivo
+              </button>
             </div>
           </div>
 
-          <div class="card-panel docs-editor-container"
-            style="padding: 1.5rem; background: rgba(8, 12, 22, 0.85); border: 1px solid rgba(148, 163, 184, 0.15); border-radius: 14px;">
-            <!-- SELETOR DE DATA & AÇÕES DE DOCUMENTO -->
-            <div
-              style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; background: rgba(15, 23, 42, 0.7); padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid rgba(148, 163, 184, 0.12);">
-              <div style="display: flex; align-items: center; gap: 0.6rem;">
-                <button class="btn-action" onclick="changeEditorialDate(-1)"><i class="ri-arrow-left-s-line"></i> Dia
-                  Anterior</button>
-                <input type="date" id="editorialDatePicker" class="guiao-date-input"
-                  onchange="onEditorialDatePickerChange(this.value)">
-                <button class="btn-action" onclick="setEditorialDateToday()">Hoje</button>
-                <button class="btn-action" onclick="changeEditorialDate(1)">Dia Seguinte <i
-                    class="ri-arrow-right-s-line"></i></button>
-              </div>
-              <div style="display: flex; align-items: center; gap: 0.6rem;">
-                <span id="editorialSaveStatus" class="guiao-save-status"><i class="ri-check-line"></i> Guardado
-                  automaticamente</span>
-              </div>
+          <!-- BARRA DE DATA E DIAS DA SEMANA -->
+          <div class="rs-top-bar no-print">
+            <div class="rs-date-nav">
+              <button type="button" class="btn-action btn-sm" onclick="RundownStudio.shiftDate(-1)" title="Dia anterior">
+                <i class="ri-arrow-left-s-line"></i> Ontem
+              </button>
+              <input type="date" id="rsDatePicker" class="guiao-date-input" onchange="RundownStudio.setDate(this.value)" title="Escolher data da emissão">
+              <button type="button" class="guiao-today-chip" onclick="RundownStudio.today()">Hoje</button>
+              <button type="button" class="btn-action btn-sm" onclick="RundownStudio.shiftDate(1)" title="Dia seguinte">
+                Amanhã <i class="ri-arrow-right-s-line"></i>
+              </button>
             </div>
 
-            <!-- TÍTULO DO DOCUMENTO DO GUIÃO -->
-            <div class="guiao-editor-header">
-              <input type="text" id="editorialScriptTitle" class="form-input-lg guiao-title-editor"
-                placeholder="Título do Guião / Alinhamento (Ex: Guião da Emissão do Intervalo Grande)"
-                oninput="autoSaveEditorialScript()">
-            </div>
+            <div class="rs-week-strip" id="rsWeekStrip" aria-label="Dias da semana"></div>
 
-            <div class="guiao-workspace-meta" aria-label="Resumo prático do guião">
-              <div class="guiao-meta-card">
-                <span class="guiao-meta-label">Estado</span>
-                <strong id="editorialStatusPill">Rascunho</strong>
-              </div>
-              <div class="guiao-meta-card">
-                <span class="guiao-meta-label">Avisos</span>
-                <strong id="editorialAlertCount">0 itens</strong>
-              </div>
-              <div class="guiao-meta-card">
-                <span class="guiao-meta-label">Próximo passo</span>
-                <strong>Preparar leitura</strong>
-              </div>
-            </div>
+            <span class="rs-save-badge" id="rsSaveBadge"><i class="ri-check-double-line"></i> Sincronizado com Ao Vivo</span>
+          </div>
 
-            <!-- BARRA DINÂMICA DE TÓPICOS GERADOS A PARTIR DOS AVISOS DO CALENDÁRIO -->
-            <div class="guiao-agenda-bar" id="editorialAgendaBar">
-              <div class="guiao-agenda-header">
-                <div class="guiao-agenda-title">
-                  <i class="ri-sparkling-fill" style="color: #f59e0b;"></i>
-                  <span>Avisos &amp; Eventos do Calendário para esta data:</span>
+          <!-- GRELHA DO ESTÚDIO: FOLHA OFICIAL (ESQUERDA) + BANCO DE MÚSICAS & CONTEÚDOS (DIREITA) -->
+          <div class="rs-studio-grid">
+
+            <!-- COLUNA ESQUERDA: FOLHA OFICIAL INTERATIVA -->
+            <div class="wave-rundown-sheet rs-sheet-main" id="rsSheet">
+              <!-- Barra de Inserção Rápida em 1 Clique + Arrastar (Drag & Drop) -->
+              <div class="rs-quickadd-bar no-print">
+                <span class="rs-quickadd-label" title="Clica ou arrasta qualquer bloco para a posição desejada na tabela"><i class="ri-drag-move-2-line"></i> Arrasta ou clica:</span>
+                <button type="button" class="rs-qbtn is-jingle" draggable="true" data-rs-act="preset" data-kind="jingle_open"><i class="ri-draggable"></i><i class="ri-radio-line"></i> Jingle Abertura</button>
+                <button type="button" class="rs-qbtn is-talk" draggable="true" data-rs-act="preset" data-kind="talk_live"><i class="ri-draggable"></i><i class="ri-mic-line"></i> Fala (live)</button>
+                <button type="button" class="rs-qbtn is-rubrica" draggable="true" data-rs-act="preset" data-kind="rubrica"><i class="ri-draggable"></i><i class="ri-lightbulb-line"></i> Rubrica</button>
+                <button type="button" class="rs-qbtn is-interval" draggable="true" data-rs-act="preset" data-kind="interval"><i class="ri-draggable"></i><i class="ri-pause-circle-line"></i> Intervalo</button>
+                <button type="button" class="rs-qbtn is-jingle" draggable="true" data-rs-act="preset" data-kind="jingle_end"><i class="ri-draggable"></i><i class="ri-stop-circle-line"></i> Jingle Fim</button>
+
+                <div class="rs-qbtn-right">
+                  <div class="rs-trash-dropzone" id="rsTrashDropzone" title="Arrasta uma linha da tabela para aqui para a remover">
+                    <i class="ri-delete-bin-2-line"></i> <span>Largar para remover</span>
+                  </div>
+                  <button type="button" class="rs-qbtn" data-rs-act="custom" title="Abrir formulário detalhado"><i class="ri-add-line"></i> Linha</button>
+                  <button type="button" class="rs-qbtn" data-rs-act="renumber" title="Renumerar ordem automaticamente de 1 a N"><i class="ri-list-ordered"></i> 1..N</button>
+                  <button type="button" class="rs-qbtn is-danger-icon" onclick="clearAoVivoRundown()" title="Limpar folha deste dia"><i class="ri-delete-bin-line"></i></button>
                 </div>
-                <button type="button" class="guiao-sync-btn" onclick="syncEditorialTopicsFromCalendar()"
-                  title="Inserir todos os avisos do calendário no guião">
-                  <i class="ri-magic-line"></i> Inserir todos no guião
+              </div>
+
+              <!-- Cabeçalho Oficial da Folha -->
+              <div class="rundown-sheet-header">
+                <h2 class="rundown-sheet-title" id="rsSheetTitle">DIA DA EMISSÃO: --</h2>
+                <div class="rundown-sheet-badges no-print">
+                  <span class="rundown-badge-chip" id="rsTotalDuration"><i class="ri-timer-line"></i> 0:00</span>
+                  <span class="rundown-badge-chip" id="rsTotalItems"><i class="ri-list-check-2"></i> 0 itens</span>
+                </div>
+              </div>
+
+              <!-- Tabela Editável -->
+              <div class="wave-rundown-table-wrap">
+                <table class="wave-rundown-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 74px; text-align: center;">ORDEM</th>
+                      <th>DESCRIÇÃO / PLAYLIST</th>
+                      <th style="width: 92px; text-align: center;">DURAÇÃO</th>
+                      <th class="no-print" style="width: 144px; text-align: right;">ESTADO / AÇÕES</th>
+                    </tr>
+                  </thead>
+                  <tbody id="rsTbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- COLUNA DIREITA: BANCO DE MÚSICAS & CONTEÚDOS -->
+            <aside class="rs-picker-card no-print" aria-label="Banco de músicas e conteúdos para o guião">
+              <div class="rs-picker-tabs" role="tablist">
+                <button type="button" class="rs-ptab active" data-ptab="requests" role="tab">
+                  <i class="ri-fire-line"></i> Pedidos <span class="rs-ptab-badge" id="rsPickerReqCount">0</span>
+                </button>
+                <button type="button" class="rs-ptab" data-ptab="catalog" role="tab">
+                  <i class="ri-apple-fill"></i> Catálogo
+                </button>
+                <button type="button" class="rs-ptab" data-ptab="agenda" role="tab">
+                  <i class="ri-calendar-event-line"></i> Agenda
                 </button>
               </div>
-              <div class="guiao-agenda-chips" id="editorialAgendaChips">
-                <!-- Chips com categorias e cores gerados via JS -->
-              </div>
-            </div>
+              <div class="rs-picker-body" id="rsPickerBody"></div>
+            </aside>
 
-            <!-- BARRA DE FERRAMENTAS -->
-            <div class="docs-editor-toolbar">
-              <div class="docs-toolbar-group">
-                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('heading')"
-                  title="Título de Secção ([Secção])"><i class="ri-heading"></i> Título</button>
-                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('bold')"
-                  title="Negrito (**texto**)"><i class="ri-bold"></i> Negrito</button>
-                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('italic')"
-                  title="Itálico (*texto*)"><i class="ri-italic"></i> Itálico</button>
-              </div>
-              <div class="docs-toolbar-divider"></div>
-              <div class="docs-toolbar-group">
-                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('bullet')" title="Lista (-)"><i
-                    class="ri-list-unordered"></i> Lista (-)</button>
-                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('number')"
-                  title="Lista Numerada (1.)"><i class="ri-list-ordered"></i> Numeração</button>
-                <button type="button" class="docs-tool-btn" onclick="formatEditorialText('quote')"
-                  title="Nota / Destaque"><i class="ri-double-quotes-l"></i> Destaque</button>
-              </div>
-            </div>
-
-            <!-- TEXTAREA DO GUIÃO SUITE GOOGLE DOCS / WORD -->
-            <div class="docs-paper-wrapper">
-              <textarea id="editorialScriptContent" class="guiao-word-textarea docs-paper-textarea"
-                style="min-height: 480px; width: 100%; padding: 1.5rem; background: rgba(5, 8, 18, 0.85); border: 1px solid rgba(148, 163, 184, 0.18); border-radius: 10px; font-size: 1.1rem; line-height: 1.8;"
-                placeholder="Escreve aqui o guião completo da emissão...
-
-[Inicio da Emissão]
-- Bom dia Cidadela! São [hora], Segunda-feira, 15 de Setembro
-
-[Eventos]
-- (Eventos e dias temáticos do calendário)
-
-[Avisos]
-Sem avisos hoje
-
-[Musica Começa]" oninput="autoSaveEditorialScript()"></textarea>
-            </div>
           </div>
         </section>
 
@@ -477,33 +516,82 @@ Sem avisos hoje
         <section id="sec-musicas" class="admin-section" style="display: none;">
           <div class="admin-section-heading">
             <div>
-              <h2>Músicas Mais Sugeridas</h2>
-              <p>Ranking agregado de músicas enviadas pelos alunos com respetiva contagem de pedidos.</p>
+              <h2>Músicas Pedidas</h2>
+              <p><span id="shTotalRequests">0 pedidos</span> · decide depressa: o que é explícito fica isolado
+                automaticamente.</p>
             </div>
-            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-              <button class="btn-action" onclick="filterSongsByStatus('all')">Todas</button>
-              <button class="btn-action" onclick="filterSongsByStatus('pending')">Pendentes</button>
-              <button class="btn-action" onclick="filterSongsByStatus('played')">Tocadas</button>
-              <button class="btn-action danger-action" onclick="clearAllSuggestions()"><i
-                  class="ri-delete-bin-line"></i> Limpar lista</button>
+            <div class="sh-head-actions">
+              <button class="btn-action" type="button" onclick="SongsHub.copySafe()"
+                title="Copiar a lista de músicas seguras por decidir">
+                <i class="ri-file-copy-line"></i> Copiar seguras
+              </button>
+              <button class="btn-action" type="button" onclick="exportSongsRankingCSV()"
+                title="Exportar ranking em CSV">
+                <i class="ri-download-2-line"></i> CSV
+              </button>
+              <button class="btn-action danger-action" type="button" onclick="SongsHub.clearAll()"
+                title="Eliminar todos os pedidos">
+                <i class="ri-delete-bin-line"></i>
+              </button>
             </div>
           </div>
-          <div class="card-panel data-table-wrapper">
-            <table class="data-table-inst">
-              <thead>
-                <tr>
-                  <th># Pos</th>
-                  <th>Música &amp; Artista</th>
-                  <th>Contagem de Pedidos</th>
-                  <th>Estado</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody id="songRankingTbody">
-                <!-- Renderizado via js/admin.js -->
-              </tbody>
-            </table>
+
+          <!-- MOTOR DE VERIFICAÇÃO AUTOMÁTICA -->
+          <div class="sh-engine" id="shEngine">
+            <i class="ri-shield-check-fill"></i><span>A iniciar verificação automática…</span>
           </div>
+
+          <!-- SEPARADORES: O FLUXO DE TRABALHO -->
+          <div class="sh-tabs" role="tablist" aria-label="Vista das músicas">
+            <button type="button" class="sh-tab active" data-tab="todo" role="tab"><i class="ri-inbox-line"></i> Por
+              decidir <span class="sh-tab-count" data-sh-count="todo">0</span></button>
+            <button type="button" class="sh-tab is-explicit-tab" data-tab="explicit" role="tab"><span
+                class="song-explicit-tag mini">E</span> Explícitas <span class="sh-tab-count"
+                data-sh-count="explicit">0</span></button>
+            <button type="button" class="sh-tab" data-tab="played" role="tab"><i class="ri-check-double-line"></i>
+              Tocadas <span class="sh-tab-count" data-sh-count="played">0</span></button>
+            <button type="button" class="sh-tab" data-tab="archived" role="tab"><i class="ri-archive-line"></i> Arquivo
+              <span class="sh-tab-count" data-sh-count="archived">0</span></button>
+            <button type="button" class="sh-tab" data-tab="all" role="tab"><i class="ri-list-check-2"></i> Todas <span
+                class="sh-tab-count" data-sh-count="all">0</span></button>
+          </div>
+
+          <!-- PESQUISA / ORIGEM / ORDEM -->
+          <div class="sh-toolbar">
+            <div class="sh-search"><i class="ri-search-line"></i><input type="search" id="shSearch"
+                placeholder="Pesquisar música, artista ou turma…  ( / )" autocomplete="off"></div>
+            <div class="sh-seg" role="group" aria-label="Origem">
+              <button type="button" class="sh-seg-btn active" data-source="all">Todos</button>
+              <button type="button" class="sh-seg-btn" data-source="web">Alunos</button>
+              <button type="button" class="sh-seg-btn" data-source="dt">DT</button>
+            </div>
+            <select id="shSort" class="sh-select" aria-label="Ordenar">
+              <option value="votes">Mais pedidas</option>
+              <option value="recent">Mais recentes</option>
+              <option value="az">A–Z</option>
+            </select>
+          </div>
+
+          <div class="sh-banner" id="shBanner" hidden></div>
+
+          <!-- AÇÕES EM MASSA -->
+          <div class="sh-bulk" id="shBulk">
+            <label class="sh-check sh-check-all" title="Selecionar todas as visíveis"><input type="checkbox"
+                id="shSelectAll"><span></span></label>
+            <strong id="shBulkCount">0 selecionadas</strong>
+            <div class="sh-bulk-actions">
+              <button type="button" class="sh-btn is-primary" data-bulk="add"><i class="ri-play-list-add-line"></i>
+                Guião</button>
+              <button type="button" class="sh-btn is-ok" data-bulk="played"><i class="ri-check-double-line"></i>
+                Tocadas</button>
+              <button type="button" class="sh-btn" data-bulk="archive"><i class="ri-archive-line"></i> Arquivar</button>
+              <button type="button" class="sh-btn is-danger" data-bulk="delete"><i class="ri-delete-bin-line"></i>
+                Eliminar</button>
+              <button type="button" class="sh-btn" data-bulk="clear">Limpar</button>
+            </div>
+          </div>
+
+          <div class="sh-list" id="shList"></div>
         </section>
 
         <!-- LINKS -->
@@ -585,12 +673,16 @@ Sem avisos hoje
           <div class="rbac-filters-bar" style="margin-bottom: 1rem;">
             <div class="rbac-search-box">
               <i class="ri-search-line"></i>
-              <input type="text" id="annSearchInput" placeholder="Pesquisar artigo por título, categoria ou autor..." oninput="renderAdminAnnouncementsTable()">
+              <input type="text" id="annSearchInput" placeholder="Pesquisar artigo por título, categoria ou autor..."
+                oninput="renderAdminAnnouncementsTable()">
             </div>
             <div class="rbac-role-filters">
-              <button class="rbac-filter-chip active" data-ann-filter="all" onclick="filterAdminAnnouncements('all')">Todos</button>
-              <button class="rbac-filter-chip" data-ann-filter="public" onclick="filterAdminAnnouncements('public')">Públicos no Site</button>
-              <button class="rbac-filter-chip" data-ann-filter="internal" onclick="filterAdminAnnouncements('internal')">Avisos em Antena</button>
+              <button class="rbac-filter-chip active" data-ann-filter="all"
+                onclick="filterAdminAnnouncements('all')">Todos</button>
+              <button class="rbac-filter-chip" data-ann-filter="public"
+                onclick="filterAdminAnnouncements('public')">Públicos no Site</button>
+              <button class="rbac-filter-chip" data-ann-filter="internal"
+                onclick="filterAdminAnnouncements('internal')">Avisos em Antena</button>
             </div>
           </div>
 
@@ -842,9 +934,11 @@ Sem avisos hoje
             <div>
               <div style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
                 <h2>Alerta Nerd · Desafios da Rádio</h2>
-                <span id="nerdSiteStatusBadge" class="badge" style="font-size: 0.74rem; padding: 0.25rem 0.65rem;">Oculto no site</span>
+                <span id="nerdSiteStatusBadge" class="badge"
+                  style="font-size: 0.74rem; padding: 0.25rem 0.65rem;">Oculto no site</span>
               </div>
-              <p>A página <code>/nerd-alert.html</code> e o menu do site só ficam visíveis aos alunos quando existe um desafio ativo. As respostas preservam a hora exata ao milissegundo.</p>
+              <p>A página <code>/nerd-alert.html</code> e o menu do site só ficam visíveis aos alunos quando existe um
+                desafio ativo. As respostas preservam a hora exata ao milissegundo.</p>
             </div>
             <div style="display: flex; gap: 0.55rem; flex-wrap: wrap;">
               <a href="nerd-alert.html" target="_blank" rel="noopener" class="btn-action">
@@ -863,20 +957,25 @@ Sem avisos hoje
 
           <!-- PAINEL DE RESPOSTAS DOS ALUNOS (ORDEM DE CHEGADA / PRIMEIRO A ACERTAR) -->
           <div class="card-panel" style="padding: 1.35rem 1.5rem;">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.15rem;">
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.15rem;">
               <div>
                 <h3 style="margin: 0; font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem;">
-                  <i class="ri-timer-flash-line" style="color: #f59e0b;"></i> Respostas Recebidas (Por Ordem Exata de Chegada)
+                  <i class="ri-timer-flash-line" style="color: #f59e0b;"></i> Respostas Recebidas (Por Ordem Exata de
+                  Chegada)
                 </h3>
                 <p style="margin: 0.2rem 0 0; font-size: 0.82rem; color: var(--text-muted);">
                   Ordenadas da mais antiga para a mais recente para identificar imediatamente a 1.ª pessoa que acertou.
                 </p>
               </div>
               <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
-                <select id="nerdSubmissionsChallengeSelect" class="form-input-lg" style="min-width: 220px; padding: 0.45rem 0.8rem; font-size: 0.85rem;" onchange="onNerdChallengeFilterChange(this.value)">
+                <select id="nerdSubmissionsChallengeSelect" class="form-input-lg"
+                  style="min-width: 220px; padding: 0.45rem 0.8rem; font-size: 0.85rem;"
+                  onchange="onNerdChallengeFilterChange(this.value)">
                   <option value="all">Todos os Desafios</option>
                 </select>
-                <button type="button" class="btn-action" onclick="exportNerdSubmissionsCSV()" title="Exportar respostas para Excel / CSV">
+                <button type="button" class="btn-action" onclick="exportNerdSubmissionsCSV()"
+                  title="Exportar respostas para Excel / CSV">
                   <i class="ri-download-2-line"></i> Exportar CSV
                 </button>
               </div>
@@ -886,17 +985,23 @@ Sem avisos hoje
             <div class="rbac-filters-bar" style="margin-bottom: 1rem;">
               <div class="rbac-search-box">
                 <i class="ri-search-line"></i>
-                <input type="text" id="nerdSubSearchInput" placeholder="Procurar por nome, apelido, turma, email ou resposta..." oninput="renderNerdSubmissionsTable()">
+                <input type="text" id="nerdSubSearchInput"
+                  placeholder="Procurar por nome, apelido, turma, email ou resposta..."
+                  oninput="renderNerdSubmissionsTable()">
               </div>
               <div class="rbac-role-filters">
-                <button type="button" class="rbac-filter-chip active" data-nerd-sub-filter="all" onclick="setNerdSubmissionStatusFilter('all')">Todas (Ordem de Chegada)</button>
-                <button type="button" class="rbac-filter-chip" data-nerd-sub-filter="correct" onclick="setNerdSubmissionStatusFilter('correct')">Apenas Certas / Vencedores</button>
-                <button type="button" class="rbac-filter-chip" data-nerd-sub-filter="pending" onclick="setNerdSubmissionStatusFilter('pending')">Por Validar</button>
+                <button type="button" class="rbac-filter-chip active" data-nerd-sub-filter="all"
+                  onclick="setNerdSubmissionStatusFilter('all')">Todas (Ordem de Chegada)</button>
+                <button type="button" class="rbac-filter-chip" data-nerd-sub-filter="correct"
+                  onclick="setNerdSubmissionStatusFilter('correct')">Apenas Certas / Vencedores</button>
+                <button type="button" class="rbac-filter-chip" data-nerd-sub-filter="pending"
+                  onclick="setNerdSubmissionStatusFilter('pending')">Por Validar</button>
               </div>
             </div>
 
             <!-- DESTAQUE: 1.ª PESSOA QUE ACERTOU -->
-            <div id="nerdFirstWinnerBanner" style="display: none; margin-bottom: 1.15rem; padding: 1rem 1.25rem; border-radius: 12px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.18), rgba(6, 95, 70, 0.25)); border: 1px solid rgba(52, 211, 153, 0.45);">
+            <div id="nerdFirstWinnerBanner"
+              style="display: none; margin-bottom: 1.15rem; padding: 1rem 1.25rem; border-radius: 12px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.18), rgba(6, 95, 70, 0.25)); border: 1px solid rgba(52, 211, 153, 0.45);">
               <!-- Preenchido via JS -->
             </div>
 
@@ -925,7 +1030,9 @@ Sem avisos hoje
           <div class="admin-section-heading">
             <div>
               <h2>Equipa da Rádio (Página Pública)</h2>
-              <p>Gere os membros apresentados na página pública <code>/equipa.html</code> com nome, cargo e fotografia (podes criar primeiro os membros sem foto e carregar as fotografias em PNG/JPG para Base64 quando estiverem prontas).</p>
+              <p>Gere os membros apresentados na página pública <code>/equipa.html</code> com nome, cargo e fotografia
+                (podes criar primeiro os membros sem foto e carregar as fotografias em PNG/JPG para Base64 quando
+                estiverem prontas).</p>
             </div>
             <div style="display: flex; gap: 0.55rem; flex-wrap: wrap;">
               <a href="equipa.html" target="_blank" rel="noopener" class="btn-action">
@@ -940,6 +1047,265 @@ Sem avisos hoje
           <div id="teamMembersAdminGrid" class="polls-admin-grid">
             <!-- Renderizado via js/admin.js -->
           </div>
+        </section>
+
+        <!-- SABIAS QUE... (CURIOSIDADES POR DISCIPLINA) -->
+        <section id="sec-sabes-que" class="admin-section" style="display: none;">
+          <div class="admin-section-heading">
+            <div>
+              <h2>Sabias que... · Curiosidades por Disciplina</h2>
+              <p>Publica curiosidades curtas associadas a qualquer disciplina (Economia, História, Biologia, Física,
+                etc.). O item mais recente de cada disciplina surge automaticamente na página inicial.</p>
+            </div>
+            <div style="display: flex; gap: 0.55rem; flex-wrap: wrap;">
+              <a href="sabes-que.html" target="_blank" rel="noopener" class="btn-action">
+                <i class="ri-external-link-line"></i> Ver Página Pública
+              </a>
+              <button class="btn-submit-main admin-add-button" onclick="openSabesQueModal()">
+                <i class="ri-lightbulb-flash-line"></i> Novo "Sabias que..."
+              </button>
+            </div>
+          </div>
+
+          <div class="rbac-filters-bar" style="margin-bottom: 1rem;">
+            <div class="rbac-search-box">
+              <i class="ri-search-line"></i>
+              <input type="text" id="sabesQueAdminSearch" placeholder="Pesquisar por título, disciplina ou conteúdo..."
+                oninput="renderAdminSabesQueSection()">
+            </div>
+            <select id="sabesQueAdminDisciplineFilter" class="form-input-lg" style="max-width: 240px;"
+              onchange="renderAdminSabesQueSection()">
+              <option value="all">Todas as Disciplinas</option>
+            </select>
+          </div>
+
+          <div id="sabesQueAdminGrid" class="polls-admin-grid">
+            <!-- Renderizado via js/admin.js -->
+          </div>
+        </section>
+
+        <!-- ECONOMIA EM FREQUÊNCIA (SUB-PORTAL FILHO) -->
+        <section id="sec-economia" class="admin-section" style="display: none;">
+          <div class="admin-section-heading">
+            <div>
+              <h2>Economia em Frequência · Canal Temático</h2>
+              <p>Gestão de conteúdos da rubrica "Sabias que... Economia" e dos 3 podcasts temáticos da rádio escolar.
+              </p>
+            </div>
+            <div style="display: flex; gap: 0.55rem; flex-wrap: wrap; align-items: center;">
+              <a href="economia.html" target="_blank" rel="noopener" class="btn-action"
+                title="Abrir página pública de Economia em Frequência">
+                <i class="ri-external-link-line"></i> Abrir Canal Público
+              </a>
+              <button class="btn-action" type="button" onclick="openSabesQueModal('', 'Economia')">
+                <i class="ri-lightbulb-flash-line" style="color: #fbbf24;"></i> Sabias que... Economia
+              </button>
+              <button class="btn-submit-main admin-add-button" type="button"
+                onclick="openPodcastModal(null, 'economia', 'Mito ou verdade')">
+                <i class="ri-headphones-line"></i> Novo Episódio
+              </button>
+            </div>
+          </div>
+
+          <!-- KPIs DE ECONOMIA -->
+          <div class="songs-kpi-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+            <div class="songs-kpi-card">
+              <div class="songs-kpi-icon is-amber"><i class="ri-lightbulb-flash-line"></i></div>
+              <div>
+                <span class="songs-kpi-num" id="adminEconFactsCount">0</span>
+                <span class="songs-kpi-label">Sabias que... Economia</span>
+              </div>
+            </div>
+            <div class="songs-kpi-card">
+              <div class="songs-kpi-icon is-emerald"><i class="ri-scales-3-line"></i></div>
+              <div>
+                <span class="songs-kpi-num" id="adminEconCountMito">0</span>
+                <span class="songs-kpi-label">Mito ou verdade</span>
+              </div>
+            </div>
+            <div class="songs-kpi-card">
+              <div class="songs-kpi-icon is-sky"><i class="ri-wallet-3-line"></i></div>
+              <div>
+                <span class="songs-kpi-num" id="adminEconCountJovens">0</span>
+                <span class="songs-kpi-label">Jovens e dinheiro</span>
+              </div>
+            </div>
+            <div class="songs-kpi-card">
+              <div class="songs-kpi-icon is-purple"><i class="ri-leaf-line"></i></div>
+              <div>
+                <span class="songs-kpi-num" id="adminEconCountSust">0</span>
+                <span class="songs-kpi-label">Sustentabilidade</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECÇÃO 1: OS 3 PODCASTS DE ECONOMIA -->
+          <div class="econ-admin-section-block">
+            <div class="econ-admin-block-header">
+              <span class="econ-admin-badge is-emerald"><i class="ri-radio-2-line"></i> Canal Áudio</span>
+              <h3>Podcasts Oficiais de Economia em Frequência</h3>
+              <p>Gestão individual por programa: adiciona episódios a cada uma das três séries temáticas.</p>
+            </div>
+
+            <div class="econ-admin-shows-grid">
+              <!-- SHOW 1: Mito ou verdade -->
+              <div class="card-panel econ-admin-show-card">
+                <div class="econ-admin-show-head">
+                  <div class="econ-admin-show-title-wrap">
+                    <span class="econ-admin-badge is-emerald">PODCAST 1</span>
+                    <h4><i class="ri-scales-3-line" style="color: #34d399;"></i> Mito ou verdade</h4>
+                    <span class="econ-admin-sub">Mitos financeiros e factos económicos</span>
+                  </div>
+                  <button type="button" class="btn-action btn-sm"
+                    onclick="openPodcastModal(null, 'economia', 'Mito ou verdade')"
+                    title="Adicionar episódio a Mito ou verdade">
+                    <i class="ri-add-line"></i> Episódio
+                  </button>
+                </div>
+                <div class="econ-admin-show-body" id="adminEconListMito"></div>
+              </div>
+
+              <!-- SHOW 2: Jovens e dinheiro -->
+              <div class="card-panel econ-admin-show-card">
+                <div class="econ-admin-show-head">
+                  <div class="econ-admin-show-title-wrap">
+                    <span class="econ-admin-badge is-sky">PODCAST 2</span>
+                    <h4><i class="ri-wallet-3-line" style="color: #38bdf8;"></i> Jovens e dinheiro</h4>
+                    <span class="econ-admin-sub">Literacia financeira e poupança</span>
+                  </div>
+                  <button type="button" class="btn-action btn-sm"
+                    onclick="openPodcastModal(null, 'economia', 'Jovens e dinheiro')"
+                    title="Adicionar episódio a Jovens e dinheiro">
+                    <i class="ri-add-line"></i> Episódio
+                  </button>
+                </div>
+                <div class="econ-admin-show-body" id="adminEconListJovens"></div>
+              </div>
+
+              <!-- SHOW 3: Economia e sustentabilidade -->
+              <div class="card-panel econ-admin-show-card">
+                <div class="econ-admin-show-head">
+                  <div class="econ-admin-show-title-wrap">
+                    <span class="econ-admin-badge is-purple">PODCAST 3</span>
+                    <h4><i class="ri-leaf-line" style="color: #c084fc;"></i> Economia & Sustentabilidade</h4>
+                    <span class="econ-admin-sub">Economia circular e transição verde</span>
+                  </div>
+                  <button type="button" class="btn-action btn-sm"
+                    onclick="openPodcastModal(null, 'economia', 'Economia e sustentabilidade')"
+                    title="Adicionar episódio a Economia e sustentabilidade">
+                    <i class="ri-add-line"></i> Episódio
+                  </button>
+                </div>
+                <div class="econ-admin-show-body" id="adminEconListSust"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECÇÃO 2: SABIAS QUE... ECONOMIA -->
+          <div class="card-panel econ-admin-facts-panel" style="margin-top: 1.25rem;">
+            <div class="econ-admin-facts-head">
+              <div>
+                <span class="econ-admin-badge is-amber"><i class="ri-lightbulb-line"></i> Rubrica Curta</span>
+                <h3
+                  style="margin: 0.25rem 0 0.2rem; font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem;">
+                  <i class="ri-lightbulb-flash-line" style="color: #fbbf24;"></i> Sabias que... Economia
+                  <span class="econ-count-badge" id="adminEconFactsBadge">0 curiosidades</span>
+                </h3>
+                <p style="margin: 0; font-size: 0.82rem; color: var(--adm-text-muted);">Curiosidades rápidas exibidas na
+                  página principal e no separador Economia em Frequência.</p>
+              </div>
+              <button type="button" class="btn-action" onclick="openSabesQueModal('', 'Economia')">
+                <i class="ri-add-line"></i> Nova Curiosidade
+              </button>
+            </div>
+            <div id="adminEconFactsList" class="econ-facts-admin-grid"></div>
+          </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- HISTÓRICO GLOBAL DE VERSÕES (TIME MACHINE DE TODO O SITE)    -->
+        <!-- ============================================================ -->
+        <section id="sec-historico" class="admin-section" style="display: none;">
+          <div class="admin-command-header">
+            <div>
+              <span class="admin-eyebrow"><i class="ri-history-line"></i> Proteção &amp; Recuperação Total</span>
+              <h2>Histórico de Versões do Site</h2>
+              <p>Registo automático de todas as criações, edições e eliminações em todas as secções da rádio, com restauro instantâneo.</p>
+            </div>
+            <div class="admin-command-actions">
+              <button type="button" class="btn-action" onclick="WaveTimeMachine.exportJson()">
+                <i class="ri-download-2-line"></i> Exportar Histórico (.JSON)
+              </button>
+              <button type="button" class="btn-submit-main" onclick="WaveTimeMachine.checkpoint()">
+                <i class="ri-save-3-line"></i> Criar Ponto de Restauro Global
+              </button>
+            </div>
+          </div>
+
+          <div class="vh-kpis-grid">
+            <div class="vh-kpi-card">
+              <div class="vh-kpi-icon" style="background: rgba(56, 189, 248, 0.14); color: #38bdf8;">
+                <i class="ri-history-line"></i>
+              </div>
+              <div class="vh-kpi-info">
+                <strong id="vhKpiTotal">0</strong>
+                <span>Versões guardadas automaticamente</span>
+              </div>
+            </div>
+            <div class="vh-kpi-card">
+              <div class="vh-kpi-icon" style="background: rgba(239, 68, 68, 0.14); color: #f87171;">
+                <i class="ri-delete-bin-line"></i>
+              </div>
+              <div class="vh-kpi-info">
+                <strong id="vhKpiDeletes">0</strong>
+                <span>Itens eliminados recuperáveis</span>
+              </div>
+            </div>
+            <div class="vh-kpi-card">
+              <div class="vh-kpi-icon" style="background: rgba(168, 85, 247, 0.14); color: #c084fc;">
+                <i class="ri-restart-line"></i>
+              </div>
+              <div class="vh-kpi-info">
+                <strong id="vhKpiRestores">0</strong>
+                <span>Restauros efetuados</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="vh-toolbar">
+            <div class="vh-search-box">
+              <i class="ri-search-line"></i>
+              <input type="text" class="vh-search-input" placeholder="Pesquisar por título, música, guião, autor ou ID...">
+            </div>
+            <select class="vh-select vh-col-select" aria-label="Filtrar por módulo do site">
+              <option value="all">Todos os módulos do site</option>
+              <option value="rundowns">Guiões &amp; Alinhamento</option>
+              <option value="announcements">Notícias &amp; Avisos</option>
+              <option value="sabesQue">Sabias Que...</option>
+              <option value="podcasts">Podcasts</option>
+              <option value="suggestions">Músicas Pedidas</option>
+              <option value="links">Links Rápidos</option>
+              <option value="teamMembers">Equipa do Site</option>
+              <option value="calendarEvents">Calendário</option>
+              <option value="tasks">Tarefas</option>
+              <option value="polls">Votações</option>
+              <option value="nerdChallenges">Alerta Nerd</option>
+              <option value="messages">Mensagens</option>
+              <option value="teamMemos">Recados da Equipa</option>
+              <option value="adminUsers">Utilizadores &amp; Perfis</option>
+              <option value="siteSettings">Definições &amp; Visibilidade</option>
+            </select>
+            <select class="vh-select vh-act-select" aria-label="Filtrar por tipo de ação">
+              <option value="all">Todas as ações</option>
+              <option value="create">Criados</option>
+              <option value="update">Editados</option>
+              <option value="delete">Eliminados</option>
+              <option value="restore">Restaurados</option>
+              <option value="snapshot">Checkpoints Manuais</option>
+            </select>
+          </div>
+
+          <div id="vhMainTimelineList" class="vh-timeline-list"></div>
         </section>
 
       </main>
@@ -970,8 +1336,13 @@ Sem avisos hoje
 
         <!-- AÇÕES DE TOPO -->
         <div class="aovivo-topbar-actions">
-          <button type="button" id="btnAoVivoMaintenance" class="btn-action" onclick="openSiteMaintenanceModal()" title="Modo de Manutenção do Site">
+          <button type="button" id="btnAoVivoMaintenance" class="btn-action" onclick="openSiteMaintenanceModal()"
+            title="Modo de Manutenção do Site">
             <i class="ri-tools-fill"></i> <span id="aoVivoMaintLabel">Manutenção</span>
+          </button>
+          <button type="button" id="btnAoVivoVisibility" class="btn-action" onclick="openSiteVisibilityModal()"
+            title="Visibilidade &amp; Modo Beta">
+            <i class="ri-eye-line"></i> <span id="aoVivoVisLabel">Páginas &amp; Beta</span>
           </button>
           <button class="btn-action" onclick="switchAdminMode('editorial')" title="Painel de Gestão & Editorial">
             <i class="ri-dashboard-line"></i> <span>Ir para Gestão</span>
@@ -985,7 +1356,7 @@ Sem avisos hoje
       <!-- CORPO AO VIVO: 2 COLUNAS LIMPAS -->
       <div class="aovivo-grid-dual">
 
-        <!-- COLUNA 1 (60%): O GUIÃO NÃO EDITÁVEL PARA LOCUÇÃO (TELEPROMPTER / LEITOR DE ESTÚDIO) -->
+        <!-- COLUNA 1 (60%): O GUIÃO + MÚSICAS ESCOLHIDAS (TABELA DE ALINHAMENTO AO VIVO) -->
         <div class="aovivo-col-guiao">
           <div class="aovivo-card-main">
 
@@ -1008,23 +1379,95 @@ Sem avisos hoje
               </button>
             </div>
 
-            <!-- BARRA DE TÍTULO E CONTROLOS DO GUIÃO AO VIVO (NÃO EDITÁVEL) -->
-            <div class="guiao-live-title-bar">
-              <h2 id="aoVivoScriptTitleDisplay" class="guiao-live-title">Guião da Emissão</h2>
+            <!-- BARRA DE FERRAMENTAS DO ALINHAMENTO -->
+            <div class="rundown-toolbar-bar">
+              <div class="rundown-toolbar-left">
+                <div class="rundown-view-tabs" role="tablist">
+                  <button type="button" class="rundown-tab-btn active" id="tabAoVivoTable"
+                    onclick="setAoVivoViewMode('table')">
+                    <i class="ri-table-line"></i> Tabela Oficial
+                  </button>
+                  <button type="button" class="rundown-tab-btn" id="tabAoVivoTeleprompter"
+                    onclick="setAoVivoViewMode('prompter')">
+                    <i class="ri-article-line"></i> Texto / Guião
+                  </button>
+                </div>
+              </div>
 
-              <div class="guiao-tools-right">
-                <div class="guiao-font-controls">
-                  <button class="guiao-tool-btn" onclick="adjustAoVivoFontSize(-2)"
-                    title="Diminuir tamanho da letra">A-</button>
-                  <button class="guiao-tool-btn" onclick="adjustAoVivoFontSize(2)"
-                    title="Aumentar tamanho da letra">A+</button>
+              <div class="rundown-toolbar-right no-print">
+                <button type="button" class="btn-action btn-sm" onclick="openAddRundownItemModal()"
+                  title="Adicionar música, fala ou jingle">
+                  <i class="ri-add-line"></i> Linha / Item
+                </button>
+                <button type="button" class="btn-action btn-sm" onclick="addRundownIntervalBlock()"
+                  title="Adicionar divisor de intervalo escolar (ex: 2º Intervalo)">
+                  <i class="ri-pause-circle-line"></i> Intervalo
+                </button>
+                <button type="button" class="btn-action btn-sm" onclick="printAoVivoRundown()"
+                  title="Imprimir folha de alinhamento para estúdio">
+                  <i class="ri-printer-line"></i> Imprimir
+                </button>
+                <button type="button" class="btn-action btn-sm" onclick="loadDefaultTemplateRundown()"
+                  title="Preencher com modelo oficial da emissão">
+                  <i class="ri-magic-line"></i> Modelo
+                </button>
+                <button type="button" class="btn-action btn-sm" style="color: #f87171;" onclick="clearAoVivoRundown()"
+                  title="Limpar alinhamento deste dia">
+                  <i class="ri-delete-bin-line"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- VISTA 1: TABELA OFICIAL DO ALINHAMENTO (ESTILO WAVE + REFERÊNCIA EMISSÃO) -->
+            <div id="aoVivoTableView" class="rundown-table-view-container">
+              <div class="wave-rundown-sheet" id="aoVivoRundownSheet">
+                <div class="rundown-sheet-header">
+                  <h2 class="rundown-sheet-title" id="aoVivoEmissionTitle">DIA DA EMISSÃO: --</h2>
+                  <div class="rundown-sheet-badges no-print">
+                    <span class="rundown-badge-chip" id="aoVivoRundownDuration"><i class="ri-time-line"></i> Duração:
+                      0:00</span>
+                    <span class="rundown-badge-chip" id="aoVivoRundownItemsCount"><i class="ri-list-check"></i> 0
+                      itens</span>
+                  </div>
+                </div>
+
+                <div class="wave-rundown-table-wrap">
+                  <table class="wave-rundown-table" id="aoVivoRundownTable">
+                    <thead>
+                      <tr>
+                        <th style="width: 72px; text-align: center;">ORDEM</th>
+                        <th>DESCRIÇÃO / PLAYLIST</th>
+                        <th style="width: 96px; text-align: center;">DURAÇÃO</th>
+                        <th class="no-print" style="width: 140px; text-align: right;">ESTADO / AÇÕES</th>
+                      </tr>
+                    </thead>
+                    <tbody id="aoVivoRundownTbody">
+                      <!-- Linhas renderizadas dinamicamente via JS -->
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
 
-            <!-- LEITOR NÃO EDITÁVEL DE ESTÚDIO -->
-            <div id="aoVivoScriptDisplay" class="guiao-reader-display">
-              <!-- Renderizado via JS como leitor de estúdio com marcação visual de tópicos lidos -->
+            <!-- VISTA 2: TELEPROMPTER DE TEXTO -->
+            <div id="aoVivoPrompterView" class="rundown-prompter-view-container" style="display: none;">
+              <div class="guiao-live-title-bar">
+                <h2 id="aoVivoScriptTitleDisplay" class="guiao-live-title">Guião da Emissão</h2>
+
+                <div class="guiao-tools-right">
+                  <div class="guiao-font-controls">
+                    <button class="guiao-tool-btn" onclick="adjustAoVivoFontSize(-2)"
+                      title="Diminuir tamanho da letra">A-</button>
+                    <button class="guiao-tool-btn" onclick="adjustAoVivoFontSize(2)"
+                      title="Aumentar tamanho da letra">A+</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- LEITOR NÃO EDITÁVEL DE ESTÚDIO -->
+              <div id="aoVivoScriptDisplay" class="guiao-reader-display">
+                <!-- Renderizado via JS como leitor de estúdio com marcação visual de tópicos lidos -->
+              </div>
             </div>
 
           </div>
@@ -1045,6 +1488,9 @@ Sem avisos hoje
               <div class="musicas-filters">
                 <button class="musicas-filter-chip active" id="filterAoVivoPending"
                   onclick="filterAoVivoSongs('pending')">Pendentes</button>
+                <button class="musicas-filter-chip" id="filterAoVivoClean" onclick="filterAoVivoSongs('clean')"
+                  title="Apenas músicas seguras para a escola (sem palavrões [E])"><i class="ri-shield-check-line"></i>
+                  Seguras</button>
                 <button class="musicas-filter-chip" id="filterAoVivoAll"
                   onclick="filterAoVivoSongs('all')">Todas</button>
                 <button class="musicas-filter-chip" id="filterAoVivoPlayed"
@@ -1070,6 +1516,94 @@ Sem avisos hoje
   <!-- ============================================================ -->
   <!-- MODAIS                                                        -->
   <!-- ============================================================ -->
+
+  <!-- MODAL: ADICIONAR / EDITAR ITEM NO ALINHAMENTO AO VIVO -->
+  <div class="modal-overlay" id="aoVivoRundownItemModal">
+    <div class="card-panel modal-window" style="max-width: 580px;">
+      <div class="modal-header-bar">
+        <div class="modal-header-left">
+          <div class="modal-header-icon"
+            style="background: rgba(56, 189, 248, 0.14); color: #38bdf8; border-color: rgba(56, 189, 248, 0.25);">
+            <i class="ri-play-list-add-line"></i>
+          </div>
+          <div class="modal-header-text">
+            <h3 id="aoVivoRundownModalTitle">Adicionar Linha ao Alinhamento</h3>
+            <p>Define músicas, falas, jingles ou rubricas para a emissão deste dia.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="closeModal('aoVivoRundownItemModal')"
+          title="Fechar"><i class="ri-close-line"></i></button>
+      </div>
+
+      <form id="aoVivoRundownItemForm" onsubmit="saveAoVivoRundownItemForm(event)">
+        <input type="hidden" id="rundownItemEditIndex" value="-1">
+
+        <div class="form-group-custom">
+          <label class="form-label-custom">Tipo de Item</label>
+          <div class="rundown-type-selector">
+            <label class="rundown-type-opt">
+              <input type="radio" name="rundownItemType" value="music" checked
+                onchange="onRundownTypeChange(this.value)">
+              <span><i class="ri-music-2-line"></i> Música</span>
+            </label>
+            <label class="rundown-type-opt">
+              <input type="radio" name="rundownItemType" value="talk" onchange="onRundownTypeChange(this.value)">
+              <span><i class="ri-mic-line"></i> Fala / Live</span>
+            </label>
+            <label class="rundown-type-opt">
+              <input type="radio" name="rundownItemType" value="jingle" onchange="onRundownTypeChange(this.value)">
+              <span><i class="ri-radio-line"></i> Jingle</span>
+            </label>
+            <label class="rundown-type-opt">
+              <input type="radio" name="rundownItemType" value="rubrica" onchange="onRundownTypeChange(this.value)">
+              <span><i class="ri-lightbulb-line"></i> Rubrica / Dica</span>
+            </label>
+            <label class="rundown-type-opt">
+              <input type="radio" name="rundownItemType" value="interval" onchange="onRundownTypeChange(this.value)">
+              <span><i class="ri-separator"></i> Intervalo</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group-custom">
+          <label class="form-label-custom" for="rundownItemTitle">Título / Nome Principal <span
+              style="color:#f87171;">*</span></label>
+          <input type="text" id="rundownItemTitle" class="form-input-custom"
+            placeholder="ex: Jungle 'back on 74', Playlist do Prof, Jingle Rádio Wave..." required>
+        </div>
+
+        <div class="form-group-custom" id="groupRundownSubtitle">
+          <label class="form-label-custom" for="rundownItemArtist">Artista / Subtítulo / Detalhe</label>
+          <input type="text" id="rundownItemArtist" class="form-input-custom"
+            placeholder="ex: Freya Skye, ou 'Playlist escolhida pela prof. Sandra Pinto...'">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group-custom" id="groupRundownDuration">
+            <label class="form-label-custom" for="rundownItemDuration">Duração (m:ss)</label>
+            <input type="text" id="rundownItemDuration" class="form-input-custom" placeholder="ex: 3:38 ou 1:43">
+          </div>
+          <div class="form-group-custom" id="groupRundownOrder">
+            <label class="form-label-custom" for="rundownItemOrder">Ordem (Nº da linha)</label>
+            <input type="number" id="rundownItemOrder" class="form-input-custom" min="1" placeholder="Auto">
+          </div>
+        </div>
+
+        <div class="form-group-custom" id="groupRundownLiveHighlight" style="margin-top: 0.5rem;">
+          <label class="rundown-checkbox-label">
+            <input type="checkbox" id="rundownItemHighlightLive">
+            <span>Destacar com etiqueta <strong
+                style="background:#fef08a; color:#000; padding:2px 6px; border-radius:3px;">(fazer live)</strong></span>
+          </label>
+        </div>
+
+        <div class="modal-footer-actions">
+          <button type="button" class="btn-action" onclick="closeModal('aoVivoRundownItemModal')">Cancelar</button>
+          <button type="submit" class="btn-submit-main"><i class="ri-check-line"></i> Guardar no Alinhamento</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- MODAL: ADICIONAR LINK -->
   <div class="modal-overlay" id="addLinkModal">
@@ -1189,6 +1723,10 @@ Sem avisos hoje
               <option value="Música">Música &amp; Cultura</option>
               <option value="Ciência &amp; Escola">Ciência &amp; Tecnologia</option>
               <option value="Emissão Especial">Emissão Especial</option>
+              <option value="Mito ou verdade">Mito ou verdade (Economia)</option>
+              <option value="Jovens e dinheiro">Jovens e dinheiro (Economia)</option>
+              <option value="Economia e sustentabilidade">Economia e sustentabilidade (Economia)</option>
+              <option value="Economia">Economia em Frequência</option>
               <option value="Desporto">Desporto Escolar</option>
               <option value="Geral" selected>Geral</option>
             </select>
@@ -1197,6 +1735,15 @@ Sem avisos hoje
             <label>Locutores / Participantes</label>
             <input type="text" id="podHostsInput" class="form-input-lg" placeholder="Ex: Matilde e Rodrigo (10.º A)">
           </div>
+        </div>
+
+        <div class="form-field">
+          <label for="podPortalInput">Portal de Publicação</label>
+          <select id="podPortalInput" class="form-input-lg">
+            <option value="main" selected>Site Principal (Podcasts)</option>
+            <option value="economia">Economia em Frequência (Canal Temático)</option>
+            <option value="both">Ambos (Site Principal + Economia em Frequência)</option>
+          </select>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
@@ -1219,25 +1766,32 @@ Sem avisos hoje
 
         <!-- IMAGEM / THUMBNAIL DO EPISÓDIO (UPLOAD PNG/JPG BASE64 + URL) -->
         <div class="form-field">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.4rem;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.4rem;">
             <label style="margin-bottom: 0;">Imagem da Capa do Episódio</label>
             <div style="display: flex; gap: 0.4rem;">
-              <input type="file" id="podCoverFileInput" accept="image/png,image/jpeg,image/webp,image/gif" style="display: none;" onchange="handlePodCoverFileUpload(this.files[0])">
-              <button type="button" class="btn-action" style="padding: 0.25rem 0.65rem; font-size: 0.78rem; color: #38bdf8; border-color: rgba(56, 189, 248, 0.35);" onclick="document.getElementById('podCoverFileInput').click()">
+              <input type="file" id="podCoverFileInput" accept="image/png,image/jpeg,image/webp,image/gif"
+                style="display: none;" onchange="handlePodCoverFileUpload(this.files[0])">
+              <button type="button" class="btn-action"
+                style="padding: 0.25rem 0.65rem; font-size: 0.78rem; color: #38bdf8; border-color: rgba(56, 189, 248, 0.35);"
+                onclick="document.getElementById('podCoverFileInput').click()">
                 <i class="ri-upload-cloud-2-line"></i> Carregar Foto (PNG/JPG Base64)
               </button>
-              <button type="button" class="btn-action" style="padding: 0.25rem 0.55rem; font-size: 0.78rem;" onclick="clearPodCoverImage()" title="Limpar imagem">
+              <button type="button" class="btn-action" style="padding: 0.25rem 0.55rem; font-size: 0.78rem;"
+                onclick="clearPodCoverImage()" title="Limpar imagem">
                 <i class="ri-close-line"></i>
               </button>
             </div>
           </div>
           <div style="display: flex; gap: 0.85rem; align-items: center;">
-            <img id="podThumbPreview" src="assets/logo-radio.jpg" alt="Capa do Episódio" style="width: 58px; height: 58px; border-radius: 10px; object-fit: cover; border: 1px solid rgba(255,255,255,0.16); flex-shrink: 0;">
+            <img id="podThumbPreview" src="assets/logo-radio.jpg" alt="Capa do Episódio"
+              style="width: 58px; height: 58px; border-radius: 10px; object-fit: cover; border: 1px solid rgba(255,255,255,0.16); flex-shrink: 0;">
             <div style="flex: 1; min-width: 0;">
               <input type="text" id="podThumbnailInput" class="form-input-lg"
                 placeholder="Carrega uma foto PNG/JPG acima ou cola o URL da imagem..."
                 oninput="updatePodThumbPreview(this.value)">
-              <div id="podThumbStatus" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem; display: flex; align-items: center; gap: 0.35rem;">
+              <div id="podThumbStatus"
+                style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem; display: flex; align-items: center; gap: 0.35rem;">
                 <i class="ri-image-line"></i> Alojamento 100% gratuito em Base64 ou ligação direta.
               </div>
             </div>
@@ -1293,11 +1847,12 @@ Sem avisos hoje
       <form id="addAnnouncementForm" onsubmit="saveNewAnnouncement(event)">
         <input type="hidden" id="annIdInput">
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
           <div class="form-field">
             <label for="annTagInput">Categoria Editorial</label>
             <select id="annTagInput" class="form-input-lg">
               <option value="Notícia">Notícia</option>
+              <option value="Economia">Economia</option>
               <option value="Evento Escolar">Evento Escolar</option>
               <option value="Desporto">Desporto</option>
               <option value="Cultura & Música">Cultura &amp; Música</option>
@@ -1308,17 +1863,26 @@ Sem avisos hoje
             </select>
           </div>
           <div class="form-field">
-            <label for="annVisibilityInput">Visibilidade / Destino</label>
+            <label for="annVisibilityInput">Visibilidade</label>
             <select id="annVisibilityInput" class="form-input-lg">
-              <option value="public">Público no Site (Notícias)</option>
-              <option value="internal">Aviso Interno para Emissão</option>
+              <option value="public">Público no Site</option>
+              <option value="internal">Aviso Interno (Antena)</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="annPortalInput">Portal / Destino</label>
+            <select id="annPortalInput" class="form-input-lg">
+              <option value="main">Site Principal</option>
+              <option value="economia">Economia em Frequência</option>
+              <option value="both">Ambos os Portais</option>
             </select>
           </div>
         </div>
 
         <div class="form-field">
           <label for="annTitleInput">Título do Artigo <span style="color: #ef4444;">*</span></label>
-          <input type="text" id="annTitleInput" class="form-input-lg" placeholder="Ex: Torneio Interturmas da Cidadela" required>
+          <input type="text" id="annTitleInput" class="form-input-lg" placeholder="Ex: Torneio Interturmas da Cidadela"
+            required>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
@@ -1334,24 +1898,44 @@ Sem avisos hoje
 
         <!-- UPLOAD DE CAPA BASE64 -->
         <div class="form-field">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.4rem;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.4rem;">
             <label style="margin-bottom: 0;">Fotografia de Capa (PNG / JPG para Base64 Gratuito)</label>
             <div style="display: flex; gap: 0.4rem;">
-              <input type="file" id="annCoverFileInput" accept="image/png,image/jpeg,image/webp,image/gif" style="display: none;" onchange="handleAnnModalCoverUpload(this.files[0])">
-              <button type="button" class="btn-action" style="padding: 0.25rem 0.65rem; font-size: 0.78rem; color: #38bdf8; border-color: rgba(56, 189, 248, 0.35);" onclick="document.getElementById('annCoverFileInput').click()">
+              <input type="file" id="annCoverFileInput" accept="image/png,image/jpeg,image/webp,image/gif"
+                style="display: none;" onchange="handleAnnModalCoverUpload(this.files[0])">
+              <button type="button" class="btn-action"
+                style="padding: 0.25rem 0.65rem; font-size: 0.78rem; color: #38bdf8; border-color: rgba(56, 189, 248, 0.35);"
+                onclick="document.getElementById('annCoverFileInput').click()">
                 <i class="ri-upload-cloud-2-line"></i> Carregar Foto (Base64)
               </button>
-              <button type="button" class="btn-action" style="padding: 0.25rem 0.55rem; font-size: 0.78rem;" onclick="clearAnnModalCover()">
+              <button type="button" class="btn-action" style="padding: 0.25rem 0.55rem; font-size: 0.78rem;"
+                onclick="clearAnnModalCover()">
                 <i class="ri-close-line"></i>
               </button>
             </div>
           </div>
           <div style="display: flex; gap: 0.85rem; align-items: center;">
-            <img id="annCoverPreview" src="assets/logo-radio.jpg" alt="Capa" style="width: 76px; height: 52px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(255,255,255,0.16); flex-shrink: 0;">
+            <img id="annCoverPreview" src="assets/logo-radio.jpg" alt="Capa"
+              style="width: 76px; height: 52px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(255,255,255,0.16); flex-shrink: 0;">
             <div style="flex: 1; min-width: 0;">
-              <input type="text" id="annImageInput" class="form-input-lg" placeholder="Carrega uma foto acima ou cola o URL / Base64..." oninput="updateAnnModalCoverPreview(this.value)">
-              <small id="annCoverStatus" style="color: var(--text-muted); font-size: 0.74rem; display: block; margin-top: 0.25rem;">Capa padrão ativa</small>
+              <input type="text" id="annImageInput" class="form-input-lg"
+                placeholder="Carrega uma foto acima ou cola o URL / Base64..."
+                oninput="updateAnnModalCoverPreview(this.value)">
+              <small id="annCoverStatus"
+                style="color: var(--text-muted); font-size: 0.74rem; display: block; margin-top: 0.25rem;">Capa padrão
+                ativa</small>
             </div>
+          </div>
+          <div style="margin-top: 0.65rem;">
+            <label for="annImageSourceInput"
+              style="font-size: 0.8rem; display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.25rem;">
+              <i class="ri-camera-lens-line" style="color: #38bdf8;"></i> Fonte / Créditos da Capa (Opcional)
+            </label>
+            <input type="text" id="annImageSourceInput" class="form-input-lg"
+              placeholder="Ex: Foto: Maria Silva / Arquivo Escolar / Unsplash">
+            <small style="color: var(--text-muted); font-size: 0.73rem; display: block; margin-top: 0.2rem;">Identifica
+              o autor ou a proveniência da fotografia de capa.</small>
           </div>
         </div>
 
@@ -1655,7 +2239,8 @@ Sem avisos hoje
                 Regista a conta no Firebase Authentication para permitir login no painel.
               </small>
               <div id="adminUserResetPassWrap" style="display: none; margin-top: 0.35rem;">
-                <button type="button" class="btn-action" style="font-size: 0.74rem; padding: 0.25rem 0.5rem;" onclick="sendCurrentModalUserPasswordReset()">
+                <button type="button" class="btn-action" style="font-size: 0.74rem; padding: 0.25rem 0.5rem;"
+                  onclick="sendCurrentModalUserPasswordReset()">
                   <i class="ri-mail-send-line"></i> Enviar email para redefinir palavra-passe
                 </button>
               </div>
@@ -2484,7 +3069,8 @@ Sem avisos hoje
         <div class="form-field">
           <label>Pergunta / Enigma do Desafio <span style="color: #ef4444;">*</span></label>
           <textarea id="nerdChallengeQuestionInput" class="form-input-lg" rows="4"
-            placeholder="Escreve aqui o desafio ou pergunta completa que os alunos vão ler na página Alerta Nerd..." required></textarea>
+            placeholder="Escreve aqui o desafio ou pergunta completa que os alunos vão ler na página Alerta Nerd..."
+            required></textarea>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
@@ -2509,11 +3095,14 @@ Sem avisos hoje
           <div class="form-field">
             <label>Imagem do Desafio (URL ou Upload Base64 Gratuito)</label>
             <div style="display: flex; gap: 0.45rem;">
-              <input type="text" id="nerdChallengeImageInput" class="form-input-lg" placeholder="URL ou carrega foto ->" style="flex: 1;">
-              <label for="nerdChallengeFileInput" class="btn-action" style="cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 0.35rem; margin: 0;">
+              <input type="text" id="nerdChallengeImageInput" class="form-input-lg" placeholder="URL ou carrega foto ->"
+                style="flex: 1;">
+              <label for="nerdChallengeFileInput" class="btn-action"
+                style="cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 0.35rem; margin: 0;">
                 <i class="ri-upload-cloud-2-line"></i> Foto
               </label>
-              <input type="file" id="nerdChallengeFileInput" accept="image/*" style="display: none;" onchange="handleNerdChallengeImageUpload(this)">
+              <input type="file" id="nerdChallengeFileInput" accept="image/*" style="display: none;"
+                onchange="handleNerdChallengeImageUpload(this)">
             </div>
           </div>
         </div>
@@ -2533,7 +3122,8 @@ Sem avisos hoje
     <div class="card-panel modal-window" style="max-width: 580px;">
       <div class="modal-header-row">
         <div>
-          <span class="badge badge-info" style="margin-bottom: 0.35rem;"><i class="ri-user-star-line"></i> Página Pública da Equipa</span>
+          <span class="badge badge-info" style="margin-bottom: 0.35rem;"><i class="ri-user-star-line"></i> Página
+            Pública da Equipa</span>
           <h3 id="teamMemberModalTitle">Adicionar Membro da Equipa</h3>
         </div>
         <button type="button" class="modal-close-icon-btn" onclick="closeModal('teamMemberModal')" title="Fechar"><i
@@ -2546,13 +3136,12 @@ Sem avisos hoje
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.75rem;">
           <div class="form-field">
             <label>Nome e Apelido <span style="color: #ef4444;">*</span></label>
-            <input type="text" id="teamMemberNameInput" class="form-input-lg"
-              placeholder="Ex: Tomás Ribeiro" required>
+            <input type="text" id="teamMemberNameInput" class="form-input-lg" placeholder="Ex: Tomás Ribeiro" required>
           </div>
           <div class="form-field">
             <label>Ordem de Exibição</label>
-            <input type="number" id="teamMemberOrderInput" class="form-input-lg"
-              placeholder="1" min="1" max="999" value="10">
+            <input type="number" id="teamMemberOrderInput" class="form-input-lg" placeholder="1" min="1" max="999"
+              value="10">
           </div>
         </div>
 
@@ -2573,14 +3162,17 @@ Sem avisos hoje
           </div>
           <div class="form-field">
             <label>Turma / Etiqueta na Foto (opcional)</label>
-            <input type="text" id="teamMemberBioInput" class="form-input-lg"
-              placeholder="Ex: 10ºD">
+            <input type="text" id="teamMemberBioInput" class="form-input-lg" placeholder="Ex: 10ºD">
           </div>
         </div>
 
-        <div class="form-field" style="padding: 0.85rem 1rem; border-radius: 12px; background: rgba(15, 23, 42, 0.45); border: 1px solid rgba(148, 163, 184, 0.2); margin-bottom: 0.9rem;">
-          <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; margin-bottom: 0.55rem; font-weight: 700; color: #f8fafc;">
-            <input type="checkbox" id="teamMemberSocialEnabledInput" onchange="toggleTeamMemberSocialInput(this.checked)" style="width: 18px; height: 18px; accent-color: #f43f5e; cursor: pointer;">
+        <div class="form-field"
+          style="padding: 0.85rem 1rem; border-radius: 12px; background: rgba(15, 23, 42, 0.45); border: 1px solid rgba(148, 163, 184, 0.2); margin-bottom: 0.9rem;">
+          <label
+            style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; margin-bottom: 0.55rem; font-weight: 700; color: #f8fafc;">
+            <input type="checkbox" id="teamMemberSocialEnabledInput"
+              onchange="toggleTeamMemberSocialInput(this.checked)"
+              style="width: 18px; height: 18px; accent-color: #f43f5e; cursor: pointer;">
             <span><i class="ri-share-box-line" style="color: #f472b6;"></i> Abrir rede social ao clicar no perfil</span>
           </label>
           <div id="teamMemberSocialUrlWrap" style="display: none;">
@@ -2594,23 +3186,33 @@ Sem avisos hoje
 
         <div class="form-field">
           <label>Fotografia do Membro (Opcional — Podes carregar agora ou mais tarde em PNG/JPG)</label>
-          <div style="display: flex; align-items: center; gap: 1rem; padding: 0.85rem; border-radius: 12px; background: rgba(15, 23, 42, 0.45); border: 1px dashed rgba(148, 163, 184, 0.3);">
-            <div id="teamMemberPhotoPreviewWrap" style="width: 76px; height: 76px; border-radius: 12px; overflow: hidden; flex-shrink: 0; background: #1e293b; border: 2px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.35rem; color: #f8fafc;">
-              <img id="teamMemberPhotoPreviewImg" src="" alt="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+          <div
+            style="display: flex; align-items: center; gap: 1rem; padding: 0.85rem; border-radius: 12px; background: rgba(15, 23, 42, 0.45); border: 1px dashed rgba(148, 163, 184, 0.3);">
+            <div id="teamMemberPhotoPreviewWrap"
+              style="width: 76px; height: 76px; border-radius: 12px; overflow: hidden; flex-shrink: 0; background: #1e293b; border: 2px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.35rem; color: #f8fafc;">
+              <img id="teamMemberPhotoPreviewImg" src="" alt=""
+                style="width: 100%; height: 100%; object-fit: cover; display: none;">
               <span id="teamMemberPhotoPreviewInitials"><i class="ri-user-smile-line"></i></span>
             </div>
             <div style="flex: 1; min-width: 0;">
               <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.45rem;">
-                <label for="teamMemberPhotoFileInput" class="btn-action" style="cursor: pointer; margin: 0; display: inline-flex; align-items: center; gap: 0.35rem; border-color: rgba(236, 72, 153, 0.45); color: #f472b6;">
+                <label for="teamMemberPhotoFileInput" class="btn-action"
+                  style="cursor: pointer; margin: 0; display: inline-flex; align-items: center; gap: 0.35rem; border-color: rgba(236, 72, 153, 0.45); color: #f472b6;">
                   <i class="ri-upload-cloud-2-line"></i> Carregar Foto
                 </label>
-                <input type="file" id="teamMemberPhotoFileInput" accept="image/png,image/jpeg,image/webp,image/gif" style="display: none;" onchange="handleTeamMemberPhotoUpload(this)">
-                <button type="button" class="btn-action" id="teamMemberClearPhotoBtn" style="display: none;" onclick="clearTeamMemberPhoto()">
+                <input type="file" id="teamMemberPhotoFileInput" accept="image/png,image/jpeg,image/webp,image/gif"
+                  style="display: none;" onchange="handleTeamMemberPhotoUpload(this)">
+                <button type="button" class="btn-action" id="teamMemberClearPhotoBtn" style="display: none;"
+                  onclick="clearTeamMemberPhoto()">
                   <i class="ri-close-circle-line"></i> Sem Foto
                 </button>
               </div>
-              <input type="text" id="teamMemberPhotoInput" class="form-input-lg" placeholder="Ou cola URL / Base64 da foto (deixa vazio se ainda não houver foto)" style="font-size: 0.8rem; padding: 0.45rem 0.7rem;" oninput="updateTeamMemberModalPhotoPreview(this.value)">
-              <small id="teamMemberPhotoStatus" style="display: block; margin-top: 0.25rem; font-size: 0.74rem; color: var(--text-muted);">
+              <input type="text" id="teamMemberPhotoInput" class="form-input-lg"
+                placeholder="Ou cola URL / Base64 da foto (deixa vazio se ainda não houver foto)"
+                style="font-size: 0.8rem; padding: 0.45rem 0.7rem;"
+                oninput="updateTeamMemberModalPhotoPreview(this.value)">
+              <small id="teamMemberPhotoStatus"
+                style="display: block; margin-top: 0.25rem; font-size: 0.74rem; color: var(--text-muted);">
                 Se deixares sem foto, o site mostra um avatar com as iniciais até carregares a fotografia.
               </small>
             </div>
@@ -2627,29 +3229,196 @@ Sem avisos hoje
     </div>
   </div>
 
+  <!-- MODAL: CRIAR / EDITAR SABIAS QUE... POR DISCIPLINA -->
+  <div class="modal-overlay" id="sabesQueModal">
+    <div class="card-panel modal-window" style="max-width: 660px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header-bar">
+        <div class="modal-header-left">
+          <div class="modal-header-icon"
+            style="background: rgba(245, 158, 11, 0.16); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3);">
+            <i class="ri-lightbulb-flash-line"></i>
+          </div>
+          <div class="modal-header-text">
+            <h3 id="sabesQueModalTitle">Novo "Sabias que..."</h3>
+            <p>Escolhe uma disciplina existente ou adiciona uma nova disciplina para publicar curiosidades.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="closeModal('sabesQueModal')" title="Fechar"><i
+            class="ri-close-line"></i></button>
+      </div>
+
+      <form id="sabesQueForm" onsubmit="saveSabesQueForm(event)">
+        <input type="hidden" id="sqIdInput">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-field">
+            <label for="sqDisciplineSelect">Disciplina <span style="color: #ef4444;">*</span></label>
+            <select id="sqDisciplineSelect" class="form-input-lg"
+              onchange="onSabesQueDisciplineSelectChange(this.value)">
+              <option value="Economia">Economia</option>
+              <option value="__new__">+ Nova Disciplina...</option>
+            </select>
+          </div>
+          <div class="form-field" id="sqCustomDisciplineWrap" style="display: none;">
+            <label for="sqCustomDisciplineInput">Nome da Nova Disciplina <span style="color: #ef4444;">*</span></label>
+            <input type="text" id="sqCustomDisciplineInput" class="form-input-lg"
+              placeholder="Ex: História, Biologia, Física...">
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="sqTitleInput">Sabias que... (Título / Pergunta Curta) <span
+              style="color: #ef4444;">*</span></label>
+          <input type="text" id="sqTitleInput" class="form-input-lg"
+            placeholder="Ex: Sabias porque é que a inflação reduz o poder de compra?" required>
+        </div>
+
+        <div class="form-field">
+          <label for="sqContentInput">Explicação / Curiosidade Completa <span style="color: #ef4444;">*</span></label>
+          <textarea id="sqContentInput" class="form-input-lg" rows="5"
+            placeholder="Explica de forma clara e interessante para os alunos..." required></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-field">
+            <label for="sqAuthorInput">Autor / Turma / Professor</label>
+            <input type="text" id="sqAuthorInput" class="form-input-lg"
+              placeholder="Ex: Turma 11.º E / Equipa Economia">
+          </div>
+          <div class="form-field">
+            <label for="sqSourceInput">Fonte / Referência (opcional)</label>
+            <input type="text" id="sqSourceInput" class="form-input-lg" placeholder="Ex: Banco de Portugal / Manual">
+          </div>
+        </div>
+
+        <div class="form-field">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.4rem;">
+            <label style="margin-bottom: 0;">Imagem Ilustrativa (Opcional — Base64 ou URL)</label>
+            <div style="display: flex; gap: 0.4rem;">
+              <input type="file" id="sqImageFileInput" accept="image/png,image/jpeg,image/webp,image/gif"
+                style="display: none;" onchange="handleSabesQueImageUpload(this.files[0])">
+              <button type="button" class="btn-action"
+                style="padding: 0.25rem 0.65rem; font-size: 0.78rem; color: #38bdf8; border-color: rgba(56, 189, 248, 0.35);"
+                onclick="document.getElementById('sqImageFileInput').click()">
+                <i class="ri-upload-cloud-2-line"></i> Carregar Foto
+              </button>
+              <button type="button" class="btn-action" style="padding: 0.25rem 0.55rem; font-size: 0.78rem;"
+                onclick="clearSabesQueImage()">
+                <i class="ri-close-line"></i>
+              </button>
+            </div>
+          </div>
+          <input type="text" id="sqImageInput" class="form-input-lg"
+            placeholder="Deixa vazio para cartão sem foto ou cola URL/Base64...">
+        </div>
+
+        <div class="modal-actions" style="margin-top: 1.5rem; justify-content: space-between;">
+          <button type="button" id="sqDeleteBtn" class="btn-action danger-action" style="display: none;"
+            onclick="deleteOpenSabesQue()">
+            <i class="ri-delete-bin-line"></i> Eliminar
+          </button>
+          <div style="display: flex; gap: 0.5rem; margin-left: auto;">
+            <button type="button" class="btn-action" onclick="closeModal('sabesQueModal')">Cancelar</button>
+            <button type="submit" class="btn-submit-main"><i class="ri-check-line"></i> Guardar Sabias que...</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: GESTÃO DE VISIBILIDADE DE PÁGINAS E SECÇÕES (MODO BETA / FEATURE FLAGS) -->
+  <div class="modal-overlay" id="siteVisibilityModal">
+    <div class="card-panel modal-window"
+      style="max-width: 720px; max-height: 90vh; display: flex; flex-direction: column;">
+      <div class="modal-header-row">
+        <div>
+          <span class="badge"
+            style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); margin-bottom: 0.35rem; display: inline-flex; align-items: center; gap: 0.3rem;">
+            <i class="ri-eye-line"></i> Controlo de Produção &amp; Beta
+          </span>
+          <h3 style="margin: 0.2rem 0; font-size: 1.25rem;">Visibilidade do Site &amp; Páginas em Beta</h3>
+          <p style="margin: 0; font-size: 0.82rem; color: var(--adm-text-muted);">
+            Oculta páginas e secções que estejam em desenvolvimento. As páginas em Beta saem dos menus e redirecionam
+            visitantes para a página principal (sem mostrar ecrã de manutenção). Os administradores continuam com acesso
+            para testes.
+          </p>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="closeModal('siteVisibilityModal')" title="Fechar"><i
+            class="ri-close-line"></i></button>
+      </div>
+
+      <div
+        style="overflow-y: auto; padding-right: 0.35rem; margin-top: 1rem; display: flex; flex-direction: column; gap: 1.35rem;">
+        <!-- PÁGINAS COMPLETAS DO SITE -->
+        <div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem;">
+            <h4
+              style="margin: 0; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--adm-text-bright); display: flex; align-items: center; gap: 0.4rem;">
+              <i class="ri-pages-line" style="color: #38bdf8;"></i> Páginas Completas (URLs)
+            </h4>
+            <span style="font-size: 0.72rem; color: var(--adm-text-muted);">Verde = Público | Amarelo = Apenas Admin
+              (Beta)</span>
+          </div>
+          <div class="visibility-items-grid" id="visPagesGrid">
+            <!-- Gerado via js/admin.js -->
+          </div>
+        </div>
+
+        <!-- SECÇÕES DE CONTEÚDO -->
+        <div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem;">
+            <h4
+              style="margin: 0; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--adm-text-bright); display: flex; align-items: center; gap: 0.4rem;">
+              <i class="ri-layout-masonry-line" style="color: #a78bfa;"></i> Secções de Conteúdo (Home &amp; Canais)
+            </h4>
+            <span style="font-size: 0.72rem; color: var(--adm-text-muted);">Ativar ou desativar blocos
+              específicos</span>
+          </div>
+          <div class="visibility-items-grid" id="visSectionsGrid">
+            <!-- Gerado via js/admin.js -->
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions"
+        style="margin-top: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 0.74rem; color: var(--adm-text-muted);" id="visLastUpdatedNotice">Sincronizado em tempo
+          real com o Firestore</span>
+        <button type="button" class="btn-action" onclick="closeModal('siteVisibilityModal')">Concluir</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: CONTROLO DE MANUTENÇÃO DO SITE EM TEMPO REAL -->
   <div class="modal-overlay" id="siteMaintenanceModal">
     <div class="card-panel modal-window" style="max-width: 560px;">
       <div class="modal-header-row">
         <div>
-          <span class="badge badge-warning" style="margin-bottom: 0.35rem;"><i class="ri-tools-fill"></i> Controlo Global do Site</span>
+          <span class="badge badge-warning" style="margin-bottom: 0.35rem;"><i class="ri-tools-fill"></i> Controlo
+            Global do Site</span>
           <h3>Modo de Manutenção do Site</h3>
         </div>
-        <button type="button" class="modal-close-icon-btn" onclick="closeModal('siteMaintenanceModal')" title="Fechar"><i
-            class="ri-close-line"></i></button>
+        <button type="button" class="modal-close-icon-btn" onclick="closeModal('siteMaintenanceModal')"
+          title="Fechar"><i class="ri-close-line"></i></button>
       </div>
 
-      <div id="maintModalStatusBox" style="padding: 1.15rem 1.25rem; border-radius: 14px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.35); margin-bottom: 1.15rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+      <div id="maintModalStatusBox"
+        style="padding: 1.15rem 1.25rem; border-radius: 14px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.35); margin-bottom: 1.15rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
         <div style="display: flex; align-items: center; gap: 0.85rem;">
-          <div id="maintModalStatusIcon" style="width: 46px; height: 46px; border-radius: 12px; background: rgba(16, 185, 129, 0.2); color: #34d399; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;">
+          <div id="maintModalStatusIcon"
+            style="width: 46px; height: 46px; border-radius: 12px; background: rgba(16, 185, 129, 0.2); color: #34d399; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;">
             <i class="ri-checkbox-circle-fill"></i>
           </div>
           <div>
-            <strong id="maintModalStatusTitle" style="display: block; font-size: 1.02rem; color: #f8fafc;">Site Público Online</strong>
-            <small id="maintModalStatusSub" style="color: var(--text-muted); font-size: 0.8rem;">Todos os visitantes podem navegar normalmente no site.</small>
+            <strong id="maintModalStatusTitle" style="display: block; font-size: 1.02rem; color: #f8fafc;">Site Público
+              Online</strong>
+            <small id="maintModalStatusSub" style="color: var(--text-muted); font-size: 0.8rem;">Todos os visitantes
+              podem navegar normalmente no site.</small>
           </div>
         </div>
-        <button type="button" id="btnToggleMaintenanceNow" class="btn-submit-main" onclick="toggleSiteMaintenanceNow()" style="white-space: nowrap;">
+        <button type="button" id="btnToggleMaintenanceNow" class="btn-submit-main" onclick="toggleSiteMaintenanceNow()"
+          style="white-space: nowrap;">
           <i class="ri-tools-fill"></i> Ativar Manutenção
         </button>
       </div>
@@ -2658,28 +3427,37 @@ Sem avisos hoje
         <label for="maintenanceCustomMsgInput">Mensagem apresentada na página de manutenção (opcional)</label>
         <textarea id="maintenanceCustomMsgInput" class="form-input-lg" rows="3"
           placeholder="Estamos a preparar novidades e a atualizar o website oficial da nossa rádio escolar. Durante este período, o portal principal encontra-se encerrado ao público. Voltamos em breve!"></textarea>
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-top: 0.45rem; flex-wrap: wrap;">
-          <small style="font-size: 0.75rem; color: var(--text-muted);">Esta mensagem aparece em tempo real em <code>manutencao.html</code>.</small>
-          <button type="button" class="btn-action" onclick="saveMaintenanceCustomMessage()" style="font-size: 0.78rem; padding: 0.35rem 0.75rem;">
+        <div
+          style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-top: 0.45rem; flex-wrap: wrap;">
+          <small style="font-size: 0.75rem; color: var(--text-muted);">Esta mensagem aparece em tempo real em
+            <code>manutencao.html</code>.</small>
+          <button type="button" class="btn-action" onclick="saveMaintenanceCustomMessage()"
+            style="font-size: 0.78rem; padding: 0.35rem 0.75rem;">
             <i class="ri-save-line"></i> Atualizar Mensagem
           </button>
         </div>
       </div>
 
-      <div style="padding: 0.9rem 1rem; border-radius: 12px; background: rgba(15, 23, 42, 0.5); border: 1px dashed rgba(148, 163, 184, 0.25); font-size: 0.82rem; color: var(--text-secondary);">
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.45rem;">
-          <span><i class="ri-key-2-line" style="color: #fbbf24;"></i> Chave de desbloqueio individual: <code style="color: #f8fafc; font-weight: 700;">OlhaAOnda1@</code></span>
+      <div
+        style="padding: 0.9rem 1rem; border-radius: 12px; background: rgba(15, 23, 42, 0.5); border: 1px dashed rgba(148, 163, 184, 0.25); font-size: 0.82rem; color: var(--text-secondary);">
+        <div
+          style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.45rem;">
+          <span><i class="ri-key-2-line" style="color: #fbbf24;"></i> Chave de desbloqueio individual: <code
+              style="color: #f8fafc; font-weight: 700;">OlhaAOnda1@</code></span>
           <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-            <button type="button" class="btn-action" onclick="copyMaintenanceUnlockLink()" style="font-size: 0.75rem; padding: 0.3rem 0.65rem;">
+            <button type="button" class="btn-action" onclick="copyMaintenanceUnlockLink()"
+              style="font-size: 0.75rem; padding: 0.3rem 0.65rem;">
               <i class="ri-link"></i> Copiar Link Desbloqueado
             </button>
-            <a href="manutencao.html" target="_blank" rel="noopener" class="btn-action" style="font-size: 0.75rem; padding: 0.3rem 0.65rem; text-decoration: none;">
+            <a href="manutencao.html" target="_blank" rel="noopener" class="btn-action"
+              style="font-size: 0.75rem; padding: 0.3rem 0.65rem; text-decoration: none;">
               <i class="ri-external-link-line"></i> Ver Página
             </a>
           </div>
         </div>
         <small style="display: block; color: var(--text-muted); font-size: 0.74rem;">
-          Nota: O Painel de Administração (<code>admin.html</code>) e a página de votação (<code>vote.html</code>) permanecem sempre acessíveis mesmo com a manutenção ativa.
+          Nota: O Painel de Administração (<code>admin.html</code>) e a página de votação (<code>vote.html</code>)
+          permanecem sempre acessíveis mesmo com a manutenção ativa.
         </small>
       </div>
 
@@ -2689,15 +3467,95 @@ Sem avisos hoje
     </div>
   </div>
 
+  <!-- MODAL RÁPIDO: HISTÓRICO GLOBAL DE VERSÕES (ACESSÍVEL DE QUALQUER PÁGINA DO ADMIN) -->
+  <div class="modal-overlay" id="vhQuickModal">
+    <div class="card-panel modal-window" style="max-width: 960px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+      <div class="modal-header-bar">
+        <div class="modal-header-left">
+          <div class="modal-header-icon" style="background: rgba(168, 85, 247, 0.16); color: #c084fc;"><i class="ri-history-line"></i></div>
+          <div class="modal-header-text">
+            <h3>Histórico de Versões do Site <span id="vhTotalCountBadge" style="font-size:0.74rem; color:#94a3b8; font-weight:600; margin-left:0.5rem;"></span></h3>
+            <p>Restaura qualquer versão anterior de notícias, guiões, podcasts, links, calendário, equipa ou itens eliminados.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="document.getElementById('vhQuickModal').classList.remove('active')"><i class="ri-close-line"></i></button>
+      </div>
+
+      <div class="vh-toolbar" style="margin-top: 0.5rem;">
+        <div class="vh-search-box">
+          <i class="ri-search-line"></i>
+          <input type="text" class="vh-search-input" placeholder="Pesquisar no histórico de todo o site...">
+        </div>
+        <select class="vh-select vh-col-select" aria-label="Módulo">
+          <option value="all">Todos os módulos</option>
+          <option value="rundowns">Guiões &amp; Alinhamento</option>
+          <option value="announcements">Notícias &amp; Avisos</option>
+          <option value="sabesQue">Sabias Que...</option>
+          <option value="podcasts">Podcasts</option>
+          <option value="suggestions">Músicas Pedidas</option>
+          <option value="links">Links Rápidos</option>
+          <option value="teamMembers">Equipa do Site</option>
+          <option value="calendarEvents">Calendário</option>
+          <option value="tasks">Tarefas</option>
+          <option value="polls">Votações</option>
+          <option value="nerdChallenges">Alerta Nerd</option>
+          <option value="messages">Mensagens</option>
+          <option value="siteSettings">Definições &amp; Visibilidade</option>
+        </select>
+        <select class="vh-select vh-act-select" aria-label="Ação">
+          <option value="all">Todas as ações</option>
+          <option value="create">Criados</option>
+          <option value="update">Editados</option>
+          <option value="delete">Eliminados</option>
+          <option value="restore">Restaurados</option>
+          <option value="snapshot">Checkpoints</option>
+        </select>
+        <button type="button" class="btn-submit-main" style="padding: 0.5rem 0.9rem; font-size: 0.8rem;" onclick="WaveTimeMachine.checkpoint()">
+          <i class="ri-save-3-line"></i> Criar Checkpoint
+        </button>
+      </div>
+
+      <div id="vhModalTimelineList" class="vh-timeline-list" style="overflow-y: auto; flex: 1; padding-right: 0.25rem;"></div>
+
+      <div class="modal-actions" style="margin-top: 1rem;">
+        <button type="button" class="btn-action" onclick="WaveTimeMachine.exportJson()"><i class="ri-download-2-line"></i> Exportar .JSON</button>
+        <button type="button" class="btn-action" onclick="document.getElementById('vhQuickModal').classList.remove('active')">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: INSPECIONAR DADOS DE UMA VERSÃO -->
+  <div class="modal-overlay" id="vhInspectModal">
+    <div class="card-panel modal-window" style="max-width: 680px; width: 95%;">
+      <div class="modal-header-bar">
+        <div class="modal-header-left">
+          <div class="modal-header-icon"><i class="ri-code-s-slash-line"></i></div>
+          <div class="modal-header-text">
+            <h3 id="vhInspectTitle">Dados da Versão</h3>
+            <p>Conteúdo exato guardado neste ponto de restauro.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="document.getElementById('vhInspectModal').classList.remove('active')"><i class="ri-close-line"></i></button>
+      </div>
+      <pre id="vhInspectJsonPre" style="background:#080c17; border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:1rem; color:#cbd5e1; font-size:0.78rem; max-height:420px; overflow:auto; white-space:pre-wrap;"></pre>
+      <div class="modal-actions" style="margin-top: 1rem;">
+        <button type="button" class="btn-action" onclick="document.getElementById('vhInspectModal').classList.remove('active')">Fechar</button>
+        <button type="button" class="btn-submit-main" id="vhInspectRestoreBtn"><i class="ri-restart-line"></i> Restaurar Esta Versão</button>
+      </div>
+    </div>
+  </div>
+
   <!-- CONTAINER FLUTUANTE DE TOAST NOTIFICATIONS -->
   <div id="toastContainer" class="toast-container"></div>
 
   <!-- MODAL: COMMAND PALETTE INTELIGENTE (CTRL+K) -->
-  <div class="adm-palette-overlay" id="adminCommandPaletteModal" role="dialog" aria-modal="true" aria-label="Pesquisa e Comandos Rápidos">
+  <div class="adm-palette-overlay" id="adminCommandPaletteModal" role="dialog" aria-modal="true"
+    aria-label="Pesquisa e Comandos Rápidos">
     <div class="adm-palette-window">
       <div class="adm-palette-head">
         <i class="ri-search-2-line" aria-hidden="true"></i>
-        <input type="text" id="adminCommandPaletteInput" class="adm-palette-input" placeholder="O que pretendes aceder ou fazer? (ex: notícias, músicas, guião...)" autocomplete="off">
+        <input type="text" id="adminCommandPaletteInput" class="adm-palette-input"
+          placeholder="O que pretendes aceder ou fazer? (ex: notícias, músicas, guião...)" autocomplete="off">
         <span class="adm-palette-esc">ESC</span>
       </div>
       <ul class="adm-palette-list" id="adminCommandPaletteList" role="listbox">
@@ -2709,10 +3567,15 @@ Sem avisos hoje
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="js/firebase-config.js?v=20261101cidadelafm"></script>
+  <script src="js/preview-player.js?v=20261119n"></script>
+  <script src="js/firebase-config.js?v=20261119n"></script>
+  <script src="js/version-history.js?v=20261119n"></script>
+  <script src="js/explicit-engine.js?v=20261119n"></script>
   <script src="js/calendar.js"></script>
-  <script src="js/admin.js?v=20261101cidadelafm"></script>
-  <script src="js/admin-ui-enhancements.js?v=20261027"></script>
+  <script src="js/admin.js?v=20261119n"></script>
+  <script src="js/songs-hub.js?v=20261119n"></script>
+  <script src="js/rundown-studio.js?v=20261119n"></script>
+  <script src="js/admin-ui-enhancements.js?v=20261117"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const shell = document.getElementById('adminShell');

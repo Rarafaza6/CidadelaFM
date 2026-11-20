@@ -18,6 +18,10 @@ service cloud.firestore {
       return !(field in data) || (data[field] is number && data[field] >= 0);
     }
 
+    function isOptionalBool(data, field) {
+      return !(field in data) || (data[field] is bool);
+    }
+
     function isValidEmail(value) {
       return value is string
         && value.size() >= 5
@@ -29,6 +33,11 @@ service cloud.firestore {
     match /siteSettings/{settingId} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    // Histórico global de versões e restauro de todo o site (apenas Administração)
+    match /versionHistory/{versionId} {
+      allow read, write: if isAdmin();
     }
 
     // Conteúdos públicos geridos no painel da rádio
@@ -106,7 +115,8 @@ service cloud.firestore {
           'weekKey',
           'source',
           'status',
-          'timestamp'
+          'timestamp',
+          'explicit'
         ])
         && request.resource.data.id == suggestionId
         && (
@@ -122,7 +132,8 @@ service cloud.firestore {
         && isOptionalString(request.resource.data, 'weekKey', 20)
         && isOptionalString(request.resource.data, 'source', 20)
         && request.resource.data.status == 'pending'
-        && isOptionalTimestamp(request.resource.data, 'timestamp');
+        && isOptionalTimestamp(request.resource.data, 'timestamp')
+        && isOptionalBool(request.resource.data, 'explicit');
       allow read: if isAdmin() || resource.data.source == 'dt';
       allow update, delete: if isAdmin();
     }
@@ -200,6 +211,12 @@ service cloud.firestore {
 
     match /tasks/{taskId} {
       allow read, write: if isAdmin();
+    }
+
+    // Curiosidades "Sabes que..." por disciplina
+    match /sabesQue/{factId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }

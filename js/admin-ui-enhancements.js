@@ -81,7 +81,9 @@
         { title: 'Mural de Notícias & Artigos', icon: 'ri-article-line', action: () => window.switchAdminSection('sec-anuncios'), keywords: 'noticias noticias posts blog artigos novidades' },
         { title: 'Podcasts & Episódios', icon: 'ri-headphones-line', action: () => window.switchAdminSection('sec-podcasts'), keywords: 'podcasts audio spotify episodios' },
         { title: 'Links Rápidos (Linktree)', icon: 'ri-links-line', action: () => window.switchAdminSection('sec-links'), keywords: 'links atalhos linktree redes' },
-        { title: 'Membros da Equipa', icon: 'ri-user-star-line', action: () => window.switchAdminSection('sec-equipa'), keywords: 'equipa equipas membros staff fotos' }
+        { title: 'Membros da Equipa', icon: 'ri-user-star-line', action: () => window.switchAdminSection('sec-equipa'), keywords: 'equipa equipas membros staff fotos' },
+        { title: 'Sabias que... (Disciplinas)', icon: 'ri-lightbulb-flash-line', action: () => window.switchAdminSection('sec-sabes-que'), keywords: 'sabias que sabes curiosidades disciplinas economia' },
+        { title: 'Economia em Frequência', icon: 'ri-line-chart-line', action: () => window.switchAdminSection('sec-economia'), keywords: 'economia frequencia blog podcast sabes que' }
       ]
     },
     {
@@ -98,6 +100,7 @@
         { title: 'Novo Guião de Emissão', icon: 'ri-quill-pen-line', action: () => { if (typeof openNewRundownModal === 'function') openNewRundownModal(); }, keywords: 'novo guiao criar alinhamento' },
         { title: 'Novo Desafio Alerta Nerd', icon: 'ri-add-circle-line', action: () => { if (typeof openNerdChallengeModal === 'function') openNerdChallengeModal(); }, keywords: 'novo desafio criar alerta nerd' },
         { title: 'Controlo de Manutenção do Site', icon: 'ri-tools-fill', action: () => { if (typeof openSiteMaintenanceModal === 'function') openSiteMaintenanceModal(); }, keywords: 'manutencao offline online fechar trancar site' },
+        { title: 'Visibilidade do Site & Páginas em Beta', icon: 'ri-eye-line', action: () => { if (typeof openSiteVisibilityModal === 'function') openSiteVisibilityModal(); }, keywords: 'visibilidade paginas seccoes beta esconder mostrar producao feature flags' },
         { title: 'Gestão de Utilizadores & Permissões', icon: 'ri-shield-user-line', action: () => window.switchAdminSection('sec-utilizadores'), keywords: 'utilizadores contas logins rbac password equipa' },
         { title: 'Abrir Modo de Estúdio Ao Vivo', icon: 'ri-broadcast-line', action: () => { if (typeof switchAdminMode === 'function') switchAdminMode('aovivo'); }, keywords: 'ao vivo cockpit estúdio teleprompter' },
         { title: 'Ver Site Público (Abrir numa nova aba)', icon: 'ri-external-link-line', action: () => window.open('index.html', '_blank'), keywords: 'site publico ver visitar' }

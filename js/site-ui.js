@@ -175,6 +175,58 @@
     }
   }
 
+  function ensureSubPortalNavigation() {
+    const path = window.location.pathname.toLowerCase();
+    const isEconomiaPage = path.includes('economia.html');
+    const isSabesQuePage = path.includes('sabes-que.html');
+
+    // 1. Desktop navbar: Economia em Frequência
+    const desktopLinks = document.querySelector('.w-nav .w-links');
+    if (desktopLinks && !desktopLinks.querySelector('a[href="economia.html"]')) {
+      const li = document.createElement('li');
+      li.innerHTML = `<a href="economia.html"${isEconomiaPage ? ' class="active" aria-current="page"' : ''}>Economia em Frequência</a>`;
+      const msgLink = desktopLinks.querySelector('a[href="mensagem.html"]');
+      if (msgLink && msgLink.parentElement) {
+        desktopLinks.insertBefore(li, msgLink.parentElement);
+      } else {
+        desktopLinks.appendChild(li);
+      }
+    }
+
+    // 2. Mobile drawer: Economia em Frequência
+    const drawer = document.getElementById('mobileMenu');
+    if (drawer && !drawer.querySelector('a[href="economia.html"]')) {
+      const a = document.createElement('a');
+      a.className = `w-d-link${isEconomiaPage ? ' active' : ''}`;
+      a.href = 'economia.html';
+      a.innerHTML = 'Economia em Frequência <i class="ri-arrow-right-up-line" aria-hidden="true"></i>';
+      const msgDrawerLink = drawer.querySelector('a[href="mensagem.html"]');
+      const ctaBtn = drawer.querySelector('.w-btn-block');
+      if (msgDrawerLink) {
+        drawer.insertBefore(a, msgDrawerLink);
+      } else if (ctaBtn) {
+        drawer.insertBefore(a, ctaBtn);
+      } else {
+        drawer.appendChild(a);
+      }
+    }
+
+    // 3. Footer list: Economia em Frequência + Sabes que...
+    const footList = document.querySelector('.w-foot-list');
+    if (footList) {
+      if (!footList.querySelector('a[href="economia.html"]')) {
+        const liEcon = document.createElement('li');
+        liEcon.innerHTML = '<a href="economia.html">Economia em Frequência</a>';
+        footList.appendChild(liEcon);
+      }
+      if (!footList.querySelector('a[href="sabes-que.html"]')) {
+        const liSq = document.createElement('li');
+        liSq.innerHTML = `<a href="sabes-que.html"${isSabesQuePage ? ' aria-current="page"' : ''}>Sabias que...</a>`;
+        footList.appendChild(liSq);
+      }
+    }
+  }
+
   /* ---------- 2. ALERTA NERD DINÂMICO (SÓ MOSTRA SE HOUVER DESAFIO ATIVO) ---------- */
   function syncNerdAlertNavigation() {
     const activeChallenge = (window.db && typeof window.db.getActiveNerdChallenge === 'function')
@@ -393,14 +445,151 @@
     }
   }
 
+  /* ---------- 2.2 GESTÃO DE VISIBILIDADE DE PÁGINAS E SECÇÕES (MODO BETA) ---------- */
+  function isUserAdminOrPreview() {
+    try {
+      if (localStorage.getItem('radio_maintenance_unlock_v1') === 'OlhaAOnda1@') return true;
+      if (sessionStorage.getItem('wave_admin_authenticated') === 'true') return true;
+      if (sessionStorage.getItem('radio_admin_user') || localStorage.getItem('wave_admin_session')) return true;
+      if (window.firebase && window.firebase.auth && window.firebase.auth().currentUser) return true;
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('preview') === 'beta' || params.get('preview') === '1' || params.get('admin') === '1') {
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  function renderBetaModeBanner(fileName) {
+    if (document.getElementById('betaPreviewBanner')) return;
+    const banner = document.createElement('div');
+    banner.id = 'betaPreviewBanner';
+    banner.className = 'beta-preview-banner';
+    banner.innerHTML = `
+      <div class="beta-preview-inner">
+        <div style="display: flex; align-items: center; gap: 0.65rem;">
+          <span class="beta-badge"><i class="ri-flask-line"></i> MODO BETA</span>
+          <span style="font-size: 0.82rem;">Esta página (<strong>${fileName}</strong>) está oculta do público geral. Visível apenas para ti como Administrador.</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <a href="admin.html" class="beta-admin-btn"><i class="ri-dashboard-line"></i> Painel Admin</a>
+          <button type="button" class="beta-admin-btn" onclick="this.closest('#betaPreviewBanner').remove()" title="Dispensar aviso">✕</button>
+        </div>
+      </div>
+    `;
+    document.body.prepend(banner);
+  }
+
+  function syncSiteVisibility() {
+    let visibility = null;
+    if (window.db && typeof window.db.getSiteVisibility === 'function') {
+      visibility = window.db.getSiteVisibility();
+    } else {
+      try {
+        visibility = JSON.parse(localStorage.getItem('wave_site_visibility') || 'null');
+      } catch (_) {}
+    }
+    if (!visibility || !visibility.pages) return;
+
+    const pages = visibility.pages;
+    const sections = visibility.sections || {};
+    const currentPath = window.location.pathname.toLowerCase();
+    const currentFile = (currentPath.split('/').pop() || 'index.html').toLowerCase();
+    const isAdmin = isUserAdminOrPreview();
+
+    // 1. Guard de página inteira (Beta / Oculta)
+    let isCurrentHidden = false;
+    Object.keys(pages).forEach(key => {
+      if (key.toLowerCase() === currentFile && pages[key] === false) {
+        isCurrentHidden = true;
+      }
+    });
+
+    if (isCurrentHidden) {
+      if (!isAdmin) {
+        // Redirecionamento instantâneo e suave sem ecrã de erro
+        window.location.replace('index.html');
+        return;
+      } else {
+        renderBetaModeBanner(currentFile);
+      }
+    }
+
+    // 2. Ocultar links de navegação para páginas desativadas
+    Object.keys(pages).forEach(key => {
+      const isVisible = pages[key] !== false;
+      const normKey = key.toLowerCase();
+
+      // Desktop navbar links
+      document.querySelectorAll('.w-nav .w-links li').forEach(li => {
+        const a = li.querySelector('a');
+        if (a) {
+          const href = (a.getAttribute('href') || '').toLowerCase();
+          if (href === normKey || href.endsWith('/' + normKey)) {
+            li.style.display = isVisible ? '' : 'none';
+          }
+        }
+      });
+
+      // Mobile drawer links
+      document.querySelectorAll('#mobileMenu .w-d-link').forEach(a => {
+        const href = (a.getAttribute('href') || '').toLowerCase();
+        if (href === normKey || href.endsWith('/' + normKey)) {
+          a.style.display = isVisible ? '' : 'none';
+        }
+      });
+
+      // Footer links
+      document.querySelectorAll('.w-foot-list li').forEach(li => {
+        const a = li.querySelector('a');
+        if (a) {
+          const href = (a.getAttribute('href') || '').toLowerCase();
+          if (href === normKey || href.endsWith('/' + normKey)) {
+            li.style.display = isVisible ? '' : 'none';
+          }
+        }
+      });
+
+      // Hero buttons na index.html
+      document.querySelectorAll('.w-hero-ctas a').forEach(a => {
+        const href = (a.getAttribute('href') || '').toLowerCase();
+        if (href.startsWith(normKey)) {
+          a.style.display = isVisible ? '' : 'none';
+        }
+      });
+    });
+
+    // 3. Ocultar secções de páginas
+    const sectionMap = {
+      'home-news': ['#homeNewsSection', '[aria-labelledby="newsHeading"]'],
+      'home-podcasts': ['#homePodcastsSection', '[aria-labelledby="podcastsHeading"]'],
+      'home-sabias-que': ['#homeSabesQueSection'],
+      'home-manifesto': ['.w-manifesto', '#homeManifestoSection'],
+      'econ-sabias-que': ['#econSabesQue'],
+      'econ-podcasts': ['#econPodcasts']
+    };
+
+    Object.keys(sectionMap).forEach(secKey => {
+      const isVisible = sections[secKey] !== false;
+      const selectors = sectionMap[secKey];
+      selectors.forEach(sel => {
+        document.querySelectorAll(sel).forEach(el => {
+          el.style.display = isVisible ? '' : 'none';
+        });
+      });
+    });
+  }
+
   /* ---------- 3. INICIALIZAÇÃO DO DOM ---------- */
   applyTheme(getInitialTheme());
 
   document.addEventListener('DOMContentLoaded', () => {
     ensureThemeButtons();
     ensureTeamNavigation();
+    ensureSubPortalNavigation();
     syncNerdAlertNavigation();
     syncPollsNavigation();
+    syncSiteVisibility();
 
     document.addEventListener('radio-db-updated', (e) => {
       if (!e.detail || e.detail.collection === 'nerdChallenges') {
@@ -409,12 +598,20 @@
       if (!e.detail || e.detail.collection === 'polls') {
         syncPollsNavigation();
       }
+      if (!e.detail || e.detail.collection === 'announcements' || e.detail.collection === 'siteVisibility') {
+        syncSiteVisibility();
+      }
+    });
+
+    document.addEventListener('radio-visibility-updated', () => {
+      syncSiteVisibility();
     });
 
     if (window.db && typeof window.db.ready === 'function') {
       window.db.ready().then(() => {
         syncNerdAlertNavigation();
         syncPollsNavigation();
+        syncSiteVisibility();
       }).catch(() => {});
     }
 

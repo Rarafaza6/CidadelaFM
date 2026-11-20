@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
-  <link rel="stylesheet" href="css/wave.css?v=20261027c">
+  <link rel="stylesheet" href="css/wave.css?v=20261119q">
   <link rel="stylesheet" href="css/cookie-consent.css?v=20261102">
   <script>document.documentElement.classList.add('js');try{var t=localStorage.getItem('wave_theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
   <!-- Google Consent Mode v2 & Google tag (gtag.js) -->
@@ -53,7 +53,7 @@
     });
   </script>
   <script src="js/cookie-consent.js?v=20261102" defer></script>
-  <script src="js/maintenance-guard.js?v=20261027cidadelafm"></script>
+  <script src="js/maintenance-guard.js?v=20261117m"></script>
 </head>
 <body>
 <a class="skip" href="#main">Saltar para o conteúdo</a>
@@ -85,14 +85,34 @@
       <h2 class="w-card-title" id="formHeading"><i class="ri-search-2-line" aria-hidden="true"></i> Escolher tema</h2>
       <form id="suggestionForm">
         <div class="w-field">
-          <label for="musicSearchInput" class="w-label">Pesquisar música ou artista</label>
+          <label for="musicSearchInput" class="w-label">Pesquisar no catálogo Apple Music (seleciona uma sugestão da lista)</label>
           <div class="w-search">
             <i class="ri-search-line" aria-hidden="true"></i>
-            <input type="text" id="musicSearchInput" class="w-input" placeholder="Escreve o título da música ou artista..." autocomplete="off">
+            <input type="text" id="musicSearchInput" class="w-input" placeholder="Escreve o título ou artista e clica numa sugestão..." autocomplete="off">
             <div id="searchResultsDropdown" class="search-dropdown" role="listbox" aria-label="Resultados de pesquisa"></div>
           </div>
         </div>
         <div id="selectedTrackContainer"></div>
+        <div class="w-identity-box" id="studentIdentityBox">
+          <div class="w-identity-head">
+            <span class="w-identity-title"><i class="ri-id-card-line" aria-hidden="true"></i> Identificação do Aluno</span>
+            <span class="w-identity-badge">Obrigatório</span>
+          </div>
+          <div class="w-row-identity">
+            <div>
+              <label for="reqStudentName" class="w-label">Nome e Apelido</label>
+              <input type="text" id="reqStudentName" class="w-input" placeholder="Ex: João Silva" maxlength="60" required autocomplete="name">
+            </div>
+            <div>
+              <label for="reqStudentNumber" class="w-label">Número</label>
+              <input type="text" id="reqStudentNumber" class="w-input" placeholder="Ex: 14" maxlength="10" required inputmode="numeric">
+            </div>
+            <div>
+              <label for="reqStudentClass" class="w-label">Turma</label>
+              <input type="text" id="reqStudentClass" class="w-input" placeholder="Ex: 10.º A" maxlength="15" required>
+            </div>
+          </div>
+        </div>
         <button type="submit" class="w-btn w-btn-red w-btn-block"><i class="ri-send-plane-fill" aria-hidden="true"></i> Submeter sugestão</button>
       </form>
       <div id="suggestionAlertContainer" aria-live="polite"></div>
@@ -101,8 +121,9 @@
     <aside class="w-rules" aria-labelledby="rulesHeading">
       <h2 id="rulesHeading">Regras</h2>
       <div class="w-rule"><span class="w-rule-n">1</span><div><strong>Limite de 3 músicas por dia</strong><p>Cada dispositivo pode enviar até 3 sugestões diariamente (<span class="count" id="dailyRequestsCountEl">0/3</span> enviadas).</p></div></div>
-      <div class="w-rule"><span class="w-rule-n">2</span><div><strong>Músicas apropriadas</strong><p>Nós queremos ouvir o que tu gostas, mas apenas músicas com linguagem (minimamente) apropriada vão ser consideradas.</p></div></div>
-      <div class="w-rule"><span class="w-rule-n">3</span><div><strong>Nada de Zé Cabra</strong><p>Só porque o Zé Cabra é um ícone da música portuguesa, não significa que seja uma boa sugestão para a playlist do intervalo. Evita enviar músicas que sabes que não são boas.</p></div></div>
+      <div class="w-rule"><span class="w-rule-n">2</span><div><strong>Intervalo de 4 meses por música</strong><p>Não podes pedir a mesma música 2 vezes num período de 4 meses, garantindo que a rádio tem sempre temas novos e variados.</p></div></div>
+      <div class="w-rule"><span class="w-rule-n">3</span><div><strong>Músicas apropriadas</strong><p>Apenas músicas com linguagem apropriada são transmitidas na escola (músicas com palavrões [E] não passam na emissão).</p></div></div>
+      <div class="w-rule"><span class="w-rule-n">4</span><div><strong>Nada de Zé Cabra</strong><p>Evita enviar músicas que sabes que não funcionam na emissão escolar.</p></div></div>
     </aside>
   </div>
 
@@ -152,8 +173,8 @@
 </footer>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=20261101cidadelafm"></script>
-<script src="js/app.js?v=20261101cidadelafm"></script>
-<script src="js/site-ui.js?v=20261027"></script>
+<script src="js/firebase-config.js?v=20261119k"></script>
+<script src="js/app.js?v=20261119k"></script>
+<script src="js/site-ui.js?v=20261119k"></script>
 </body>
 </html>

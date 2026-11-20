@@ -367,14 +367,14 @@ async function fetchDtMusicCatalog(query, dropdown) {
   dropdown.classList.add('active');
 
   try {
-    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=6`;
+    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=8`;
     const res = await fetch(url);
     const data = await res.json();
 
     if (!data.results || data.results.length === 0) {
       dropdown.innerHTML = `
         <div class="search-dropdown-status">
-          Nenhum resultado encontrado. Clica em "+ Juntar manualmente" abaixo da caixa de pesquisa.
+          Nenhuma música encontrada no catálogo do Apple Music. Verifica se o título ou artista está bem escrito.
         </div>
       `;
       return;
@@ -405,11 +405,15 @@ async function fetchDtMusicCatalog(query, dropdown) {
       `;
 
       item.addEventListener('click', () => {
+        const isExplicit = (track.trackExplicitness === 'explicit') ||
+          (window.RadioDatabase && window.RadioDatabase.isExplicitSong(track.trackName, track.artistName)) ||
+          (typeof window.isExplicitSong === 'function' && window.isExplicitSong(track.trackName, track.artistName));
         dtSelectedTrack = {
           songTitle: track.trackName,
           artist: track.artistName,
           artwork: artwork,
-          previewUrl: track.previewUrl || ''
+          previewUrl: track.previewUrl || '',
+          explicit: Boolean(isExplicit)
         };
         dropdown.classList.remove('active');
         addCurrentInputOrTrackToQueue();
@@ -420,7 +424,7 @@ async function fetchDtMusicCatalog(query, dropdown) {
   } catch (err) {
     dropdown.innerHTML = `
       <div class="search-dropdown-status search-dropdown-error">
-        <i class="ri-error-warning-line"></i> Sem ligação ao catálogo. Escreve o título e clica em "+ Juntar manualmente".
+        <i class="ri-error-warning-line"></i> Sem ligação ao catálogo do Apple Music. Verifica a tua ligação e tenta novamente.
       </div>
     `;
   }
@@ -428,6 +432,7 @@ async function fetchDtMusicCatalog(query, dropdown) {
 
 function addCurrentInputOrTrackToQueue() {
   const searchInput = document.getElementById('dtMusicSearchInput');
+  const dropdown = document.getElementById('dtSearchResultsDropdown');
   const rawText = (searchInput?.value || '').trim();
   const remaining = Math.max(0, MAX_WEEKLY_CLASS_SONGS - dtWeeklySubmitted.length);
 
@@ -441,22 +446,16 @@ function addCurrentInputOrTrackToQueue() {
     return false;
   }
 
-  let songToAdd = null;
-  if (dtSelectedTrack) {
-    songToAdd = { ...dtSelectedTrack };
-  } else if (rawText) {
-    const parts = rawText.split(/\s+-\s+/);
-    songToAdd = {
-      songTitle: parts[0].trim(),
-      artist: parts.slice(1).join(' - ').trim() || 'Artista não especificado',
-      artwork: 'assets/logo-radio.jpg',
-      previewUrl: ''
-    };
-  } else {
-    showDtAlert('warning', 'Escreve primeiro o nome de uma música na caixa de pesquisa acima.');
-    searchInput?.focus();
+  if (!dtSelectedTrack || !dtSelectedTrack.songTitle) {
+    showDtAlert('warning', 'Escolhe uma música da lista de sugestões do Apple Music! Escreve na caixa de pesquisa e clica numa das opções.');
+    if (searchInput) {
+      searchInput.focus();
+      if (rawText.length >= 2 && dropdown) fetchDtMusicCatalog(rawText, dropdown);
+    }
     return false;
   }
+
+  const songToAdd = { ...dtSelectedTrack };
 
   const isDuplicate = dtSongQueue.some(
     s => s.songTitle.toLowerCase() === songToAdd.songTitle.toLowerCase() &&
@@ -469,6 +468,15 @@ function addCurrentInputOrTrackToQueue() {
   if (isDuplicate) {
     showDtAlert('warning', 'Essa música já está na lista desta turma.');
     return false;
+  }
+
+  if (window.db && typeof window.db.checkSongRequestCooldown === 'function') {
+    const cooldown = window.db.checkSongRequestCooldown(songToAdd.songTitle, songToAdd.artist);
+    if (cooldown && cooldown.isBlocked) {
+      const availDate = new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' }).format(cooldown.cooldownDate);
+      showDtAlert('warning', `A música "${escapeHtml(songToAdd.songTitle)}" já foi pedida há menos de 4 meses (bloqueio ativo até ${availDate}). Escolhe outro tema para a turma!`);
+      return false;
+    }
   }
 
   dtSongQueue.push(songToAdd);
@@ -593,6 +601,7 @@ function initDtStep2Form() {
       const weekKey = getCurrentWeekKey();
 
       const createdEntries = songsToSubmit.map(song => {
+        const isExp = Boolean(song.explicit || (typeof window.isExplicitSong === 'function' && window.isExplicitSong(song.songTitle, song.artist)));
         return window.db.addSuggestion({
           title: song.songTitle,
           songTitle: song.songTitle,
@@ -603,7 +612,8 @@ function initDtStep2Form() {
           source: 'dt',
           teacherName: dtCurrentTeacher.slice(0, 80),
           studentClass: dtCurrentClass.slice(0, 30),
-          weekKey: weekKey
+          weekKey: weekKey,
+          explicit: isExp
         });
       });
 

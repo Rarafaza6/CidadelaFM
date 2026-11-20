@@ -5,7 +5,17 @@
 document.addEventListener('DOMContentLoaded', async () => {
   await window.db.ready();
   if (window.db.error) {
-    ['announcementsContainer', 'homePodcastsContainer', 'fullPodcastsGrid', 'fullNewsGrid'].forEach(id => window.showFirebaseError(document.getElementById(id)));
+    [
+      'announcementsContainer',
+      'homePodcastsContainer',
+      'fullPodcastsGrid',
+      'fullNewsGrid',
+      'homeSabesQueContainer',
+      'economiaSabesQueContainer',
+      'economiaNewsContainer',
+      'economiaPodcastsContainer',
+      'fullSabesQueGrid'
+    ].forEach(id => window.showFirebaseError(document.getElementById(id)));
     return;
   }
   initMusicSearch();
@@ -18,6 +28,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   initNewsFilters();
   initPodcastPlayer();
   syncInitialPodcastSelection();
+  renderHomeSabesQue();
+  renderEconomiaPage();
+  initEconomiaFilters();
+  renderFullSabesQuePage();
+  initSabesQueFilters();
   checkDailyLimitUI();
 });
 
@@ -27,10 +42,19 @@ document.addEventListener('radio-db-updated', (e) => {
     renderHomePodcasts();
     renderFullPodcasts();
     syncInitialPodcastSelection();
+    renderEconomiaPage();
   }
   if (!col || col === 'announcements') {
     renderHomeNews();
     renderFullNews();
+    renderHomeSabesQue();
+    renderEconomiaPage();
+    renderFullSabesQuePage();
+  }
+  if (!col || col === 'sabesQue') {
+    renderHomeSabesQue();
+    renderEconomiaPage();
+    renderFullSabesQuePage();
   }
 });
 
@@ -92,6 +116,14 @@ function initMusicSearch() {
     const query = e.target.value.trim();
     clearTimeout(debounceTimer);
 
+    // Se o aluno alterar o texto depois de ter escolhido uma música, limpa a seleção para obrigar a escolher do catálogo
+    if (selectedTrackData) {
+      const expectedValue = `${selectedTrackData.songTitle} - ${selectedTrackData.artist}`;
+      if (query !== expectedValue) {
+        window.removeSelectedTrack();
+      }
+    }
+
     if (query.length < 2) {
       dropdown.classList.remove('active');
       dropdown.innerHTML = '';
@@ -100,7 +132,18 @@ function initMusicSearch() {
 
     debounceTimer = setTimeout(() => {
       searchITunesMusic(query, dropdown);
-    }, 300);
+    }, 280);
+  });
+
+  searchInput.addEventListener('focus', () => {
+    const query = searchInput.value.trim();
+    if (!selectedTrackData && query.length >= 2) {
+      if (dropdown.innerHTML.trim() !== '') {
+        dropdown.classList.add('active');
+      } else {
+        searchITunesMusic(query, dropdown);
+      }
+    }
   });
 
   document.addEventListener('click', (e) => {
@@ -113,21 +156,21 @@ function initMusicSearch() {
 async function searchITunesMusic(query, dropdown) {
   dropdown.innerHTML = `
     <div class="search-dropdown-status">
-      <i class="ri-loader-4-line ri-spin"></i> A pesquisar músicas no catálogo...
+      <i class="ri-loader-4-line ri-spin"></i> A pesquisar músicas no catálogo Apple Music...
     </div>
   `;
   dropdown.classList.add('active');
 
   try {
-    const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=6`);
+    const response = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=8`);
     const data = await response.json();
 
     if (!data.results || data.results.length === 0) {
       dropdown.innerHTML = `
         <div class="search-dropdown-status search-dropdown-empty">
           <i class="ri-music-2-line" style="font-size: 1.5rem; display: block; margin-bottom: 0.35rem; color: #e4232a;"></i>
-          <strong>Nenhuma música encontrada</strong>
-          <span style="display: block; font-size: 0.8rem; color: #6f6768; margin-top: 0.25rem;">Podes submeter escrevendo o título manualmente.</span>
+          <strong>Nenhuma música encontrada no catálogo</strong>
+          <span style="display: block; font-size: 0.8rem; color: #6f6768; margin-top: 0.25rem;">Verifica se o nome da música ou artista está bem escrito para escolheres uma das sugestões do Apple Music.</span>
         </div>
       `;
       return;
@@ -140,13 +183,15 @@ async function searchITunesMusic(query, dropdown) {
       const rawArtwork = track.artworkUrl100 || track.artworkUrl60 || 'assets/logo-radio.jpg';
       const artwork = rawArtwork.replace('100x100bb', '300x300bb');
       const releaseYear = track.releaseDate ? new Date(track.releaseDate).getFullYear() : '';
+      const isExplicitTrack = (track.trackExplicitness === 'explicit' || track.trackExplicitness === 'cleaned') ||
+        (typeof window.isExplicitSong === 'function' ? window.isExplicitSong(track.trackName, track.artistName) : false);
 
       item.innerHTML = `
         <div class="search-result-thumb">
           <img src="${artwork}" alt="${escapeHtml(track.trackName)}" loading="lazy">
         </div>
         <div class="search-result-details">
-          <h4 class="item-title">${escapeHtml(track.trackName)}</h4>
+          <h4 class="item-title">${isExplicitTrack ? '<span class="song-explicit-tag" title="Conteúdo Explícito [E] — Impróprio para emissão escolar">E</span>' : ''}${escapeHtml(track.trackName)}</h4>
           <p class="item-artist">
             <span>${escapeHtml(track.artistName)}</span>
             ${releaseYear ? `<span class="search-result-sep">•</span><span>${releaseYear}</span>` : ''}
@@ -159,13 +204,17 @@ async function searchITunesMusic(query, dropdown) {
 
       item.addEventListener('click', () => {
         selectTrack({
+          trackId: track.trackId,
           songTitle: track.trackName,
           artist: track.artistName,
           artwork: artwork,
-          previewUrl: track.previewUrl
+          previewUrl: track.previewUrl,
+          explicit: isExplicitTrack
         });
         dropdown.classList.remove('active');
         document.getElementById('musicSearchInput').value = track.trackName + ' - ' + track.artistName;
+        const alertContainer = document.getElementById('suggestionAlertContainer');
+        if (alertContainer) alertContainer.innerHTML = '';
       });
 
       dropdown.appendChild(item);
@@ -174,7 +223,7 @@ async function searchITunesMusic(query, dropdown) {
     console.error('Erro iTunes API:', err);
     dropdown.innerHTML = `
       <div class="search-dropdown-status search-dropdown-error">
-        <i class="ri-error-warning-line"></i> Erro na ligação ao catálogo. Escreve o título manualmente.
+        <i class="ri-error-warning-line"></i> Erro na ligação ao catálogo do Apple Music. Verifica a tua ligação e tenta novamente.
       </div>
     `;
   }
@@ -186,17 +235,47 @@ function selectTrack(track) {
   if (!container) return;
 
   const hasPreview = Boolean(track.previewUrl);
+  const isExplicit = Boolean(track.explicit);
+
+  const cooldown = window.db && typeof window.db.checkSongRequestCooldown === 'function'
+    ? window.db.checkSongRequestCooldown(track.songTitle, track.artist)
+    : null;
+
+  let cooldownAlertHtml = '';
+  if (cooldown && cooldown.isBlocked) {
+    const reqDate = new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(cooldown.requestedAt));
+    const availDate = new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' }).format(cooldown.cooldownDate);
+    cooldownAlertHtml = `
+      <div class="song-cooldown-warning" style="margin-top: 0.55rem; padding: 0.65rem 0.85rem; border-radius: 8px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.45); color: #fbbf24; font-size: 0.78rem; display: flex; align-items: flex-start; gap: 0.5rem; line-height: 1.45;">
+        <i class="ri-history-line" style="font-size: 1.25rem; flex-shrink: 0; color: #f59e0b; margin-top: 1px;"></i>
+        <div>
+          <strong style="color: #fef08a;">Bloqueio de 4 meses ativo:</strong><br>
+          Já sugeriste este tema a ${reqDate}. Para manter a emissão diversificada, só poderás voltar a pedir esta música a partir de <strong>${availDate}</strong>. Escolhe outra música!
+        </div>
+      </div>
+    `;
+  }
 
   container.innerHTML = `
-    <div class="selected-track-card selected-song-card">
+    <div class="selected-track-card selected-song-card ${cooldown && cooldown.isBlocked ? 'is-cooldown-blocked' : ''}">
       <div class="track-thumb-wrap">
         <img src="${track.artwork}" alt="${escapeHtml(track.songTitle)}">
         <div class="track-active-badge" title="Selecionada"><i class="ri-check-line"></i></div>
       </div>
       <div class="track-info">
-        <span class="track-status-tag"><i class="ri-disc-line"></i> Música Selecionada</span>
-        <h4 class="track-title">${escapeHtml(track.songTitle)}</h4>
+        <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+          <span class="track-status-tag"><i class="ri-disc-line"></i> Música Selecionada</span>
+          ${isExplicit ? '<span class="song-explicit-tag" title="Conteúdo Explícito [E] — Pode não ser transmitida em horário escolar">E</span>' : ''}
+          ${cooldown && cooldown.isBlocked ? '<span class="song-cooldown-tag" style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.7rem; font-weight: 800; padding: 0.1rem 0.4rem; border-radius: 4px;"><i class="ri-history-line"></i> 4 Meses</span>' : ''}
+        </div>
+        <h4 class="track-title">${isExplicit ? '<span class="song-explicit-tag" title="Conteúdo Explícito [E]">E</span>' : ''}${escapeHtml(track.songTitle)}</h4>
         <p class="track-artist">${escapeHtml(track.artist)}</p>
+        ${cooldownAlertHtml}
+        ${isExplicit ? `
+          <div class="song-explicit-school-alert" style="margin-top: 0.35rem; padding: 0.35rem 0.6rem; border-radius: 6px; background: rgba(220, 38, 38, 0.12); border: 1px solid rgba(220, 38, 38, 0.3); font-size: 0.74rem; color: #fca5a5; display: flex; align-items: center; gap: 0.4rem;">
+            <i class="ri-alert-line"></i> <span>Atenção: Música com conteúdo explícito [E] (palavrões/linguagem sensível). Poderá não ser transmitida em contexto escolar.</span>
+          </div>
+        ` : ''}
         ${hasPreview ? `
           <div class="track-audio-preview">
             <audio id="selectedTrackAudio" src="${track.previewUrl}"></audio>
@@ -211,6 +290,22 @@ function selectTrack(track) {
       </button>
     </div>
   `;
+
+  const form = document.getElementById('suggestionForm');
+  const submitBtn = form?.querySelector('button[type="submit"]');
+  if (submitBtn) {
+    if (cooldown && cooldown.isBlocked) {
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = '0.55';
+      submitBtn.style.cursor = 'not-allowed';
+      submitBtn.innerHTML = '<i class="ri-forbid-line" aria-hidden="true"></i> Bloqueada por 4 meses';
+    } else {
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '';
+      submitBtn.style.cursor = '';
+      submitBtn.innerHTML = '<i class="ri-send-plane-fill" aria-hidden="true"></i> Submeter sugestão';
+    }
+  }
 }
 
 window.toggleAudioPreview = function(e) {
@@ -245,16 +340,38 @@ window.removeSelectedTrack = function() {
   }
   const container = document.getElementById('selectedTrackContainer');
   if (container) container.innerHTML = '';
+
+  const form = document.getElementById('suggestionForm');
+  const submitBtn = form?.querySelector('button[type="submit"]');
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.style.opacity = '';
+    submitBtn.style.cursor = '';
+    submitBtn.innerHTML = '<i class="ri-send-plane-fill" aria-hidden="true"></i> Submeter sugestão';
+  }
 };
 
 /* ==========================================================================
-   2. ENVIO DE SUGESTÃO COM LIMITE DE 3 POR DIA
+   2. ENVIO DE SUGESTÃO COM LIMITE DE 3 POR DIA E BLOQUEIO DE 4 MESES
    ========================================================================== */
 function initSuggestionForm() {
   const form = document.getElementById('suggestionForm');
   const alertContainer = document.getElementById('suggestionAlertContainer');
 
   if (!form) return;
+
+  // Pré-preencher identificação guardada no dispositivo para tornar os próximos pedidos rápidos
+  const nameInputEl = document.getElementById('reqStudentName');
+  const numInputEl = document.getElementById('reqStudentNumber');
+  const classInputEl = document.getElementById('reqStudentClass');
+  try {
+    const savedIdentity = JSON.parse(localStorage.getItem('wave_student_identity') || 'null');
+    if (savedIdentity && typeof savedIdentity === 'object') {
+      if (nameInputEl && savedIdentity.name) nameInputEl.value = savedIdentity.name;
+      if (numInputEl && savedIdentity.number) numInputEl.value = savedIdentity.number;
+      if (classInputEl && savedIdentity.studentClass) classInputEl.value = savedIdentity.studentClass;
+    }
+  } catch (_) {}
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -264,39 +381,101 @@ function initSuggestionForm() {
       return;
     }
 
-    const manualInput = document.getElementById('musicSearchInput').value.trim();
+    const searchInputEl = document.getElementById('musicSearchInput');
+    const dropdownEl = document.getElementById('searchResultsDropdown');
+    const manualInput = searchInputEl ? searchInputEl.value.trim() : '';
 
-    let finalSongTitle = '';
-    let finalArtist = '';
-    let artwork = 'assets/logo-radio.jpg';
-    let previewUrl = '';
-
-    if (selectedTrackData) {
-      finalSongTitle = selectedTrackData.songTitle;
-      finalArtist = selectedTrackData.artist;
-      artwork = selectedTrackData.artwork;
-      previewUrl = selectedTrackData.previewUrl;
-    } else if (manualInput) {
-      finalSongTitle = manualInput;
-      finalArtist = 'Não especificado';
-    } else {
+    if (!selectedTrackData || !selectedTrackData.songTitle) {
       alertContainer.innerHTML = `
-        <div class="form-feedback error">
-          <i class="ri-error-warning-line"></i> Escolhe uma música no catálogo ou escreve o título!
+        <div class="form-feedback error" style="animation: fadeInUp 0.25s ease;">
+          <i class="ri-error-warning-line"></i>
+          <span><strong>Escolhe uma música da lista de sugestões!</strong> Só é possível pedir músicas que apareçam no catálogo do Apple Music. Escreve na barra de pesquisa e clica numa das opções da lista.</span>
+        </div>
+      `;
+      if (searchInputEl) {
+        searchInputEl.focus();
+        if (manualInput.length >= 2 && dropdownEl) {
+          searchITunesMusic(manualInput, dropdownEl);
+        }
+      }
+      return;
+    }
+
+    const finalSongTitle = selectedTrackData.songTitle;
+    const finalArtist = selectedTrackData.artist;
+    const artwork = selectedTrackData.artwork || 'assets/logo-radio.jpg';
+    const previewUrl = selectedTrackData.previewUrl || '';
+
+    const nameEl = document.getElementById('reqStudentName');
+    const numEl = document.getElementById('reqStudentNumber');
+    const classEl = document.getElementById('reqStudentClass');
+    const sName = (nameEl ? nameEl.value : '').trim();
+    const sNum = (numEl ? numEl.value : '').trim();
+    const sClass = (classEl ? classEl.value : '').trim();
+
+    if (!sName || sName.length < 2 || !sNum || !sClass) {
+      alertContainer.innerHTML = `
+        <div class="form-feedback error" style="animation: fadeInUp 0.25s ease;">
+          <i class="ri-error-warning-line"></i>
+          <span><strong>Identificação obrigatória:</strong> Para sugerires uma música, tens de preencher o teu <strong>Nome</strong>, <strong>Número</strong> e <strong>Turma</strong>!</span>
+        </div>
+      `;
+      if (!sName || sName.length < 2) nameEl?.focus();
+      else if (!sNum) numEl?.focus();
+      else classEl?.focus();
+      return;
+    }
+
+    try {
+      localStorage.setItem('wave_student_identity', JSON.stringify({
+        name: sName,
+        number: sNum,
+        studentClass: sClass
+      }));
+    } catch (_) {}
+
+    const studentClassField = `${sClass} · Nº ${sNum}`.slice(0, 40);
+    const teacherNameField = `Aluno: ${sName} (Nº ${sNum} · ${sClass})`.slice(0, 120);
+
+    // Validação de intervalo de 4 meses para a mesma pessoa / dispositivo
+    const cooldown = window.db && typeof window.db.checkSongRequestCooldown === 'function'
+      ? window.db.checkSongRequestCooldown(finalSongTitle, finalArtist)
+      : null;
+
+    if (cooldown && cooldown.isBlocked) {
+      const reqDate = new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(cooldown.requestedAt));
+      const availDate = new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' }).format(cooldown.cooldownDate);
+      alertContainer.innerHTML = `
+        <div class="form-feedback warning" style="animation: fadeInUp 0.3s ease;">
+          <i class="ri-history-line" style="font-size: 1.4rem; color: #f59e0b; flex-shrink: 0;"></i>
+          <div>
+            <strong>Música pedida recentemente (Bloqueio de 4 Meses):</strong><br>
+            Já sugeriste a música <em>"${escapeHtml(cooldown.songTitle)}"</em> há menos de 4 meses (a ${reqDate}). Para garantirmos uma emissão diversificada e dar vez a novos temas, só poderás voltar a pedir esta música a partir de <strong>${availDate}</strong>.
+          </div>
         </div>
       `;
       return;
     }
 
-    const newSug = window.db.addSuggestion({
+    const isExplicit = Boolean(
+      (selectedTrackData && (selectedTrackData.explicit === true || selectedTrackData.trackExplicitness === 'explicit')) ||
+      (typeof window.isExplicitSong === 'function' ? window.isExplicitSong(finalSongTitle, finalArtist) : false)
+    );
+
+    const suggestionPayload = {
       title: finalSongTitle,
       songTitle: finalSongTitle,
       artist: finalArtist,
       cover: artwork,
       artwork: artwork,
       previewUrl: previewUrl || '',
-      source: 'web'
-    });
+      explicit: Boolean(isExplicit),
+      source: 'web',
+      studentClass: studentClassField,
+      teacherName: teacherNameField
+    };
+
+    const newSug = window.db.addSuggestion(suggestionPayload);
 
     if (newSug && newSug.id) {
       }
@@ -304,7 +483,7 @@ function initSuggestionForm() {
     incrementTodayRequestCount();
 
     window.removeSelectedTrack();
-    form.reset();
+    if (searchInputEl) searchInputEl.value = '';
 
     const newCount = getTodayRequestCount();
     checkDailyLimitUI();
@@ -704,7 +883,10 @@ function syncInitialPodcastSelection() {
   const playerSec = document.getElementById('podcastMainPlayerSection');
   if (!playerSec || currentActivePodcastObj) return;
 
-  const allPods = window.db && window.db.getPodcasts ? window.db.getPodcasts() : [];
+  const isEconomiaPage = Boolean(document.getElementById('economiaPodcastsContainer'));
+  const allPods = isEconomiaPage
+    ? (window.db && window.db.getEconomyPodcasts ? window.db.getEconomyPodcasts() : [])
+    : (window.db && window.db.getMainPodcasts ? window.db.getMainPodcasts() : (window.db.getPodcasts ? window.db.getPodcasts() : []));
   if (!allPods || allPods.length === 0) return;
 
   const sorted = [...allPods].sort((a, b) => {
@@ -738,7 +920,7 @@ function renderHomePodcasts() {
   const container = document.getElementById('homePodcastsContainer');
   if (!container) return;
 
-  const allPods = window.db.getPodcasts ? window.db.getPodcasts() : [];
+  const allPods = window.db.getMainPodcasts ? window.db.getMainPodcasts() : (window.db.getPodcasts ? window.db.getPodcasts() : []);
   const podcasts = [...allPods].sort((a, b) => {
     if (a.featured && !b.featured) return -1;
     if (!a.featured && b.featured) return 1;
@@ -770,7 +952,7 @@ function renderFullPodcasts() {
   const container = document.getElementById('fullPodcastsGrid');
   if (!container) return;
 
-  const allPods = window.db.getPodcasts ? window.db.getPodcasts() : [];
+  const allPods = window.db.getMainPodcasts ? window.db.getMainPodcasts() : (window.db.getPodcasts ? window.db.getPodcasts() : []);
 
   let filtered = allPods;
   if (activePodcastCategory !== 'all') {
@@ -999,4 +1181,425 @@ function escapeHtml(text) {
 function escapeJs(text) {
   if (!text) return '';
   return text.replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
+/* ==========================================================================
+   5. SABES QUE... (POR DISCIPLINA) & ECONOMIA EM FREQUÊNCIA
+   ========================================================================== */
+function buildSabesQueCardHTML(item, options = {}) {
+  const discipline = item.discipline || 'Economia';
+  const showLatestBadge = Boolean(options.showLatestBadge);
+  const safeId = escapeJs(item.id || '');
+  const hasImg = Boolean(item.image && String(item.image).trim());
+  const dateLabel = item.date || (item.createdAt ? new Date(item.createdAt).toLocaleDateString('pt-PT') : 'Recente');
+
+  return `
+    <article class="sq-card">
+      <div class="sq-card-top">
+        <span class="sq-discipline-pill"><i class="ri-lightbulb-flash-line" aria-hidden="true"></i> Sabias que... ${escapeHtml(discipline)}</span>
+        <span class="sq-badge">
+          ${showLatestBadge ? '<i class="ri-sparkling-line" aria-hidden="true"></i> Mais recente' : `<i class="ri-calendar-line" aria-hidden="true"></i> ${escapeHtml(dateLabel)}`}
+        </span>
+      </div>
+      ${hasImg ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}" class="sq-cover-thumb" loading="lazy" onerror="this.style.display='none'">` : ''}
+      <h3 class="sq-question">${escapeHtml(item.title || 'Curiosidade')}</h3>
+      <p class="sq-body">${escapeHtml(item.content || '')}</p>
+      <div class="sq-footer">
+        <span><i class="ri-user-3-line" aria-hidden="true"></i> ${escapeHtml(item.author || 'Wave Rádio')}</span>
+        <button type="button" class="sq-read-btn" onclick="openSabesQueModal('${safeId}')">
+          Ler tudo <i class="ri-arrow-right-up-line" aria-hidden="true"></i>
+        </button>
+      </div>
+    </article>
+  `;
+}
+
+function buildNewsCardElement(ann) {
+  const card = document.createElement('div');
+  card.className = 'card-box news-card-modern';
+  const imgSrc = ann.image || 'assets/logo-radio.jpg';
+  card.innerHTML = `
+    <a class="news-card-cover" href="artigo.html?id=${encodeURIComponent(ann.id)}" aria-label="Ler ${escapeHtml(ann.title)}">
+      <img src="${escapeHtml(imgSrc)}" alt="" loading="lazy" onerror="this.onerror=null;this.src='assets/logo-radio.jpg';">
+      <span class="news-card-category">${escapeHtml(ann.category || ann.tag || 'Notícia')}</span>
+    </a>
+    <div class="news-card-body">
+      <h3 class="news-card-title"><a href="artigo.html?id=${encodeURIComponent(ann.id)}">${escapeHtml(ann.title)}</a></h3>
+      <p class="news-card-excerpt">${escapeHtml(ann.excerpt || '')}</p>
+      <div class="news-card-footer">
+        <span><i class="ri-calendar-line"></i> ${escapeHtml(ann.date || 'Recente')}</span>
+        <span><i class="ri-time-line"></i> ${escapeHtml(ann.readTime || '2 min de leitura')}</span>
+      </div>
+    </div>
+  `;
+  return card;
+}
+
+window.openSabesQueModal = function (id) {
+  if (!window.db || typeof window.db.getSabesQueById !== 'function') return;
+  const item = window.db.getSabesQueById(id);
+  if (!item) return;
+
+  let overlay = document.getElementById('sabesQueReaderOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'sabesQueReaderOverlay';
+    overlay.className = 'sq-modal-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', 'sqModalTitle');
+    overlay.innerHTML = `
+      <div class="sq-modal-card">
+        <button type="button" class="sq-modal-close" id="sqModalCloseBtn" aria-label="Fechar janela"><i class="ri-close-line"></i></button>
+        <div id="sqModalBodySlot"></div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeSabesQueModal();
+    });
+    document.getElementById('sqModalCloseBtn').addEventListener('click', closeSabesQueModal);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && overlay.classList.contains('open')) closeSabesQueModal();
+    });
+  }
+
+  const slot = document.getElementById('sqModalBodySlot');
+  const disc = item.discipline || 'Economia';
+  slot.innerHTML = `
+    <span class="sq-discipline-pill"><i class="ri-lightbulb-flash-line"></i> Sabias que... ${escapeHtml(disc)}</span>
+    <h2 class="sq-modal-title" id="sqModalTitle">${escapeHtml(item.title)}</h2>
+    ${item.image ? `<img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}" class="sq-cover-thumb" style="max-height:320px;" onerror="this.style.display='none'">` : ''}
+    <div class="sq-modal-content">${escapeHtml(item.content)}</div>
+    <div class="sq-modal-meta">
+      <span><i class="ri-user-3-line"></i> ${escapeHtml(item.author || 'Equipa da Rádio')}</span>
+      ${item.date ? `<span><i class="ri-calendar-line"></i> ${escapeHtml(item.date)}</span>` : ''}
+      ${item.source ? `<span><i class="ri-book-2-line"></i> Fonte: ${escapeHtml(item.source)}</span>` : ''}
+      <a href="sabes-que.html?disciplina=${encodeURIComponent(disc)}" style="margin-left:auto;color:var(--red-a);font-weight:700;text-decoration:underline;">Ver mais de ${escapeHtml(disc)}</a>
+    </div>
+  `;
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+};
+
+window.closeSabesQueModal = function () {
+  const overlay = document.getElementById('sabesQueReaderOverlay');
+  if (overlay) overlay.classList.remove('open');
+  document.body.style.overflow = '';
+};
+
+function renderHomeSabesQue() {
+  const container = document.getElementById('homeSabesQueContainer');
+  if (!container) return;
+
+  const latestByDiscipline = window.db && window.db.getLatestSabesQueByDiscipline
+    ? window.db.getLatestSabesQueByDiscipline()
+    : [];
+
+  if (latestByDiscipline.length === 0) {
+    container.innerHTML = `
+      <div class="hv2-empty-state" style="grid-column: 1 / -1;">
+        <div class="hv2-empty-icon"><i class="ri-lightbulb-flash-line"></i></div>
+        <h3>Ainda não foram adicionadas curiosidades "Sabias que..."</h3>
+        <p>Em breve vais encontrar aqui o "Sabias que..." mais recente de Economia e de outras disciplinas.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = latestByDiscipline
+    .map(item => buildSabesQueCardHTML(item, { showLatestBadge: true }))
+    .join('');
+}
+
+const ECONOMY_PODCAST_SHOWS = [
+  {
+    id: 'eco-show-mito-ou-verdade',
+    title: 'Mito ou verdade',
+    category: 'Mito ou verdade',
+    hosts: 'Economia em Frequência',
+    duration: 'Série Oficial',
+    description: 'Desmontamos mitos financeiros e verdades sobre dinheiro, consumo e mercados no dia a dia.',
+    thumbnail: 'assets/logo-radio.jpg'
+  },
+  {
+    id: 'eco-show-jovens-e-dinheiro',
+    title: 'Jovens e dinheiro',
+    category: 'Jovens e dinheiro',
+    hosts: 'Economia em Frequência',
+    duration: 'Série Oficial',
+    description: 'Poupança, consumo consciente, gestão de orçamento e os primeiros passos na literacia financeira.',
+    thumbnail: 'assets/logo-radio.jpg'
+  },
+  {
+    id: 'eco-show-economia-sustentabilidade',
+    title: 'Economia e sustentabilidade',
+    category: 'Economia e sustentabilidade',
+    hosts: 'Economia em Frequência',
+    duration: 'Série Oficial',
+    description: 'Como equilibrar crescimento económico, inovação verde e escolhas responsáveis para o futuro.',
+    thumbnail: 'assets/logo-radio.jpg'
+  }
+];
+
+function initEconomiaFilters() {}
+
+function getEpisodesForEconomyShow(econPods, showCategory) {
+  const catNorm = String(showCategory || '').trim().toLowerCase();
+  return (econPods || []).filter(p =>
+    String(p.category || '').trim().toLowerCase() === catNorm ||
+    String(p.title || '').toLowerCase().includes(catNorm)
+  );
+}
+
+function buildEconomyPodcastColumn(show, episodes) {
+  const latest = episodes.length > 0 ? episodes[0] : null;
+  const previousCount = episodes.length > 1 ? episodes.length - 1 : 0;
+  const safeCat = escapeJs(show.category);
+
+  let bodyHtml = '';
+  if (latest) {
+    const thumb = latest.thumbnail || 'assets/logo-radio.jpg';
+    const safeId = escapeJs(latest.id || '');
+    bodyHtml = `
+      <div class="podcast-card-thumb-wrap" onclick="playPodcastById('${safeId}')" title="Reproduzir ${escapeHtml(latest.title)}">
+        <img src="${escapeHtml(thumb)}" alt="${escapeHtml(latest.title)}" class="podcast-card-thumb"
+          onerror="this.src='assets/logo-radio.jpg'" loading="lazy">
+        <div class="podcast-card-thumb-overlay">
+          <span class="podcast-card-play-icon"><i class="ri-play-fill"></i></span>
+        </div>
+        <span class="podcast-card-featured-tag"><i class="ri-sparkling-fill"></i> Mais recente</span>
+      </div>
+      <div class="econ-pod-col-body">
+        <div class="econ-pod-meta">
+          <span><i class="ri-calendar-line"></i> ${escapeHtml(latest.date || 'Recente')}</span>
+          <span><i class="ri-time-line"></i> ${escapeHtml(latest.duration || '—')}</span>
+        </div>
+        <h4 class="econ-pod-ep-title">${escapeHtml(latest.title)}</h4>
+        ${latest.hosts ? `<p class="econ-pod-ep-hosts"><i class="ri-user-voice-line"></i> ${escapeHtml(latest.hosts)}</p>` : ''}
+        <p class="econ-pod-ep-desc">${escapeHtml(latest.description || show.description)}</p>
+        <div class="econ-pod-actions">
+          <button type="button" class="btn-spotlight-play" onclick="playPodcastById('${safeId}')">
+            <i class="ri-play-circle-fill"></i> Ouvir mais recente
+          </button>
+          <button type="button" class="btn-econ-history" onclick="openEconomyPodcastHistory('${safeCat}')">
+            <i class="ri-history-line"></i> Ver episódios anteriores${previousCount > 0 ? ` (${previousCount})` : ''}
+          </button>
+        </div>
+      </div>
+    `;
+  } else {
+    bodyHtml = `
+      <div class="econ-pod-col-body econ-pod-col-empty">
+        <div class="econ-pod-empty-icon"><i class="ri-mic-off-line"></i></div>
+        <p class="econ-pod-ep-desc">${escapeHtml(show.description)}</p>
+        <p class="econ-pod-empty-note">Ainda não existe nenhum episódio publicado para este podcast.</p>
+        <div class="econ-pod-actions">
+          <button type="button" class="btn-econ-history" onclick="openEconomyPodcastHistory('${safeCat}')">
+            <i class="ri-history-line"></i> Ver episódios anteriores
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <article class="econ-pod-col">
+      <header class="econ-pod-col-head">
+        <h3 class="econ-pod-col-title">${escapeHtml(show.title)}</h3>
+        <span class="econ-pod-col-count">${episodes.length} ${episodes.length === 1 ? 'ep.' : 'eps.'}</span>
+      </header>
+      ${bodyHtml}
+    </article>
+  `;
+}
+
+window.openEconomyPodcastHistory = function (showCategory) {
+  const show = ECONOMY_PODCAST_SHOWS.find(s => s.category.toLowerCase() === String(showCategory || '').toLowerCase())
+    || { title: showCategory || 'Podcast', category: showCategory || '' };
+  const econPods = window.db && window.db.getEconomyPodcasts ? window.db.getEconomyPodcasts() : [];
+  const episodes = getEpisodesForEconomyShow(econPods, show.category);
+  const previousEpisodes = episodes.slice(1);
+
+  let overlay = document.getElementById('econHistoryOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'econHistoryOverlay';
+    overlay.className = 'sq-modal-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', 'econHistoryTitle');
+    overlay.innerHTML = `
+      <div class="sq-modal-card">
+        <button type="button" class="sq-modal-close" id="econHistoryCloseBtn" aria-label="Fechar janela"><i class="ri-close-line"></i></button>
+        <div id="econHistoryBodySlot"></div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeEconomyPodcastHistory();
+    });
+    document.getElementById('econHistoryCloseBtn').addEventListener('click', closeEconomyPodcastHistory);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && overlay.classList.contains('open')) closeEconomyPodcastHistory();
+    });
+  }
+
+  const slot = document.getElementById('econHistoryBodySlot');
+  const listToDisplay = previousEpisodes;
+  let listHtml = '';
+
+  if (episodes.length === 0) {
+    listHtml = '<p class="econ-pod-empty-note" style="margin-top:1rem;">Ainda não existem episódios publicados neste podcast.</p>';
+  } else if (listToDisplay.length === 0) {
+    listHtml = `
+      <p class="econ-pod-empty-note" style="margin-top:1rem;">Este podcast tem apenas o episódio mais recente publicado neste momento:</p>
+      <div class="econ-history-list">
+        <div class="econ-history-item">
+          <div>
+            <strong>${escapeHtml(episodes[0].title)}</strong>
+            <small>${escapeHtml(episodes[0].date || 'Recente')} • ${escapeHtml(episodes[0].duration || '—')}</small>
+          </div>
+          <button type="button" class="sq-read-btn" onclick="playPodcastFromHistory('${escapeJs(episodes[0].id)}')">
+            <i class="ri-play-fill"></i> Ouvir
+          </button>
+        </div>
+      </div>
+    `;
+  } else {
+    listHtml = `
+      <div class="econ-history-list">
+        ${listToDisplay.map(ep => `
+          <div class="econ-history-item">
+            <div>
+              <strong>${escapeHtml(ep.title)}</strong>
+              <small>${escapeHtml(ep.date || 'Recente')} • ${escapeHtml(ep.duration || '—')}${ep.hosts ? ` • ${escapeHtml(ep.hosts)}` : ''}</small>
+              ${ep.description ? `<p>${escapeHtml(ep.description)}</p>` : ''}
+            </div>
+            <button type="button" class="sq-read-btn" onclick="playPodcastFromHistory('${escapeJs(ep.id)}')">
+              <i class="ri-play-fill"></i> Ouvir
+            </button>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  slot.innerHTML = `
+    <span class="sq-discipline-pill"><i class="ri-history-line"></i> Episódios anteriores</span>
+    <h2 class="sq-modal-title" id="econHistoryTitle">${escapeHtml(show.title)}</h2>
+    ${listHtml}
+  `;
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+};
+
+window.closeEconomyPodcastHistory = function () {
+  const overlay = document.getElementById('econHistoryOverlay');
+  if (overlay) overlay.classList.remove('open');
+  document.body.style.overflow = '';
+};
+
+window.playPodcastFromHistory = function (id) {
+  closeEconomyPodcastHistory();
+  if (typeof window.playPodcastById === 'function') {
+    window.playPodcastById(id);
+  }
+};
+
+function renderEconomiaPage() {
+  const sqContainer = document.getElementById('economiaSabesQueContainer');
+  const podContainer = document.getElementById('economiaPodcastsContainer');
+  if (!sqContainer && !podContainer) return;
+
+  const econFacts = window.db.getSabesQue ? window.db.getSabesQue('Economia') : [];
+  const econPods = window.db.getEconomyPodcasts ? window.db.getEconomyPodcasts() : [];
+
+  // 1. Sabes que... Economia
+  if (sqContainer) {
+    const shownFacts = econFacts.slice(0, 6);
+    if (shownFacts.length === 0) {
+      sqContainer.innerHTML = `
+        <div class="hv2-empty-state" style="grid-column: 1 / -1;">
+          <div class="hv2-empty-icon"><i class="ri-lightbulb-flash-line"></i></div>
+          <h3>Ainda não existem curiosidades de Economia</h3>
+          <p>Novos "Sabias que... Economia" serão publicados brevemente pela equipa.</p>
+        </div>
+      `;
+    } else {
+      sqContainer.innerHTML = shownFacts.map(item => buildSabesQueCardHTML(item)).join('');
+    }
+  }
+
+  // 2. Podcasts de Economia divididos em 3 colunas (mais recente + botão episódios anteriores)
+  if (podContainer) {
+    podContainer.innerHTML = ECONOMY_PODCAST_SHOWS
+      .map(show => buildEconomyPodcastColumn(show, getEpisodesForEconomyShow(econPods, show.category)))
+      .join('');
+  }
+}
+
+let activeSabesQueDiscipline = 'all';
+let activeSabesQueQuery = '';
+
+function initSabesQueFilters() {
+  const search = document.getElementById('sabesQueSearchInput');
+  if (search) {
+    search.addEventListener('input', (e) => {
+      activeSabesQueQuery = (e.target.value || '').trim().toLowerCase();
+      renderFullSabesQuePage();
+    });
+  }
+
+  const urlDisc = new URLSearchParams(window.location.search).get('disciplina');
+  if (urlDisc && urlDisc.trim()) {
+    activeSabesQueDiscipline = urlDisc.trim();
+  }
+}
+
+window.filterSabesQueByDiscipline = function (discipline) {
+  activeSabesQueDiscipline = discipline || 'all';
+  renderFullSabesQuePage();
+};
+
+function renderFullSabesQuePage() {
+  const grid = document.getElementById('fullSabesQueGrid');
+  const pillsWrap = document.getElementById('sabesQueDisciplinePills');
+  if (!grid) return;
+
+  const disciplines = window.db.getSabesQueDisciplines ? window.db.getSabesQueDisciplines() : ['Economia'];
+  if (pillsWrap) {
+    const isAll = activeSabesQueDiscipline === 'all';
+    const buttons = [
+      `<button type="button" class="pod-filter-btn ${isAll ? 'active' : ''}" data-discipline="all" onclick="filterSabesQueByDiscipline('all')">Todas</button>`,
+      ...disciplines.map(d => {
+        const active = d.toLowerCase() === String(activeSabesQueDiscipline || '').toLowerCase();
+        return `<button type="button" class="pod-filter-btn ${active ? 'active' : ''}" data-discipline="${escapeHtml(d)}" onclick="filterSabesQueByDiscipline('${escapeJs(d)}')">${escapeHtml(d)}</button>`;
+      })
+    ];
+    pillsWrap.innerHTML = buttons.join('');
+  }
+
+  let list = window.db.getSabesQue
+    ? window.db.getSabesQue(activeSabesQueDiscipline === 'all' ? null : activeSabesQueDiscipline)
+    : [];
+
+  if (activeSabesQueQuery) {
+    list = list.filter(item =>
+      `${item.title} ${item.content} ${item.discipline} ${item.author}`.toLowerCase().includes(activeSabesQueQuery)
+    );
+  }
+
+  if (list.length === 0) {
+    grid.innerHTML = `
+      <div class="hv2-empty-state" style="grid-column: 1 / -1;">
+        <div class="hv2-empty-icon"><i class="ri-lightbulb-flash-line"></i></div>
+        <h3>Nenhuma curiosidade encontrada</h3>
+        <p>${activeSabesQueDiscipline === 'all' ? 'Ainda não foram adicionados "Sabias que..." de nenhuma disciplina.' : `Ainda não existem "Sabias que..." para a disciplina ${escapeHtml(activeSabesQueDiscipline)}.`}</p>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = list.map(item => buildSabesQueCardHTML(item)).join('');
 }
