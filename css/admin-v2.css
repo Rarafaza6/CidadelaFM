@@ -2724,3 +2724,108 @@ tr:hover td {
     opacity: 1 !important;
   }
 }
+/* ==========================================================================
+   AVISOS AO VIVO & TELEPROMPTER PROFISSIONAL
+   ========================================================================== */
+.av-right-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; padding: 0.65rem 0.75rem 0.45rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.av-right-tab { display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; padding: 0.55rem 0.7rem; border-radius: 9px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color: #94a3b8; font-weight: 700; font-size: 0.82rem; cursor: pointer; transition: all 0.15s ease; }
+.av-right-tab:hover { background: rgba(255,255,255,0.07); color: #f8fafc; }
+.av-right-tab.active { background: rgba(255,255,255,0.1); border-color: rgba(251,191,36,0.45); color: #ffffff; }
+.av-unread-pill.has-unread { background: #ef4444 !important; color: #fff !important; }
+
+.av-notices-panel { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
+.av-notices-head { padding: 0.75rem 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.07); display: flex; flex-direction: column; gap: 0.6rem; }
+.av-notices-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.av-notices-toolbar { display: flex; flex-direction: column; gap: 0.5rem; }
+.av-notices-search { position: relative; display: flex; align-items: center; }
+.av-notices-search i { position: absolute; left: 0.7rem; color: #64748b; font-size: 0.9rem; pointer-events: none; }
+.av-notices-search input { width: 100%; padding: 0.45rem 0.75rem 0.45rem 2.1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(15,23,42,0.55); color: #f1f5f9; font-size: 0.82rem; }
+.av-notices-search input:focus { outline: none; border-color: #fbbf24; }
+
+.av-notices-list { flex: 1; overflow-y: auto; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.65rem; }
+.av-notice-card { padding: 0.85rem 0.95rem; border-radius: 12px; background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.09); border-left: 4px solid #fbbf24; display: flex; flex-direction: column; gap: 0.45rem; transition: border-color 0.15s, background 0.15s; }
+.av-notice-card:hover { background: rgba(255,255,255,0.06); }
+.av-notice-card.is-today { border-left-color: #ef4444; background: rgba(239,68,68,0.06); }
+.av-notice-card.is-read { opacity: 0.58; border-left-color: #10b981; }
+.av-notice-top { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; }
+.av-notice-badges { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; font-size: 0.68rem; font-weight: 700; }
+.av-badge-today { background: rgba(239,68,68,0.22); color: #fca5a5; padding: 0.12rem 0.45rem; border-radius: 5px; }
+.av-badge-date { background: rgba(148,163,184,0.16); color: #cbd5e1; padding: 0.12rem 0.45rem; border-radius: 5px; }
+.av-badge-pending { background: rgba(251,191,36,0.16); color: #fde68a; padding: 0.12rem 0.45rem; border-radius: 5px; }
+.av-badge-read { background: rgba(16,185,129,0.18); color: #6ee7b7; padding: 0.12rem 0.45rem; border-radius: 5px; }
+.av-badge-time { color: #94a3b8; font-weight: 600; }
+.av-notice-icon-btn { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; border-radius: 6px; padding: 0.2rem 0.4rem; cursor: pointer; }
+.av-notice-icon-btn:hover { color: #fff; border-color: rgba(255,255,255,0.25); }
+.av-notice-title { margin: 0; font-size: 0.98rem; color: #f8fafc; line-height: 1.25; }
+.av-notice-meta { display: flex; flex-wrap: wrap; gap: 0.6rem; font-size: 0.74rem; color: #94a3b8; }
+.av-notice-preview { margin: 0; font-size: 0.8rem; color: #cbd5e1; line-height: 1.45; }
+.av-notice-actions { display: flex; gap: 0.4rem; margin-top: 0.25rem; }
+
+.prompter-nav-group, .prompter-scroll-group { display: inline-flex; align-items: center; gap: 0.3rem; background: rgba(255,255,255,0.06); padding: 0.2rem 0.35rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); }
+.prompter-queue-pos { font-size: 0.78rem; font-weight: 700; color: #e2e8f0; padding: 0 0.35rem; font-variant-numeric: tabular-nums; }
+.prompter-speed-select { background: rgba(15,23,42,0.8); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.14); border-radius: 6px; padding: 0.25rem 0.4rem; font-size: 0.75rem; cursor: pointer; }
+#prompterAutoScrollBtn.is-active { background: #16a34a; color: #fff; border-color: #22c55e; }
+.prompter-status-info kbd { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18); border-radius: 4px; padding: 0.05rem 0.35rem; font-size: 0.7rem; color: #f8fafc; }
+
+/* Polish Ao Vivo layout: evitar overflow lateral, remover título duplicado e alinhar cartões */
+.admin-aovivo-zone { width: 100%; max-width: 100%; box-sizing: border-box; }
+.aovivo-topbar { flex-wrap: wrap; gap: 0.65rem 1rem; padding: 0.6rem 1rem; }
+.aovivo-topbar-actions { flex-wrap: wrap; gap: 0.45rem; }
+#aoVivoSongsPanel .musicas-title-simple { display: none; }
+#aoVivoSongsPanel .musicas-header { padding: 0.55rem 0.75rem; justify-content: flex-start; }
+
+/* Cartões de Músicas Pedidas no Ao Vivo: grelha compacta numa única linha limpa */
+#aoVivoSongsList .musica-live-card {
+  display: grid !important;
+  grid-template-columns: 14px 28px 42px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 0.55rem !important;
+  padding: 0.55rem 0.7rem !important;
+}
+#aoVivoSongsList .musica-live-rank {
+  text-align: center;
+  font-size: 0.78rem;
+  min-width: 0;
+}
+#aoVivoSongsList .musica-live-thumb {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+}
+#aoVivoSongsList .musica-live-info {
+  min-width: 0 !important;
+  flex: initial !important;
+  text-align: left !important;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+#aoVivoSongsList .musica-live-title {
+  font-size: 0.88rem !important;
+  line-height: 1.2 !important;
+  justify-content: flex-start !important;
+}
+#aoVivoSongsList .musica-live-artist {
+  font-size: 0.74rem !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+#aoVivoSongsList .musica-live-actions {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  flex-wrap: nowrap !important;
+  flex-shrink: 0 !important;
+}
+#aoVivoSongsList .musica-live-votes,
+#aoVivoSongsList .musica-live-btn-add-rundown,
+#aoVivoSongsList .musica-live-btn-play {
+  white-space: nowrap !important;
+  padding: 0.32rem 0.55rem !important;
+  font-size: 0.74rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.25rem !important;
+}

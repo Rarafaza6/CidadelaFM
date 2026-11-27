@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
-  <link rel="stylesheet" href="css/wave.css?v=20261119q">
+  <link rel="stylesheet" href="css/wave.css?v=20261127c">
   <link rel="stylesheet" href="css/privacy-manager.css?v=20261102">
   <script>document.documentElement.classList.add('js');try{var t=localStorage.getItem('wave_theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
   <!-- Google Consent Mode v2 & Google tag (gtag.js) -->
@@ -81,27 +81,9 @@
 </header>
 
 <main id="main">
-  <!-- 1. SABIAS QUE... ECONOMIA -->
-  <section class="w-sec" id="econSabesQue" aria-labelledby="econSabesQueHeading">
-    <div class="w-wrap">
-      <header class="w-sec-head" data-reveal>
-        <h2 class="w-sec-title" id="econSabesQueHeading"><span class="n"></span>Sabias que... Economia</h2>
-        <a href="sabes-que.html?disciplina=Economia" class="w-link-arrow">Ver todas as curiosidades <i class="ri-arrow-right-line" aria-hidden="true"></i></a>
-      </header>
-      <div class="w-grid-3" id="economiaSabesQueContainer" aria-live="polite">
-        <div class="w-skel-card" aria-hidden="true"><div class="w-skel-body"><div class="w-skel-line sm"></div><div class="w-skel-line lg"></div><div class="w-skel-line md"></div></div></div>
-        <div class="w-skel-card" aria-hidden="true"><div class="w-skel-body"><div class="w-skel-line sm"></div><div class="w-skel-line lg"></div><div class="w-skel-line md"></div></div></div>
-        <div class="w-skel-card" aria-hidden="true"><div class="w-skel-body"><div class="w-skel-line sm"></div><div class="w-skel-line lg"></div><div class="w-skel-line md"></div></div></div>
-      </div>
-    </div>
-  </section>
-
   <!-- 2. PODCASTS DE ECONOMIA EM FREQUÊNCIA -->
-  <section class="w-sec alt" id="econPodcasts" aria-labelledby="econPodcastsHeading">
+  <section class="w-sec" id="econPodcasts" aria-label="Podcasts">
     <div class="w-wrap">
-      <header class="w-sec-head" data-reveal>
-        <h2 class="w-sec-title" id="econPodcastsHeading"><span class="n"></span>Podcasts de Economia</h2>
-      </header>
 
       <section class="podcast-studio-player" id="podcastMainPlayerSection" aria-label="Leitor de podcasts de Economia">
         <div class="studio-player-topbar">
@@ -158,7 +140,7 @@
         </div>
       </section>
 
-      <div class="w-grid-3" id="economiaPodcastsContainer" aria-live="polite">
+      <div class="w-grid-3 econ-pod-grid-2" id="economiaPodcastsContainer" aria-live="polite">
         <div class="w-skel-card" aria-hidden="true"><div class="w-skel-img"></div><div class="w-skel-body"><div class="w-skel-line sm"></div><div class="w-skel-line lg"></div><div class="w-skel-line md"></div></div></div>
         <div class="w-skel-card" aria-hidden="true"><div class="w-skel-img"></div><div class="w-skel-body"><div class="w-skel-line sm"></div><div class="w-skel-line lg"></div><div class="w-skel-line md"></div></div></div>
         <div class="w-skel-card" aria-hidden="true"><div class="w-skel-img"></div><div class="w-skel-body"><div class="w-skel-line sm"></div><div class="w-skel-line lg"></div><div class="w-skel-line md"></div></div></div>
@@ -207,8 +189,9 @@
 </footer>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=20261117c"></script>
-<script src="js/app.js?v=20261117k"></script>
-<script src="js/site-ui.js?v=20261117m"></script>
+<script src="js/firebase-config.js?v=20261127b"></script>
+<script src="js/app.js?v=20261127m"></script>
+<script src="js/site-ui.js?v=20261127"></script>
+<script src="js/economia-nerd.js?v=20261127b"></script>
 </body>
 </html>

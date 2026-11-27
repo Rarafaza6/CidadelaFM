@@ -97,6 +97,8 @@
     {
       group: 'Ações Rápidas & Sistema',
       items: [
+        { title: 'Criar Novo Podcast (Programa)', icon: 'ri-folder-add-line', action: () => { if (typeof openPodcastShowModal === 'function') openPodcastShowModal(); }, keywords: 'novo podcast programa criar playlist spotify' },
+        { title: 'Publicar Episódio do Spotify', icon: 'ri-spotify-fill', action: () => { if (typeof openPodcastModal === 'function') openPodcastModal(); }, keywords: 'novo episodio spotify podcast publicar' },
         { title: 'Novo Guião de Emissão', icon: 'ri-quill-pen-line', action: () => { if (typeof openNewRundownModal === 'function') openNewRundownModal(); }, keywords: 'novo guiao criar alinhamento' },
         { title: 'Novo Desafio Alerta Nerd', icon: 'ri-add-circle-line', action: () => { if (typeof openNerdChallengeModal === 'function') openNerdChallengeModal(); }, keywords: 'novo desafio criar alerta nerd' },
         { title: 'Controlo de Manutenção do Site', icon: 'ri-tools-fill', action: () => { if (typeof openSiteMaintenanceModal === 'function') openSiteMaintenanceModal(); }, keywords: 'manutencao offline online fechar trancar site' },

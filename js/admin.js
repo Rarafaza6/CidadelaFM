@@ -467,7 +467,20 @@ function buildGroupedSongsList(suggestions) {
     if (!group.previewUrl && previewUrl) group.previewUrl = previewUrl;
     if (group.artwork === 'assets/logo-radio.jpg' && artwork !== 'assets/logo-radio.jpg') group.artwork = artwork;
 
-    const ts = Number(item.timestamp) || 0;
+    const ts = (() => {
+      const raw = item.timestamp !== undefined ? item.timestamp : item.createdAt;
+      if (typeof raw === 'number' && !isNaN(raw)) return raw;
+      if (raw && typeof raw.toMillis === 'function') return raw.toMillis();
+      if (raw && typeof raw.seconds === 'number') return raw.seconds * 1000;
+      if (typeof raw === 'string' && raw.trim()) {
+        const n = Number(raw);
+        if (!isNaN(n) && n > 0) return n;
+        const parsed = Date.parse(raw);
+        if (!isNaN(parsed)) return parsed;
+      }
+      const m = String(item.id || '').match(/(\d{13})/);
+      return m ? Number(m[1]) : 0;
+    })();
     if (ts > group.latestTimestamp) group.latestTimestamp = ts;
     if (ts > 0 && (!group.firstTimestamp || ts < group.firstTimestamp)) group.firstTimestamp = ts;
 
@@ -777,6 +790,80 @@ window.parseSpotifyUrl = function (url) {
   return { isSpotify: false, embedUrl: null, originalUrl: cleanUrl, audioUrl: cleanUrl };
 };
 
+let _spotifyOembedTimer = null;
+let _spotifyShowTimer = null;
+
+async function fetchSpotifyOembed(url) {
+  const clean = String(url || '').trim();
+  if (!/open\.spotify\.com\/(episode|show)\//i.test(clean)) return null;
+  try {
+    const res = await fetch('https://open.spotify.com/oembed?url=' + encodeURIComponent(clean));
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (_) {
+    return null;
+  }
+}
+
+function smartDetectEpisodeMeta(titleText) {
+  const t = String(titleText || '').toLowerCase();
+  const catSel = document.getElementById('podCategoryInput');
+  const portalSel = document.getElementById('podPortalInput');
+  const discInput = document.getElementById('podDisciplineInput');
+  if (!catSel) return;
+
+  // Só deteta automaticamente se o utilizador ainda estiver no valor por defeito ('Geral')
+  if (catSel.value && catSel.value !== 'Geral') return;
+
+  const customShows = window.db && window.db.getPodcastShows ? window.db.getPodcastShows() : [];
+  const matchedShow = customShows.find(sh => sh.title && t.includes(sh.title.toLowerCase()));
+  if (matchedShow) {
+    catSel.value = matchedShow.title;
+    if (typeof togglePodDisciplineField === 'function') togglePodDisciplineField();
+    return;
+  }
+
+  if (t.includes('sabias que') || t.includes('sabes que')) {
+    catSel.value = 'Sabias que';
+    if (typeof togglePodDisciplineField === 'function') togglePodDisciplineField();
+    const disciplines = ['Economia', 'Matemática', 'História', 'Biologia', 'Física', 'Química', 'Português', 'Geografia', 'Inglês', 'Filosofia', 'Ciências'];
+    const foundDisc = disciplines.find(d => t.includes(d.toLowerCase()));
+    if (discInput && !discInput.value.trim()) discInput.value = foundDisc || 'Economia';
+    if (portalSel && (!foundDisc || foundDisc === 'Economia')) portalSel.value = 'economia';
+  } else if (t.includes('mito ou verdade')) {
+    catSel.value = 'Mito ou verdade';
+    if (portalSel) portalSel.value = 'economia';
+  } else if (t.includes('nerd alert') || t.includes('alerta nerd')) {
+    catSel.value = 'Nerd Alert';
+  } else if (t.includes('economia')) {
+    catSel.value = 'Economia';
+    if (portalSel) portalSel.value = 'economia';
+  }
+}
+
+window.autoFillPodcastShowFromSpotify = function (val) {
+  if (_spotifyShowTimer) clearTimeout(_spotifyShowTimer);
+  if (!/open\.spotify\.com\/(episode|show)\//i.test(String(val || ''))) return;
+  _spotifyShowTimer = setTimeout(async () => {
+    const data = await fetchSpotifyOembed(val);
+    if (!data) return;
+    const titleEl = document.getElementById('showTitleInput');
+    const coverEl = document.getElementById('showCoverInput');
+    let filled = false;
+    if (titleEl && !titleEl.value.trim() && data.title) {
+      titleEl.value = data.title.trim();
+      recommendPodcastShowStyle(titleEl.value);
+      filled = true;
+    }
+    if (coverEl && !coverEl.value.trim() && data.thumbnail_url) {
+      coverEl.value = data.thumbnail_url;
+      updatePodcastShowCoverPreview(data.thumbnail_url);
+      filled = true;
+    }
+    if (filled) showToast('Nome e capa preenchidos automaticamente do Spotify!', 'success');
+  }, 260);
+};
+
 window.handlePodcastUrlInput = function (value) {
   const previewWrapper = document.getElementById('podPreviewWrapper');
   const previewContainer = document.getElementById('podPreviewFrameContainer');
@@ -793,12 +880,33 @@ window.handlePodcastUrlInput = function (value) {
   previewWrapper.style.display = 'block';
 
   if (parsed && parsed.isSpotify && parsed.embedUrl) {
-    if (previewBadge) previewBadge.innerHTML = '<i class="ri-spotify-fill" style="color:#1db954;"></i> Spotify Embed';
+    if (previewBadge) previewBadge.innerHTML = '<i class="ri-spotify-fill" style="color:#1db954;"></i> Spotify Embed · Auto-fill';
     previewContainer.innerHTML = `
       <iframe src="${parsed.embedUrl}" width="100%" height="152" frameBorder="0" allowfullscreen=""
         allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
         loading="lazy" style="border-radius: 12px;"></iframe>
     `;
+    if (_spotifyOembedTimer) clearTimeout(_spotifyOembedTimer);
+    _spotifyOembedTimer = setTimeout(async () => {
+      const data = await fetchSpotifyOembed(parsed.originalUrl || value);
+      if (!data) return;
+      const titleInput = document.getElementById('podTitleInput');
+      const thumbInput = document.getElementById('podThumbnailInput');
+      let autoFilled = [];
+      if (titleInput && !titleInput.value.trim() && data.title) {
+        titleInput.value = data.title.trim();
+        autoFilled.push('título');
+        smartDetectEpisodeMeta(data.title);
+      }
+      if (thumbInput && !thumbInput.value.trim() && data.thumbnail_url) {
+        thumbInput.value = data.thumbnail_url;
+        updatePodThumbPreview(data.thumbnail_url);
+        autoFilled.push('capa');
+      }
+      if (autoFilled.length) {
+        showToast(`Preenchido automaticamente do Spotify (${autoFilled.join(' e ')})!`, 'success');
+      }
+    }, 260);
   } else {
     if (previewBadge) previewBadge.innerHTML = '<i class="ri-volume-up-line"></i> Áudio Direto';
     previewContainer.innerHTML = `
@@ -856,7 +964,354 @@ window.clearPodCoverImage = function () {
   updatePodThumbPreview('');
 };
 
+window.togglePodDisciplineField = function () {
+  setTimeout(() => { if (typeof refreshEpisodeSmartSuggestions === 'function') refreshEpisodeSmartSuggestions(true); }, 0);
+  const cat = String(document.getElementById('podCategoryInput')?.value || '').trim().toLowerCase();
+  const field = document.getElementById('podDisciplineField');
+  if (field) field.style.display = cat === 'sabias que' ? '' : 'none';
+  const dl = document.getElementById('podDisciplineList');
+  if (dl && window.db && window.db.getPodcasts) {
+    const names = new Set(['Economia']);
+    window.db.getPodcasts().forEach(p => { if (p.discipline) names.add(String(p.discipline).trim()); });
+    dl.innerHTML = Array.from(names).map(n => `<option value="${escapeHtml(n)}"></option>`).join('');
+  }
+};
+
+function syncPodcastShowOptions() {
+  const shows = window.db && window.db.getPodcastShows ? window.db.getPodcastShows() : [];
+  const catSel = document.getElementById('podCategoryInput');
+  if (catSel) {
+    let grp = catSel.querySelector('optgroup[data-custom-shows]');
+    if (!grp) {
+      grp = document.createElement('optgroup');
+      grp.label = 'Podcasts Criados';
+      grp.setAttribute('data-custom-shows', 'true');
+      catSel.insertBefore(grp, catSel.firstChild);
+    }
+    const prev = catSel.value;
+    grp.innerHTML = shows.map(sh => `<option value="${escapeHtml(sh.title)}" data-show-id="${escapeHtml(sh.id)}">${escapeHtml(sh.title)}</option>`).join('');
+    grp.style.display = shows.length ? '' : 'none';
+    if (prev && Array.from(catSel.options).some(o => o.value === prev)) catSel.value = prev;
+  }
+  const filterSel = document.getElementById('adminPodShowFilter');
+  if (filterSel) {
+    const prevF = filterSel.value || 'all';
+    const fixed = ['Nerd Alert', 'Sabias que', 'Mito ou verdade', 'Economia', 'Entrevistas', 'Debates', 'Música', 'Ciência & Escola', 'Emissão Especial', 'Desporto', 'Geral'];
+    const names = [...shows.map(sh => sh.title), ...fixed.filter(f => !shows.some(sh => sh.title.toLowerCase() === f.toLowerCase()))];
+    filterSel.innerHTML = '<option value="all">Todos os podcasts</option>' + names.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+    if (Array.from(filterSel.options).some(o => o.value === prevF)) filterSel.value = prevF;
+  }
+}
+
+const BUILTIN_PODCAST_SHOWS = [
+  { builtInKey: 'nerd', title: 'Nerd Alert', description: 'Desafios, enigmas e curiosidades para os mais curiosos da escola.', color: '#d97706', icon: 'ri-flashlight-fill', portal: 'main' },
+  { builtInKey: 'sabias', title: 'Sabias que', description: 'Curiosidades rápidas por disciplina, em formato de podcast.', color: '#7c3aed', icon: 'ri-lightbulb-flash-line', portal: 'economia' },
+  { builtInKey: 'economia', title: 'Economia em Frequência', description: 'O projeto temático de economia da Rádio Wave: mitos, verdades e literacia financeira.', color: '#15803d', icon: 'ri-line-chart-line', portal: 'economia' },
+  { builtInKey: 'mito', title: 'Mito ou verdade', description: 'Economia em Frequência: desmontamos mitos financeiros e factos económicos.', color: '#16a34a', icon: 'ri-scales-3-line', portal: 'economia' }
+];
+
+const SHOW_ICON_CHOICES = [
+  'ri-mic-2-fill', 'ri-flashlight-fill', 'ri-lightbulb-flash-line', 'ri-scales-3-line',
+  'ri-line-chart-line', 'ri-music-2-fill', 'ri-chat-voice-fill', 'ri-trophy-fill', 'ri-book-open-line'
+];
+
+let _showUserTouchedStyle = false;
+
+window.updatePodcastShowCoverPreview = function (val) {
+  const img = document.getElementById('showCoverPreview');
+  if (img) img.src = (val && val.trim()) ? val.trim() : 'assets/logo-radio.jpg';
+};
+
+window.selectPodcastShowIcon = function (iconClass) {
+  _showUserTouchedStyle = true;
+  const input = document.getElementById('showIconInput');
+  if (input) input.value = iconClass;
+  renderPodcastShowIconPicker(iconClass);
+};
+
+function renderPodcastShowIconPicker(selected) {
+  const wrap = document.getElementById('showIconPicker');
+  if (!wrap) return;
+  const cur = selected || document.getElementById('showIconInput')?.value || 'ri-mic-2-fill';
+  wrap.innerHTML = SHOW_ICON_CHOICES.map(ic => `
+    <button type="button" class="btn-action btn-sm"
+      style="padding: 0.4rem 0.55rem; ${ic === cur ? 'background: rgba(29,185,84,0.22); border-color: #1db954; color: #34d399;' : ''}"
+      onclick="selectPodcastShowIcon('${ic}')" title="${ic}">
+      <i class="${ic}"></i>
+    </button>`).join('');
+}
+
+window.recommendPodcastShowStyle = function (titleText) {
+  if (_showUserTouchedStyle) return;
+  const t = String(titleText || '').toLowerCase();
+  let icon = 'ri-mic-2-fill', color = '#1db954', portal = null;
+  if (t.includes('nerd') || t.includes('alerta')) { icon = 'ri-flashlight-fill'; color = '#d97706'; }
+  else if (t.includes('sabias') || t.includes('curios')) { icon = 'ri-lightbulb-flash-line'; color = '#7c3aed'; }
+  else if (t.includes('mito') || t.includes('verdade')) { icon = 'ri-scales-3-line'; color = '#15803d'; portal = 'economia'; }
+  else if (t.includes('econom') || t.includes('dinheiro')) { icon = 'ri-line-chart-line'; color = '#16a34a'; portal = 'economia'; }
+  else if (t.includes('músic') || t.includes('music')) { icon = 'ri-music-2-fill'; color = '#a855f7'; }
+  else if (t.includes('desport') || t.includes('futebol')) { icon = 'ri-trophy-fill'; color = '#0284c7'; }
+  else if (t.includes('debate') || t.includes('entrev') || t.includes('convers')) { icon = 'ri-chat-voice-fill'; color = '#e4232a'; }
+  else if (t.includes('livro') || t.includes('histór') || t.includes('escola')) { icon = 'ri-book-open-line'; color = '#ea580c'; }
+  const iconEl = document.getElementById('showIconInput');
+  const colorEl = document.getElementById('showColorInput');
+  const portalEl = document.getElementById('showPortalInput');
+  if (iconEl) iconEl.value = icon;
+  if (colorEl) colorEl.value = color;
+  if (portal && portalEl) portalEl.value = portal;
+  renderPodcastShowIconPicker(icon);
+};
+
+window.openPodcastShowModal = function (id = '', builtInKey = '') {
+  _showUserTouchedStyle = false;
+  const modalTitle = document.getElementById('podcastShowModalTitle');
+  const idInput = document.getElementById('showIdInput');
+  const biInput = document.getElementById('showBuiltInKeyInput');
+  const titleInput = document.getElementById('showTitleInput');
+  const descInput = document.getElementById('showDescInput');
+  const coverInput = document.getElementById('showCoverInput');
+  const colorInput = document.getElementById('showColorInput');
+  const iconInput = document.getElementById('showIconInput');
+  const portalInput = document.getElementById('showPortalInput');
+  const deleteBtn = document.getElementById('showDeleteBtn');
+  const spotInput = document.getElementById('showSpotifyUrlInput');
+  if (spotInput) spotInput.value = '';
+
+  const savedShows = window.db && window.db.getPodcastShows ? window.db.getPodcastShows() : [];
+  let sh = id ? savedShows.find(s => String(s.id) === String(id)) : null;
+  if (!sh && builtInKey) {
+    sh = savedShows.find(s => s.builtInKey === builtInKey) || BUILTIN_PODCAST_SHOWS.find(b => b.builtInKey === builtInKey);
+  }
+
+  if (sh) {
+    _showUserTouchedStyle = true;
+    if (modalTitle) modalTitle.textContent = sh.builtInKey ? `Personalizar "${sh.title}"` : 'Editar Podcast';
+    if (idInput) idInput.value = sh.id || '';
+    if (biInput) biInput.value = sh.builtInKey || builtInKey || '';
+    if (titleInput) titleInput.value = sh.title || '';
+    if (descInput) descInput.value = sh.description || '';
+    if (coverInput) coverInput.value = sh.cover || '';
+    if (colorInput) colorInput.value = sh.color || '#1db954';
+    if (iconInput) iconInput.value = sh.icon || 'ri-mic-2-fill';
+    if (portalInput) portalInput.value = sh.portal || 'main';
+    updatePodcastShowCoverPreview(sh.cover || '');
+    renderPodcastShowIconPicker(sh.icon || 'ri-mic-2-fill');
+    if (deleteBtn) deleteBtn.style.display = 'inline-flex';
+  } else {
+    if (modalTitle) modalTitle.textContent = 'Criar Novo Podcast';
+    if (idInput) idInput.value = '';
+    if (biInput) biInput.value = '';
+    if (titleInput) titleInput.value = '';
+    if (descInput) descInput.value = '';
+    if (coverInput) coverInput.value = '';
+    if (colorInput) colorInput.value = '#1db954';
+    if (iconInput) iconInput.value = 'ri-mic-2-fill';
+    if (portalInput) portalInput.value = 'main';
+    updatePodcastShowCoverPreview('');
+    renderPodcastShowIconPicker('ri-mic-2-fill');
+    if (deleteBtn) deleteBtn.style.display = 'none';
+  }
+  if (colorInput && !colorInput.dataset.bound) {
+    colorInput.dataset.bound = '1';
+    colorInput.addEventListener('input', () => { _showUserTouchedStyle = true; });
+  }
+  openModal('podcastShowModal');
+};
+
+window.handlePodcastShowCoverUpload = async function (inputEl) {
+  const file = inputEl?.files?.[0];
+  if (!file) return;
+  try {
+    if (typeof window.imageFileToBase64 !== 'function') {
+      showToast('Conversor Base64 indisponível.', 'error');
+      return;
+    }
+    showToast('A otimizar capa...', 'info');
+    const converted = await window.imageFileToBase64(file, { maxWidth: 900, maxHeight: 900, quality: 0.84 });
+    const coverInput = document.getElementById('showCoverInput');
+    if (coverInput && converted?.dataUrl) {
+      coverInput.value = converted.dataUrl;
+      updatePodcastShowCoverPreview(converted.dataUrl);
+      showToast(`Capa pronta (${converted.sizeKB} KB)!`, 'success');
+    }
+  } catch (err) {
+    showToast(err.message || 'Erro ao carregar capa.', 'error');
+  } finally {
+    inputEl.value = '';
+  }
+};
+
+window.savePodcastShowForm = async function (event) {
+  event.preventDefault();
+  const id = document.getElementById('showIdInput')?.value?.trim() || '';
+  const builtInKey = document.getElementById('showBuiltInKeyInput')?.value?.trim() || '';
+  const title = document.getElementById('showTitleInput')?.value?.trim() || '';
+  const description = document.getElementById('showDescInput')?.value?.trim() || '';
+  const cover = document.getElementById('showCoverInput')?.value?.trim() || '';
+  const color = document.getElementById('showColorInput')?.value?.trim() || '#1db954';
+  const icon = document.getElementById('showIconInput')?.value?.trim() || 'ri-mic-2-fill';
+  const portal = document.getElementById('showPortalInput')?.value || 'main';
+
+  if (!title) {
+    showToast('Indica o nome do podcast.', 'warning');
+    return;
+  }
+  const saved = window.db.savePodcastShow({
+    id: id || (builtInKey ? ('show-builtin-' + builtInKey) : undefined),
+    builtInKey,
+    title,
+    description,
+    cover,
+    color,
+    icon,
+    portal,
+    hidden: false
+  });
+  if (saved && saved._writePromise) {
+    try { await saved._writePromise; } catch (_) {}
+  }
+  closeModal('podcastShowModal');
+  renderAdminPodcastsTable();
+  showToast(id || builtInKey ? `Podcast "${title}" personalizado!` : `Podcast "${title}" criado! Já podes adicionar episódios do Spotify.`, 'success');
+};
+
+window.deleteOpenPodcastShow = function () {
+  const id = document.getElementById('showIdInput')?.value || '';
+  const bi = document.getElementById('showBuiltInKeyInput')?.value || '';
+  if (!id && !bi) return;
+  deletePodcastShowItem(id, bi);
+  closeModal('podcastShowModal');
+};
+
+window.deletePodcastShowItem = function (id, builtInKey = '') {
+  if (!confirm('Remover este podcast do site e do painel? Os episódios já publicados não são apagados.')) return;
+  if (builtInKey) {
+    window.db.savePodcastShow({
+      id: id || ('show-builtin-' + builtInKey),
+      builtInKey,
+      title: builtInKey,
+      hidden: true
+    });
+  } else if (id) {
+    window.db.deletePodcastShow(id);
+  }
+  renderAdminPodcastsTable();
+  showToast('Podcast removido.', 'info');
+};
+
+function getMergedAdminShows() {
+  const saved = window.db && window.db.getPodcastShows ? window.db.getPodcastShows() : [];
+  const customOnly = saved.filter(s => !s.builtInKey && !s.hidden);
+  const builtIns = BUILTIN_PODCAST_SHOWS.map(b => {
+    const override = saved.find(s => s.builtInKey === b.builtInKey || (!s.builtInKey && s.title && s.title.toLowerCase() === b.title.toLowerCase()));
+    if (override && override.hidden) return null;
+    return override ? { ...b, ...override, builtInKey: b.builtInKey } : b;
+  }).filter(Boolean);
+  return [...customOnly, ...builtIns];
+}
+
+function renderAdminPodcastShowsGrid() {
+  const grid = document.getElementById('podcastShowsAdminGrid');
+  if (!grid || !window.db) return;
+  const episodes = window.db.getPodcasts ? window.db.getPodcasts() : [];
+  const allCards = getMergedAdminShows();
+
+  grid.innerHTML = allCards.map(sh => {
+    const eps = episodes.filter(e =>
+      (sh.id && e.showId === sh.id) ||
+      String(e.category || '').trim().toLowerCase() === sh.title.toLowerCase() ||
+      (sh.builtInKey === 'sabias' && String(e.category || '').trim().toLowerCase() === 'sabias que') ||
+      (sh.builtInKey === 'nerd' && String(e.category || '').trim().toLowerCase() === 'nerd alert') ||
+      (sh.builtInKey === 'mito' && String(e.category || '').trim().toLowerCase() === 'mito ou verdade')
+    );
+    const thumb = sh.cover || (eps[0] && eps[0].thumbnail) || '';
+    const safeTitle = escapeJs(sh.title);
+    const safePortal = escapeJs(sh.portal || 'main');
+    const safeId = escapeJs(sh.id || '');
+    const safeBi = escapeJs(sh.builtInKey || '');
+    return `
+      <div style="display: flex; flex-direction: column; justify-content: space-between; gap: 0.75rem; padding: 0.95rem; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.09); border-top: 3px solid ${escapeHtml(sh.color || '#1db954')};">
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+          <div style="width: 54px; height: 54px; border-radius: 10px; overflow: hidden; flex-shrink: 0; background: ${escapeHtml(sh.color || '#1db954')}22; display: grid; place-items: center; color: ${escapeHtml(sh.color || '#1db954')}; font-size: 1.45rem;">
+            ${thumb ? `<img src="${escapeHtml(thumb)}" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.remove()">` : `<i class="${escapeHtml(sh.icon || 'ri-mic-2-fill')}"></i>`}
+          </div>
+          <div style="min-width: 0; flex: 1;">
+            <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+              <strong style="font-size: 0.96rem; color: #fff;">${escapeHtml(sh.title)}</strong>
+              <span style="font-size: 0.7rem; padding: 0.1rem 0.45rem; border-radius: 99px; background: rgba(29,185,84,0.16); color: #34d399; font-weight: 700;">${eps.length} ep${eps.length === 1 ? '' : 's'}.</span>
+            </div>
+            <p style="margin: 0.2rem 0 0; font-size: 0.78rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(sh.description || 'Sem descrição')}</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+          <button type="button" class="btn-action btn-sm" style="flex: 1; justify-content: center; background: rgba(29,185,84,0.15); color: #1db954; border-color: rgba(29,185,84,0.35);"
+            onclick="openPodcastModal(null, '${safePortal}', '${safeTitle}')">
+            <i class="ri-spotify-fill"></i> + Episódio Spotify
+          </button>
+          <button type="button" class="btn-action btn-sm" onclick="openPodcastShowModal('${safeId}', '${safeBi}')" title="Personalizar podcast (capa, cor, nome, descrição)">
+            <i class="ri-edit-line"></i>
+          </button>
+          <button type="button" class="btn-action btn-sm" style="color: #ef4444;" onclick="deletePodcastShowItem('${safeId}', '${safeBi}')" title="Remover podcast"><i class="ri-delete-bin-line"></i></button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+window.refreshEpisodeSmartSuggestions = function (autoFillEmpty = false) {
+  const bar = document.getElementById('podSmartBar');
+  const chips = document.getElementById('podSmartChips');
+  if (!bar || !chips || !window.db) return;
+
+  const cat = String(document.getElementById('podCategoryInput')?.value || '').trim();
+  const shows = getMergedAdminShows();
+  const matchedShow = shows.find(sh => sh.title.toLowerCase() === cat.toLowerCase());
+  const prevEps = (window.db.getPodcasts ? window.db.getPodcasts() : [])
+    .filter(p => String(p.category || '').trim().toLowerCase() === cat.toLowerCase());
+  const lastEp = prevEps[0];
+
+  const hostsEl = document.getElementById('podHostsInput');
+  const durEl = document.getElementById('podDurationInput');
+  const descEl = document.getElementById('podDescInput');
+  const thumbEl = document.getElementById('podThumbnailInput');
+  const portalEl = document.getElementById('podPortalInput');
+
+  // Auto-preenche campos ainda vazios com o que aprender dos episódios anteriores e do programa
+  if (autoFillEmpty) {
+    if (hostsEl && !hostsEl.value.trim() && lastEp?.hosts) hostsEl.value = lastEp.hosts;
+    if (durEl && !durEl.value.trim() && lastEp?.duration) durEl.value = lastEp.duration;
+    if (thumbEl && !thumbEl.value.trim() && matchedShow?.cover) {
+      thumbEl.value = matchedShow.cover;
+      updatePodThumbPreview(matchedShow.cover);
+    }
+    if (portalEl && matchedShow?.portal) portalEl.value = matchedShow.portal;
+  }
+
+  const suggestions = [];
+  if (lastEp?.hosts && hostsEl && hostsEl.value.trim() !== lastEp.hosts) {
+    suggestions.push({ label: `Locutores: ${lastEp.hosts}`, fn: `document.getElementById('podHostsInput').value='${escapeJs(lastEp.hosts)}';refreshEpisodeSmartSuggestions(false);` });
+  }
+  if (lastEp?.duration && durEl && durEl.value.trim() !== lastEp.duration) {
+    suggestions.push({ label: `Duração habitual: ${lastEp.duration}`, fn: `document.getElementById('podDurationInput').value='${escapeJs(lastEp.duration)}';refreshEpisodeSmartSuggestions(false);` });
+  }
+  if (matchedShow?.description && descEl && !descEl.value.trim()) {
+    suggestions.push({ label: 'Usar descrição do programa', fn: `document.getElementById('podDescInput').value='${escapeJs(matchedShow.description)}';refreshEpisodeSmartSuggestions(false);` });
+  }
+  if (matchedShow?.cover && thumbEl && thumbEl.value.trim() !== matchedShow.cover) {
+    suggestions.push({ label: 'Usar capa do programa', fn: `document.getElementById('podThumbnailInput').value='${escapeJs(matchedShow.cover)}';updatePodThumbPreview('${escapeJs(matchedShow.cover)}');refreshEpisodeSmartSuggestions(false);` });
+  }
+
+  if (suggestions.length === 0) {
+    bar.style.display = 'none';
+    return;
+  }
+  bar.style.display = '';
+  chips.innerHTML = suggestions.map(sg =>
+    `<button type="button" class="btn-action btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem;" onclick="${sg.fn}"><i class="ri-magic-line"></i> ${escapeHtml(sg.label)}</button>`
+  ).join('');
+};
+
 window.openPodcastModal = function (id = null, defaultPortal = 'main', defaultCategory = '') {
+  syncPodcastShowOptions();
   const modal = document.getElementById('addPodcastModal');
   const form = document.getElementById('addPodcastForm');
   const titleEl = document.getElementById('podcastModalTitle');
@@ -870,6 +1325,8 @@ window.openPodcastModal = function (id = null, defaultPortal = 'main', defaultCa
   const portalEl = document.getElementById('podPortalInput');
   if (portalEl) portalEl.value = defaultPortal || 'main';
   updatePodThumbPreview('');
+  const discEl = document.getElementById('podDisciplineInput');
+  if (discEl) discEl.value = '';
 
   if (id) {
     const pod = window.db.getPodcast ? window.db.getPodcast(id) : window.db.getPodcasts().find(p => p.id === id);
@@ -883,6 +1340,8 @@ window.openPodcastModal = function (id = null, defaultPortal = 'main', defaultCa
       document.getElementById('podCategoryInput').value = pod.category || 'Geral';
       if (portalEl) portalEl.value = pod.portal || 'main';
       document.getElementById('podHostsInput').value = pod.hosts || '';
+      if (discEl) discEl.value = pod.discipline || '';
+      togglePodDisciplineField();
       document.getElementById('podDateInput').value = pod.date || '';
       document.getElementById('podDurationInput').value = pod.duration || '';
       document.getElementById('podDescInput').value = pod.description || '';
@@ -910,18 +1369,27 @@ window.openPodcastModal = function (id = null, defaultPortal = 'main', defaultCa
   const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
   document.getElementById('podDateInput').value = `${now.getDate()} ${months[now.getMonth()]}, ${now.getFullYear()}`;
   document.getElementById('podCategoryInput').value = defaultCategory || (defaultPortal === 'economia' ? 'Mito ou verdade' : 'Geral');
+  if (discEl && String(defaultCategory).toLowerCase() === 'sabias que') discEl.value = 'Economia';
+  togglePodDisciplineField();
   const thumbInput = document.getElementById('podThumbnailInput');
   if (thumbInput) thumbInput.value = '';
   document.getElementById('podFeaturedInput').checked = false;
+  refreshEpisodeSmartSuggestions(true);
 
   openModal('addPodcastModal');
 };
 
 function renderAdminPodcastsTable() {
+  syncPodcastShowOptions();
+  renderAdminPodcastShowsGrid();
   const tbody = document.getElementById('podcastsAdminTbody');
   if (!tbody) return;
 
-  const list = window.db.getPodcasts();
+  const filterVal = document.getElementById('adminPodShowFilter')?.value || 'all';
+  let list = window.db.getPodcasts();
+  if (filterVal !== 'all') {
+    list = list.filter(p => String(p.category || '').trim().toLowerCase() === filterVal.toLowerCase());
+  }
   if (list.length === 0) {
     tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">Ainda não foram adicionados episódios de podcast. Clica em "Novo Episódio" para publicar via Spotify.</td></tr>';
     return;
@@ -1001,7 +1469,9 @@ window.saveNewPodcast = function (e) {
   const id = document.getElementById('podIdInput').value.trim();
   const rawUrl = document.getElementById('podUrlInput').value.trim();
   const title = document.getElementById('podTitleInput').value.trim();
-  const category = document.getElementById('podCategoryInput').value.trim() || 'Geral';
+  const catSel = document.getElementById('podCategoryInput');
+  const category = catSel.value.trim() || 'Geral';
+  const showId = catSel.selectedOptions?.[0]?.dataset?.showId || '';
   const hosts = document.getElementById('podHostsInput').value.trim();
   const date = document.getElementById('podDateInput').value.trim();
   const duration = document.getElementById('podDurationInput').value.trim() || '20 min';
@@ -1010,6 +1480,7 @@ window.saveNewPodcast = function (e) {
   const thumbnail = thumbEl?.value?.trim() || '';
   const portal = document.getElementById('podPortalInput')?.value || 'main';
   const featured = document.getElementById('podFeaturedInput').checked;
+  const discipline = category.toLowerCase() === 'sabias que' ? (document.getElementById('podDisciplineInput')?.value?.trim() || 'Economia') : '';
 
   if (!title || !rawUrl) {
     showToast('Por favor, preenche o título e a ligação do episódio.', 'warning');
@@ -1020,6 +1491,8 @@ window.saveNewPodcast = function (e) {
   const podcastData = {
     title,
     category,
+    showId,
+    discipline,
     portal,
     hosts,
     date,
@@ -1660,6 +2133,10 @@ window.syncTaskChipsFromSelects = function () {
   selectTaskWeek(week);
 };
 
+function escapeJs(str) {
+  return String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\r?\n/g, ' ');
+}
+
 function escapeHtml(text) {
   if (!text) return '';
   return text
@@ -2275,6 +2752,7 @@ document.addEventListener('radio-db-updated', event => {
   }
   if (collection === 'teamMemos') { renderTeamMemos(); }
   if (collection === 'announcements') {
+    try { if (typeof renderAoVivoOnAirList === 'function') renderAoVivoOnAirList(); } catch (_) {}
     renderAdminAnnouncementsTable();
     renderAdminOverview();
     updateKPIs();
@@ -2653,6 +3131,7 @@ function renderAoVivo() {
   if (typeof renderAoVivoRundown === 'function') renderAoVivoRundown(aoVivoSelectedDate);
   loadAoVivoDailyScript();
   renderAoVivoSongs(currentAoVivoSongFilter);
+  if (typeof renderAoVivoOnAirList === 'function') renderAoVivoOnAirList();
 }
 
 // Date navigation: Past, Today, Future
@@ -3437,17 +3916,30 @@ window.toggleRundownItemStatus = function (idx) {
 };
 
 window.deleteRundownItem = function (idx) {
-  if (!confirm('Eliminar esta linha do alinhamento?')) return;
-  const dateKey = aoVivoSelectedDate;
-  const rundown = window.db.getDailyRundown(dateKey);
-  const items = Array.isArray(rundown?.items) ? [...rundown.items] : [];
-  if (idx < 0 || idx >= items.length) return;
+  try {
+    if (window.RundownStudio && typeof window.RundownStudio.deleteItem === 'function') {
+      const studioDate = typeof window.RundownStudio.getDate === 'function' ? window.RundownStudio.getDate() : aoVivoSelectedDate;
+      if (studioDate) aoVivoSelectedDate = studioDate;
+      if (window.RundownStudio.deleteItem(idx)) return;
+    }
+    const dateKey = (window.RundownStudio && typeof window.RundownStudio.getDate === 'function' ? window.RundownStudio.getDate() : null) || aoVivoSelectedDate;
+    const rundown = window.db.getDailyRundown(dateKey);
+    const items = Array.isArray(rundown?.items) ? [...rundown.items] : [];
+    const i = Number(idx);
+    if (isNaN(i) || i < 0 || i >= items.length) return;
 
-  items.splice(idx, 1);
-  window.db.saveDailyRundown(dateKey, items);
-  renderAoVivoRundown(dateKey);
-  if (window.RundownStudio && typeof window.RundownStudio.render === 'function') window.RundownStudio.render();
-  showToast('Linha eliminada.', 'info');
+    items.splice(i, 1);
+    if (items.length === 0) {
+      try { localStorage.setItem(`wave_rundown_cleared_${dateKey}`, 'true'); } catch (_) {}
+    }
+    window.db.saveDailyRundown(dateKey, items);
+    try { if (typeof renderAoVivoRundown === 'function') renderAoVivoRundown(dateKey); } catch (_) {}
+    try { if (window.RundownStudio && typeof window.RundownStudio.render === 'function') window.RundownStudio.render(); } catch (_) {}
+    showToast('Linha eliminada.', 'info');
+  } catch (err) {
+    console.error('Erro ao eliminar linha do guião:', err);
+    showToast('Não foi possível remover esta linha. Tenta novamente.', 'error');
+  }
 };
 
 window.clearAoVivoRundown = function () {
@@ -3716,16 +4208,12 @@ function renderAoVivoSongs(filterStatus = 'pending') {
     return true;
   }).sort((a, b) => b.count - a.count);
 
-  if (countEl) {
-    if (filterStatus === 'clean') {
-      countEl.textContent = rankedList.length;
-    } else if (filterStatus === 'pending') {
-      const pendingTotal = suggestions.filter(s => s && s.status === 'pending').length;
-      countEl.textContent = pendingTotal;
-    } else {
-      countEl.textContent = rankedList.length;
-    }
-  }
+  const finalCount = filterStatus === 'pending'
+    ? suggestions.filter(s => s && s.status === 'pending').length
+    : rankedList.length;
+  if (countEl) countEl.textContent = finalCount;
+  const tabCountEl = document.getElementById('aoVivoSongsCountTab');
+  if (tabCountEl) tabCountEl.textContent = finalCount;
 
   if (rankedList.length === 0) {
     const emptyMsg = filterStatus === 'clean'
@@ -3782,7 +4270,7 @@ function renderAoVivoSongs(filterStatus = 'pending') {
 }
 
 window.filterAoVivoSongs = function (status) {
-  document.querySelectorAll('.musicas-filter-chip').forEach(btn => {
+  document.querySelectorAll('#aoVivoSongsPanel .musicas-filter-chip').forEach(btn => {
     btn.classList.toggle('active', btn.id === `filterAoVivo${status.charAt(0).toUpperCase() + status.slice(1)}`);
   });
   renderAoVivoSongs(status);
@@ -4039,6 +4527,7 @@ let prompterTimerInterval = null;
 let prompterTimerSeconds = 0;
 let isPrompterTimerRunning = false;
 
+window.openPrompterModal = function (noticeIdOrData) { return window.openAoVivoPrompter(noticeIdOrData); };
 window.openAoVivoPrompter = function (noticeIdOrData) {
   let notice = null;
   if (typeof noticeIdOrData === 'string') {
@@ -4089,7 +4578,14 @@ window.openAoVivoPrompter = function (noticeIdOrData) {
   if (wordCountEl) wordCountEl.textContent = `${words} palavras`;
   if (estDurEl) estDurEl.textContent = `Est: ~${estMins > 0 ? `${estMins}m ` : ''}${estSecsRemainder}s`;
 
+  stopPrompterAutoScroll();
   resetPrompterTimer();
+  const bodyScroll = document.getElementById('prompterBody');
+  if (bodyScroll) bodyScroll.scrollTop = 0;
+  prompterQueue = getAllOnAirNotices();
+  prompterQueueIdx = prompterQueue.findIndex(n => n.id === String(currentPrompterNoticeId));
+  if (prompterQueueIdx < 0) prompterQueueIdx = 0;
+  syncPrompterQueueUI();
 
   const modal = document.getElementById('aoVivoPrompterModal');
   if (modal) modal.classList.add('active');
@@ -4107,8 +4603,312 @@ function formatPrompterText(text) {
   return paragraphs || `<p>${formatted}</p>`;
 }
 
+/* ==========================================================================
+   AVISOS AO VIVO (PAINEL ROBUSTO + TELEPROMPTER COM AUTO-SCROLL & ATALHOS)
+   ========================================================================== */
+let aoVivoRightTab = 'songs';
+let aoVivoNoticeFilter = 'unread';
+let aoVivoNoticeSearch = '';
+let prompterQueue = [];
+let prompterQueueIdx = 0;
+let prompterAutoScrollRaf = 0;
+let prompterAutoScrollOn = false;
+let prompterLastFrameTs = 0;
+
+try {
+  const savedFs = parseFloat(localStorage.getItem('wave_prompter_fontsize'));
+  if (!isNaN(savedFs) && savedFs >= 1.1 && savedFs <= 3.2) prompterFontSize = savedFs;
+} catch (_) {}
+
+function getReadNoticesStorageKey(dateKey = aoVivoSelectedDate) {
+  return `wave_notices_read_${dateKey || localDateKey(new Date())}`;
+}
+
+function getReadNoticesSet(dateKey = aoVivoSelectedDate) {
+  try {
+    const arr = JSON.parse(localStorage.getItem(getReadNoticesStorageKey(dateKey)) || '[]');
+    return new Set(Array.isArray(arr) ? arr.map(String) : []);
+  } catch (_) {
+    return new Set();
+  }
+}
+
+function saveReadNoticesSet(set, dateKey = aoVivoSelectedDate) {
+  try {
+    localStorage.setItem(getReadNoticesStorageKey(dateKey), JSON.stringify(Array.from(set)));
+  } catch (_) {}
+}
+
+function setNoticeReadState(id, isRead, dateKey = aoVivoSelectedDate) {
+  if (!id) return;
+  const set = getReadNoticesSet(dateKey);
+  if (isRead) set.add(String(id)); else set.delete(String(id));
+  saveReadNoticesSet(set, dateKey);
+}
+
+function getAllOnAirNotices() {
+  if (!window.db) return [];
+  const raw = typeof window.db.getInternalAnnouncements === 'function'
+    ? window.db.getInternalAnnouncements()
+    : (typeof window.db.getAnnouncements === 'function' ? window.db.getAnnouncements().filter(a => a && a.onAir) : []);
+  const readSet = getReadNoticesSet(aoVivoSelectedDate);
+  const todayKey = aoVivoSelectedDate || localDateKey(new Date());
+
+  return (raw || []).filter(Boolean).map(n => {
+    const id = String(n.id || '');
+    const bDate = String(n.broadcastDate || n.date || '').slice(0, 10);
+    const isToday = Boolean(bDate && bDate === todayKey);
+    const isRead = readSet.has(id);
+    const text = String(n.content || n.body || n.excerpt || n.notes || '').trim();
+    const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+    const estSec = Math.max(5, Math.round((words / 130) * 60));
+    return { ...n, id, bDate, isToday, isRead, text, words, estSec };
+  }).sort((a, b) => {
+    if (a.isRead !== b.isRead) return a.isRead ? 1 : -1;
+    if (a.isToday !== b.isToday) return a.isToday ? -1 : 1;
+    return (b.createdAt || 0) - (a.createdAt || 0);
+  });
+}
+
+window.switchAoVivoRightTab = function (tab) {
+  aoVivoRightTab = tab === 'notices' ? 'notices' : 'songs';
+  const songsPanel = document.getElementById('aoVivoSongsPanel');
+  const noticesPanel = document.getElementById('aoVivoNoticesPanel');
+  const tabSongs = document.getElementById('tabAoVivoRightSongs');
+  const tabNotices = document.getElementById('tabAoVivoRightNotices');
+  const isNotices = aoVivoRightTab === 'notices';
+  if (songsPanel) songsPanel.style.display = isNotices ? 'none' : 'flex';
+  if (noticesPanel) noticesPanel.style.display = isNotices ? 'flex' : 'none';
+  if (tabSongs) { tabSongs.classList.toggle('active', !isNotices); tabSongs.setAttribute('aria-selected', String(!isNotices)); }
+  if (tabNotices) { tabNotices.classList.toggle('active', isNotices); tabNotices.setAttribute('aria-selected', String(isNotices)); }
+  if (isNotices) renderAoVivoOnAirList();
+};
+
+window.openAoVivoNoticesQuick = function () {
+  if (aoVivoRightTab === 'notices') {
+    openNextUnreadPrompter();
+  } else {
+    switchAoVivoRightTab('notices');
+  }
+};
+
+window.setAoVivoNoticeFilter = function (filter) {
+  aoVivoNoticeFilter = filter || 'unread';
+  document.querySelectorAll('#aoVivoNoticeFilters [data-notice-filter]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.noticeFilter === aoVivoNoticeFilter);
+  });
+  renderAoVivoOnAirList();
+};
+
+window.onAoVivoNoticesSearch = function (val) {
+  aoVivoNoticeSearch = String(val || '').trim().toLowerCase();
+  renderAoVivoOnAirList();
+};
+
+window.toggleAoVivoNoticeRead = function (id) {
+  const readSet = getReadNoticesSet(aoVivoSelectedDate);
+  const next = !readSet.has(String(id));
+  setNoticeReadState(id, next, aoVivoSelectedDate);
+  renderAoVivoOnAirList();
+  showToast(next ? 'Aviso marcado como lido.' : 'Aviso reaberto para leitura.', 'info');
+};
+
+window.addNoticeToAoVivoRundown = function (id) {
+  const notice = getAllOnAirNotices().find(n => n.id === String(id));
+  if (!notice) return;
+  const dateKey = (window.RundownStudio && typeof window.RundownStudio.getDate === 'function' ? window.RundownStudio.getDate() : null) || aoVivoSelectedDate;
+  const rundown = window.db.getDailyRundown(dateKey);
+  const items = Array.isArray(rundown?.items) ? [...rundown.items] : [];
+  const mins = Math.floor(notice.estSec / 60);
+  const secs = notice.estSec % 60;
+  items.push({
+    id: `item-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    order: items.filter(i => i.type !== 'interval').length + 1,
+    type: 'talk',
+    title: `Aviso: ${notice.title}`,
+    artist: notice.text.slice(0, 180),
+    description: notice.text,
+    duration: `${mins}:${String(secs).padStart(2, '0')}`,
+    highlightLive: true,
+    status: 'pending'
+  });
+  window.db.saveDailyRundown(dateKey, items);
+  try { if (typeof renderAoVivoRundown === 'function') renderAoVivoRundown(dateKey); } catch (_) {}
+  try { if (window.RundownStudio && typeof window.RundownStudio.render === 'function') window.RundownStudio.render(); } catch (_) {}
+  showToast(`Aviso "${notice.title}" adicionado ao alinhamento!`, 'success');
+};
+
+window.openNextUnreadPrompter = function () {
+  const all = getAllOnAirNotices();
+  const unread = all.filter(n => !n.isRead);
+  const target = unread[0] || all[0];
+  if (!target) {
+    showToast('Não há avisos preparados. Clica em "+ Novo Aviso" para criar um!', 'info');
+    return;
+  }
+  openAoVivoPrompter(target.id);
+};
+
+window.renderAoVivoOnAirList = function () {
+  const listEl = document.getElementById('aoVivoNoticesList');
+  const all = getAllOnAirNotices();
+  const unreadCount = all.filter(n => !n.isRead).length;
+
+  const badge = document.getElementById('aoVivoNoticesUnreadBadge');
+  if (badge) {
+    badge.textContent = unreadCount;
+    badge.classList.toggle('has-unread', unreadCount > 0);
+  }
+  const topLabel = document.getElementById('aoVivoNoticesTopLabel');
+  if (topLabel) topLabel.textContent = unreadCount > 0 ? `Avisos (${unreadCount} por ler)` : `Avisos (${all.length})`;
+
+  const readNextBtn = document.getElementById('btnAoVivoReadNext');
+  if (readNextBtn) readNextBtn.disabled = all.length === 0;
+
+  if (!listEl) return;
+
+  let filtered = all;
+  if (aoVivoNoticeFilter === 'unread') filtered = filtered.filter(n => !n.isRead);
+  else if (aoVivoNoticeFilter === 'today') filtered = filtered.filter(n => n.isToday);
+  else if (aoVivoNoticeFilter === 'read') filtered = filtered.filter(n => n.isRead);
+
+  if (aoVivoNoticeSearch) {
+    filtered = filtered.filter(n =>
+      `${n.title || ''} ${n.text || ''} ${n.speaker || ''} ${n.cue || ''}`.toLowerCase().includes(aoVivoNoticeSearch)
+    );
+  }
+
+  if (filtered.length === 0) {
+    const emptyMsg = aoVivoNoticeFilter === 'unread' && all.length > 0
+      ? 'Todos os avisos já foram lidos em antena! Excelente emissão.'
+      : 'Sem avisos nesta vista. Cria um aviso rápido ou altera o filtro.';
+    listEl.innerHTML = `<div class="aovivo-empty"><i class="ri-checkbox-circle-line" style="color:#34d399;"></i><span>${emptyMsg}</span></div>`;
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(n => {
+    const safeId = escapeJs(n.id);
+    const estLabel = n.estSec >= 60 ? `~${Math.floor(n.estSec / 60)}m ${n.estSec % 60}s` : `~${n.estSec}s`;
+    const preview = n.text.length > 170 ? n.text.slice(0, 170) + '…' : n.text;
+    return `
+      <article class="av-notice-card ${n.isRead ? 'is-read' : ''} ${n.isToday ? 'is-today' : ''}" id="aoVivoNotice_${escapeHtml(n.id)}">
+        <div class="av-notice-top">
+          <div class="av-notice-badges">
+            ${n.isToday ? '<span class="av-badge-today"><i class="ri-calendar-check-line"></i> HOJE</span>' : (n.bDate ? `<span class="av-badge-date">${escapeHtml(n.bDate)}</span>` : '')}
+            ${n.isRead ? '<span class="av-badge-read"><i class="ri-check-double-line"></i> Lido</span>' : '<span class="av-badge-pending"><i class="ri-radio-button-line"></i> Por ler</span>'}
+            <span class="av-badge-time"><i class="ri-time-line"></i> ${estLabel}</span>
+          </div>
+          <button type="button" class="av-notice-icon-btn" onclick="openQuickNoticeModal('${safeId}')" title="Editar aviso"><i class="ri-edit-line"></i></button>
+        </div>
+        <h4 class="av-notice-title">${escapeHtml(n.title || 'Aviso em Antena')}</h4>
+        <div class="av-notice-meta">
+          <span><i class="ri-user-voice-line"></i> ${escapeHtml(n.speaker || 'Locutor')}</span>
+          ${n.cue ? `<span><i class="ri-sound-module-line"></i> ${escapeHtml(n.cue)}</span>` : ''}
+        </div>
+        ${preview ? `<p class="av-notice-preview">${escapeHtml(preview)}</p>` : ''}
+        <div class="av-notice-actions">
+          <button type="button" class="btn-submit-main btn-sm" style="flex:1;justify-content:center;" onclick="openAoVivoPrompter('${safeId}')">
+            <i class="ri-mic-fill"></i> Ler no Teleprompter
+          </button>
+          <button type="button" class="btn-action btn-sm" onclick="toggleAoVivoNoticeRead('${safeId}')" title="${n.isRead ? 'Marcar como por ler' : 'Marcar como lido'}">
+            <i class="${n.isRead ? 'ri-restart-line' : 'ri-check-double-line'}"></i>
+          </button>
+          <button type="button" class="btn-action btn-sm" onclick="addNoticeToAoVivoRundown('${safeId}')" title="Inserir no alinhamento do dia">
+            <i class="ri-play-list-add-line"></i>
+          </button>
+        </div>
+      </article>`;
+  }).join('');
+};
+
+function syncPrompterQueueUI() {
+  const posEl = document.getElementById('prompterQueuePos');
+  const prevBtn = document.getElementById('prompterPrevBtn');
+  const nextBtn = document.getElementById('prompterNextBtn');
+  const total = prompterQueue.length || 1;
+  const idx = Math.max(0, Math.min(total - 1, prompterQueueIdx));
+  if (posEl) posEl.textContent = `${idx + 1} / ${total}`;
+  if (prevBtn) prevBtn.disabled = idx <= 0;
+  if (nextBtn) nextBtn.disabled = idx >= total - 1;
+}
+
+window.navigatePrompterNotice = function (delta) {
+  if (!prompterQueue.length) return;
+  const nextIdx = prompterQueueIdx + delta;
+  if (nextIdx < 0 || nextIdx >= prompterQueue.length) return;
+  stopPrompterAutoScroll();
+  openAoVivoPrompter(prompterQueue[nextIdx]);
+};
+
+function prompterAutoScrollStep(ts) {
+  if (!prompterAutoScrollOn) return;
+  const body = document.getElementById('prompterBody');
+  if (!body) { stopPrompterAutoScroll(); return; }
+  if (!prompterLastFrameTs) prompterLastFrameTs = ts;
+  const dt = Math.min(0.1, (ts - prompterLastFrameTs) / 1000);
+  prompterLastFrameTs = ts;
+  const pxPerSec = Number(document.getElementById('prompterScrollSpeed')?.value || 36);
+  body.scrollTop += pxPerSec * dt;
+  if (body.scrollTop + body.clientHeight >= body.scrollHeight - 2) {
+    stopPrompterAutoScroll();
+    return;
+  }
+  prompterAutoScrollRaf = requestAnimationFrame(prompterAutoScrollStep);
+}
+
+function stopPrompterAutoScroll() {
+  prompterAutoScrollOn = false;
+  prompterLastFrameTs = 0;
+  if (prompterAutoScrollRaf) cancelAnimationFrame(prompterAutoScrollRaf);
+  prompterAutoScrollRaf = 0;
+  const btn = document.getElementById('prompterAutoScrollBtn');
+  const icon = document.getElementById('prompterAutoScrollIcon');
+  if (btn) btn.classList.remove('is-active');
+  if (icon) icon.className = 'ri-play-circle-line';
+}
+
+window.togglePrompterAutoScroll = function () {
+  if (prompterAutoScrollOn) {
+    stopPrompterAutoScroll();
+    pausePrompterTimer();
+  } else {
+    prompterAutoScrollOn = true;
+    prompterLastFrameTs = 0;
+    const btn = document.getElementById('prompterAutoScrollBtn');
+    const icon = document.getElementById('prompterAutoScrollIcon');
+    if (btn) btn.classList.add('is-active');
+    if (icon) icon.className = 'ri-pause-circle-fill';
+    startPrompterTimer();
+    prompterAutoScrollRaf = requestAnimationFrame(prompterAutoScrollStep);
+  }
+};
+
+(function bindPrompterEnhancementsOnce() {
+  if (window.__prompterEnhanced) return;
+  window.__prompterEnhanced = true;
+  document.addEventListener('keydown', (e) => {
+    const modal = document.getElementById('aoVivoPrompterModal');
+    if (!modal || !modal.classList.contains('active')) return;
+    const tag = (e.target && e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+    if (e.code === 'Space') { e.preventDefault(); togglePrompterAutoScroll(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); navigatePrompterNotice(-1); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); navigatePrompterNotice(1); }
+    else if (e.key === '+' || e.key === '=') { e.preventDefault(); adjustPrompterFontSize(2); }
+    else if (e.key === '-') { e.preventDefault(); adjustPrompterFontSize(-2); }
+    else if (e.key.toLowerCase() === 'l') { e.preventDefault(); markCurrentPrompterAsRead(true); }
+    else if (e.key === 'Escape') { e.preventDefault(); closePrompterModal(); }
+  });
+  document.addEventListener('wheel', (e) => {
+    if (prompterAutoScrollOn && e.target && e.target.closest && e.target.closest('#prompterBody')) {
+      stopPrompterAutoScroll();
+    }
+  }, { passive: true });
+})();
+
 window.adjustPrompterFontSize = function (delta) {
   prompterFontSize = Math.max(1.1, Math.min(3.2, prompterFontSize + (delta * 0.15)));
+  try { localStorage.setItem('wave_prompter_fontsize', String(prompterFontSize.toFixed(2))); } catch (_) {}
   const bodyEl = document.getElementById('prompterBody');
   if (bodyEl) bodyEl.style.fontSize = `${prompterFontSize}rem`;
 };
@@ -4159,15 +4959,26 @@ function updatePrompterTimerDisplay() {
 }
 
 window.closePrompterModal = function () {
+  stopPrompterAutoScroll();
   pausePrompterTimer();
   const modal = document.getElementById('aoVivoPrompterModal');
   if (modal) modal.classList.remove('active');
 };
 
-window.markCurrentPrompterAsRead = function () {
-  if (currentPrompterNoticeId) {
-    const itemEl = document.getElementById(`aoVivoNotice_${currentPrompterNoticeId}`);
-    if (itemEl) itemEl.classList.add('is-read');
+window.markCurrentPrompterAsRead = function (advanceNext = false) {
+  stopPrompterAutoScroll();
+  if (currentPrompterNoticeId && currentPrompterNoticeId !== 'demo') {
+    setNoticeReadState(currentPrompterNoticeId, true, aoVivoSelectedDate);
+    renderAoVivoOnAirList();
+  }
+  if (advanceNext) {
+    const nextUnread = getAllOnAirNotices().find(n => !n.isRead && n.id !== String(currentPrompterNoticeId));
+    if (nextUnread) {
+      showToast('Marcado como lido — a abrir o próximo aviso!', 'success');
+      openAoVivoPrompter(nextUnread.id);
+      return;
+    }
+    showToast('Todos os avisos foram lidos!', 'success');
   }
   closePrompterModal();
 };
@@ -5557,7 +6368,7 @@ function renderNerdChallengesGrid(challenges) {
             </span>
           </div>
 
-          <h3 style="margin: 0 0 0.45rem; font-size: 1.1rem;">${escapeHtml(c.title || 'Desafio Alerta Nerd')}</h3>
+          <h3 style="margin: 0 0 0.45rem; font-size: 1.1rem;">${c.portal === 'economia' ? '<span class="badge" style="margin-right:.4rem;background:rgba(251,191,36,.18);color:#fbbf24;">ECONOMIA</span>' : ''}${escapeHtml(c.title || 'Desafio Alerta Nerd')}</h3>
           <p style="margin: 0 0 0.75rem; font-size: 0.88rem; color: var(--text-muted); line-height: 1.45;">${escapeHtml(c.question || '')}</p>
 
           ${c.expectedAnswer ? `<div style="font-size: 0.78rem; padding: 0.4rem 0.65rem; border-radius: 6px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; margin-bottom: 0.5rem;"><strong>Resposta esperada:</strong> ${escapeHtml(c.expectedAnswer)}</div>` : ''}
@@ -5748,6 +6559,7 @@ window.openNerdChallengeModal = function (id = '') {
   const prizeInput = document.getElementById('nerdChallengePrizeInput');
   const imageInput = document.getElementById('nerdChallengeImageInput');
   const deleteBtn = document.getElementById('nerdChallengeDeleteBtn');
+  const portalInput = document.getElementById('nerdChallengePortalInput');
 
   if (id) {
     const existing = window.db.getNerdChallenges().find(c => c.id === id);
@@ -5761,6 +6573,7 @@ window.openNerdChallengeModal = function (id = '') {
     if (hintInput) hintInput.value = existing.hint || '';
     if (prizeInput) prizeInput.value = existing.prize || '';
     if (imageInput) imageInput.value = existing.image || '';
+    if (portalInput) portalInput.value = existing.portal || 'main';
     if (deleteBtn) deleteBtn.style.display = 'inline-flex';
   } else {
     if (modalTitle) modalTitle.textContent = 'Novo Desafio Alerta Nerd';
@@ -5772,6 +6585,7 @@ window.openNerdChallengeModal = function (id = '') {
     if (hintInput) hintInput.value = '';
     if (prizeInput) prizeInput.value = '';
     if (imageInput) imageInput.value = '';
+    if (portalInput) portalInput.value = 'main';
     if (deleteBtn) deleteBtn.style.display = 'none';
   }
 
@@ -5810,6 +6624,7 @@ window.saveNerdChallengeForm = async function (event) {
   const hint = document.getElementById('nerdChallengeHintInput')?.value?.trim() || '';
   const prize = document.getElementById('nerdChallengePrizeInput')?.value?.trim() || '';
   const image = document.getElementById('nerdChallengeImageInput')?.value?.trim() || '';
+  const portal = document.getElementById('nerdChallengePortalInput')?.value === 'economia' ? 'economia' : 'main';
 
   if (!title || !question) {
     showToast('Preenche o título e a pergunta do desafio.', 'warning');
@@ -5824,7 +6639,8 @@ window.saveNerdChallengeForm = async function (event) {
     expectedAnswer,
     hint,
     prize,
-    image
+    image,
+    portal
   });
 
   if (saved && saved._writePromise) {
@@ -6615,7 +7431,8 @@ window.onSabesQueDisciplineSelectChange = function (val) {
   }
 };
 
-window.openSabesQueModal = function (id = '', presetDiscipline = '') {
+// "Sabias que" é um podcast: novos episódios criam-se no formulário de podcast (só os textos antigos continuam editáveis/eliminável aqui)
+const legacyOpenSabesQueModal = function (id = '', presetDiscipline = '') {
   const form = document.getElementById('sabesQueForm');
   const modalTitle = document.getElementById('sabesQueModalTitle');
   const delBtn = document.getElementById('sqDeleteBtn');
@@ -6662,6 +7479,11 @@ window.openSabesQueModal = function (id = '', presetDiscipline = '') {
     discSelect.value = presetDiscipline;
   }
   openModal('sabesQueModal');
+};
+
+window.openSabesQueModal = function (id = '', presetDiscipline = '') {
+  if (id) return legacyOpenSabesQueModal(id, presetDiscipline);
+  return window.openPodcastModal(null, 'economia', 'Sabias que');
 };
 
 window.handleSabesQueImageUpload = async function (file) {
@@ -6753,7 +7575,7 @@ function renderAdminEconomiaSection() {
   const normCat = (cat) => String(cat || '').trim().toLowerCase();
 
   const mitoPods = podcasts.filter(p => normCat(p.category).includes('mito'));
-  const jovensPods = podcasts.filter(p => normCat(p.category).includes('jovens') || normCat(p.category).includes('dinheiro'));
+  const jovensPods = podcasts.filter(p => normCat(p.category).includes('sabias'));
   const sustPods = podcasts.filter(p => normCat(p.category).includes('sustentab') || normCat(p.category).includes('verde'));
 
   const fc = document.getElementById('adminEconFactsCount');
@@ -6808,7 +7630,7 @@ function renderAdminEconomiaSection() {
   };
 
   renderShowList(mitoEl, mitoPods, 'Mito ou verdade', 'ri-scales-3-line', '52, 211, 153');
-  renderShowList(jovensEl, jovensPods, 'Jovens e dinheiro', 'ri-wallet-3-line', '56, 189, 248');
+  renderShowList(jovensEl, jovensPods, 'Sabias que', 'ri-lightbulb-flash-line', '251, 191, 36');
   renderShowList(sustEl, sustPods, 'Economia e sustentabilidade', 'ri-leaf-line', '192, 132, 252');
 
   // Curiosidades

@@ -583,6 +583,13 @@
   /* ---------- 3. INICIALIZAÇÃO DO DOM ---------- */
   applyTheme(getInitialTheme());
 
+  /* Nerd Alert de Economia: carregado em todo o site (só aparece se houver desafio ativo) */
+  if (!/manutencao|admin/i.test(window.location.pathname) && !document.querySelector('script[src*="economia-nerd"]')) {
+    const ens = document.createElement('script');
+    ens.src = 'js/economia-nerd.js?v=20261127';
+    document.body.appendChild(ens);
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     ensureThemeButtons();
     ensureTeamNavigation();

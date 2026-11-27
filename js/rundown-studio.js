@@ -257,6 +257,32 @@
     if (typeof window.renderAoVivoRundown === 'function') window.renderAoVivoRundown(dateKey);
   }
 
+  function removeItem(idx, dateKey = state.date) {
+    const items = getItems(dateKey);
+    const i = Number(idx);
+    if (isNaN(i) || i < 0 || i >= items.length) return false;
+    const removed = items[i];
+    items.splice(i, 1);
+    autoNumberInPlace(items);
+    if (items.length === 0) {
+      try { localStorage.setItem(`wave_rundown_cleared_${dateKey}`, 'true'); } catch (_) {}
+    }
+    saveItems(items, dateKey);
+    renderAll();
+    try { if (typeof window.renderAoVivoRundown === 'function') window.renderAoVivoRundown(dateKey); } catch (_) {}
+    toast(`"${(removed && removed.title) || 'Linha'}" removida do guião.`, 'info');
+    return true;
+  }
+
+  function removeByTitle(title, dateKey = state.date) {
+    const norm = String(title || '').toLowerCase().trim();
+    if (!norm) return false;
+    const items = getItems(dateKey);
+    const idx = items.findIndex(it => it.type === 'music' && String(it.title || '').toLowerCase().trim() === norm);
+    if (idx === -1) return false;
+    return removeItem(idx, dateKey);
+  }
+
   function toggleLiveTag(idx, dateKey = state.date) {
     const items = getItems(dateKey);
     if (!items[idx]) return;
@@ -837,9 +863,13 @@
         return;
       }
 
-      const pickSong = e.target.closest('[data-pick-song]');
+      const pickSong = e.target.closest('button[data-pick-song]');
       if (pickSong) {
         const title = pickSong.dataset.pickSong;
+        if (pickSong.classList.contains('is-added')) {
+          removeByTitle(title, state.date);
+          return;
+        }
         const artist = pickSong.dataset.pickArtist || '';
         const dur = pickSong.dataset.pickDur || '';
         const isExp = pickSong.dataset.pickExp === '1';
@@ -1087,6 +1117,8 @@
 
   /* ---------- Ligação com Funções Globais Existentes ---------- */
   window.RundownStudio = {
+    getDate() { return state.date; },
+    deleteItem(idx) { return removeItem(idx, state.date); },
     render() {
       bindStudioEvents();
       syncDateEverywhere(state.date);

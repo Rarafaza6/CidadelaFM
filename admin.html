@@ -15,7 +15,7 @@
     rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
   <link rel="stylesheet" href="css/styles.css?v=20261117L">
-  <link rel="stylesheet" href="css/admin-v2.css?v=20261119q">
+  <link rel="stylesheet" href="css/admin-v2.css?v=20261127c">
   <link rel="stylesheet" href="css/preview-player.css?v=20261119q">
   <link rel="stylesheet" href="css/songs-hub.css?v=20261119q">
   <link rel="stylesheet" href="css/rundown-studio.css?v=20261119q">
@@ -398,7 +398,7 @@
                 Recado</button>
             </div>
             <div class="team-memos-grid" id="teamMemosGrid">
-              <!-- Renderizado via js/admin.js -->
+              <!-- Renderizado via js/admin.js?v=20261127l -->
             </div>
           </div>
         </section>
@@ -567,8 +567,12 @@
             </div>
             <select id="shSort" class="sh-select" aria-label="Ordenar">
               <option value="votes">Mais pedidas</option>
+              <option value="votes_asc">Menos pedidas</option>
               <option value="recent">Mais recentes</option>
-              <option value="az">A–Z</option>
+              <option value="oldest">Mais antigas</option>
+              <option value="az">A–Z (Música)</option>
+              <option value="za">Z–A (Música)</option>
+              <option value="artist_az">A–Z (Artista)</option>
             </select>
           </div>
 
@@ -592,13 +596,13 @@
           </div>
 
           <!-- CABEÇALHO DA TABELA OFICIAL DE ESTÚDIO -->
-          <div class="sh-grid-header" aria-hidden="true">
+          <div class="sh-grid-header">
             <span class="sh-gh-check"></span>
-            <span class="sh-gh-votes" title="Número de pedidos">Pedidos</span>
+            <span class="sh-gh-votes" data-sh-sort="votes" style="cursor:pointer;user-select:none;" title="Ordenar por número de pedidos">Pedidos</span>
             <span class="sh-gh-cover">Áudio</span>
-            <span class="sh-gh-track">Música &amp; Artista</span>
+            <span class="sh-gh-track" data-sh-sort="az" style="cursor:pointer;user-select:none;" title="Ordenar por música (A–Z / Z–A)">Música &amp; Artista</span>
             <span class="sh-gh-requester">Requerente (Aluno &amp; Turma)</span>
-            <span class="sh-gh-time">Data / Hora</span>
+            <span class="sh-gh-time" data-sh-sort="recent" style="cursor:pointer;user-select:none;" title="Ordenar por data / hora">Data / Hora</span>
             <span class="sh-gh-verdict">Classificação</span>
             <span class="sh-gh-actions">Comandos de Emissão</span>
           </div>
@@ -629,7 +633,7 @@
                 </tr>
               </thead>
               <tbody id="linksAdminTbody">
-                <!-- Renderizado via js/admin.js -->
+                <!-- Renderizado via js/admin.js?v=20261127l -->
               </tbody>
             </table>
           </div>
@@ -639,14 +643,42 @@
         <section id="sec-podcasts" class="admin-section" style="display: none;">
           <div class="admin-section-heading">
             <div>
-              <h2>Gestão de Podcasts (Spotify &amp; Emissões)</h2>
-              <p>Publica episódios via Spotify ou ficheiros de áudio com integração no leitor oficial do site.</p>
+              <h2>Gestão de Podcasts (Programas &amp; Episódios Spotify)</h2>
+              <p>Cria os teus podcasts (programas) e adiciona episódios do Spotify ou áudio diretamente em cada um.</p>
             </div>
-            <button class="btn-submit-main admin-add-button" onclick="openPodcastModal()">
-              <i class="ri-add-line"></i> Novo Episódio
-            </button>
+            <div style="display: flex; gap: 0.55rem; flex-wrap: wrap;">
+              <button type="button" class="btn-action" onclick="openPodcastShowModal()">
+                <i class="ri-folder-add-line"></i> Novo Podcast
+              </button>
+              <button type="button" class="btn-submit-main admin-add-button" onclick="openPodcastModal()">
+                <i class="ri-spotify-fill"></i> Novo Episódio
+              </button>
+            </div>
           </div>
+
+          <!-- PROGRAMAS / PODCASTS CRIADOS -->
+          <div class="card-panel" style="margin-bottom: 1.5rem; padding: 1.25rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
+              <div>
+                <h3 style="margin: 0; font-size: 1.05rem; display: flex; align-items: center; gap: 0.45rem;">
+                  <i class="ri-mic-2-line" style="color: #1db954;"></i> Podcasts / Programas
+                </h3>
+                <p style="margin: 0.2rem 0 0; font-size: 0.82rem; color: var(--text-muted);">Cria programas próprios e clica em «+ Episódio Spotify» dentro de cada um para lá publicar episódios.</p>
+              </div>
+              <button type="button" class="btn-action btn-sm" onclick="openPodcastShowModal()">
+                <i class="ri-add-line"></i> Criar Podcast
+              </button>
+            </div>
+            <div id="podcastShowsAdminGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.9rem;"></div>
+          </div>
+
           <div class="card-panel data-table-wrapper">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; padding: 1rem 1.15rem 0.5rem;">
+              <h3 style="margin: 0; font-size: 1rem;"><i class="ri-play-list-2-line" style="color: #c084fc;"></i> Todos os Episódios</h3>
+              <select id="adminPodShowFilter" class="form-input-lg" style="width: auto; min-width: 210px; padding: 0.4rem 0.75rem; font-size: 0.85rem;" onchange="renderAdminPodcastsTable()">
+                <option value="all">Todos os podcasts</option>
+              </select>
+            </div>
             <table class="data-table-inst">
               <thead>
                 <tr>
@@ -658,7 +690,7 @@
                 </tr>
               </thead>
               <tbody id="podcastsAdminTbody">
-                <!-- Renderizado via js/admin.js -->
+                <!-- Renderizado via js/admin.js?v=20261127l -->
               </tbody>
             </table>
           </div>
@@ -711,7 +743,7 @@
                 </tr>
               </thead>
               <tbody id="announcementsAdminTbody">
-                <!-- Renderizado via js/admin.js -->
+                <!-- Renderizado via js/admin.js?v=20261127l -->
               </tbody>
             </table>
           </div>
@@ -966,7 +998,7 @@
 
           <!-- LISTA DE DESAFIOS NERD ALERT -->
           <div id="nerdChallengesAdminGrid" class="polls-admin-grid" style="margin-bottom: 1.75rem;">
-            <!-- Renderizado via js/admin.js -->
+            <!-- Renderizado via js/admin.js?v=20261127l -->
           </div>
 
           <!-- PAINEL DE RESPOSTAS DOS ALUNOS (ORDEM DE CHEGADA / PRIMEIRO A ACERTAR) -->
@@ -1032,7 +1064,7 @@
                   </tr>
                 </thead>
                 <tbody id="nerdSubmissionsTbody">
-                  <!-- Renderizado via js/admin.js -->
+                  <!-- Renderizado via js/admin.js?v=20261127l -->
                 </tbody>
               </table>
             </div>
@@ -1059,7 +1091,7 @@
           </div>
 
           <div id="teamMembersAdminGrid" class="polls-admin-grid">
-            <!-- Renderizado via js/admin.js -->
+            <!-- Renderizado via js/admin.js?v=20261127l -->
           </div>
         </section>
 
@@ -1094,7 +1126,7 @@
           </div>
 
           <div id="sabesQueAdminGrid" class="polls-admin-grid">
-            <!-- Renderizado via js/admin.js -->
+            <!-- Renderizado via js/admin.js?v=20261127l -->
           </div>
         </section>
 
@@ -1184,12 +1216,12 @@
                 <div class="econ-admin-show-head">
                   <div class="econ-admin-show-title-wrap">
                     <span class="econ-admin-badge is-sky">PODCAST 2</span>
-                    <h4><i class="ri-wallet-3-line" style="color: #38bdf8;"></i> Jovens e dinheiro</h4>
-                    <span class="econ-admin-sub">Literacia financeira e poupança</span>
+                    <h4><i class="ri-lightbulb-flash-line" style="color: #fbbf24;"></i> Sabias que...</h4>
+                    <span class="econ-admin-sub">Curiosidades rápidas em formato podcast</span>
                   </div>
                   <button type="button" class="btn-action btn-sm"
-                    onclick="openPodcastModal(null, 'economia', 'Jovens e dinheiro')"
-                    title="Adicionar episódio a Jovens e dinheiro">
+                    onclick="openPodcastModal(null, 'economia', 'Sabias que')"
+                    title="Adicionar episódio a Sabias que">
                     <i class="ri-add-line"></i> Episódio
                   </button>
                 </div>
@@ -1197,7 +1229,7 @@
               </div>
 
               <!-- SHOW 3: Economia e sustentabilidade -->
-              <div class="card-panel econ-admin-show-card">
+              <div class="card-panel econ-admin-show-card" hidden>
                 <div class="econ-admin-show-head">
                   <div class="econ-admin-show-title-wrap">
                     <span class="econ-admin-badge is-purple">PODCAST 3</span>
@@ -1216,7 +1248,7 @@
           </div>
 
           <!-- SECÇÃO 2: SABIAS QUE... ECONOMIA -->
-          <div class="card-panel econ-admin-facts-panel" style="margin-top: 1.25rem;">
+          <div class="card-panel econ-admin-facts-panel" style="margin-top: 1.25rem;" hidden>
             <div class="econ-admin-facts-head">
               <div>
                 <span class="econ-admin-badge is-amber"><i class="ri-lightbulb-line"></i> Rubrica Curta</span>
@@ -1350,6 +1382,11 @@
 
         <!-- AÇÕES DE TOPO -->
         <div class="aovivo-topbar-actions">
+          <button type="button" id="btnAoVivoNoticesQuick" class="btn-action" onclick="openAoVivoNoticesQuick()"
+            title="Ver avisos para ler em antena"
+            style="border-color: rgba(251, 191, 36, 0.4); background: rgba(251, 191, 36, 0.12); color: #fbbf24;">
+            <i class="ri-megaphone-fill"></i> <span id="aoVivoNoticesTopLabel">Avisos (0)</span>
+          </button>
           <button type="button" id="btnAoVivoMaintenance" class="btn-action" onclick="openSiteMaintenanceModal()"
             title="Modo de Manutenção do Site">
             <i class="ri-tools-fill"></i> <span id="aoVivoMaintLabel">Manutenção</span>
@@ -1487,10 +1524,20 @@
           </div>
         </div>
 
-        <!-- COLUNA 2 (40%): AS MÚSICAS PEDIDAS -->
+        <!-- COLUNA 2 (40%): MÚSICAS PEDIDAS & AVISOS EM ANTENA -->
         <div class="aovivo-col-musicas">
           <div class="aovivo-card-main">
 
+            <div class="av-right-tabs" role="tablist" aria-label="Painel lateral Ao Vivo">
+              <button type="button" role="tab" aria-selected="true" class="av-right-tab active" id="tabAoVivoRightSongs" onclick="switchAoVivoRightTab('songs')">
+                <i class="ri-music-2-line" style="color:#f59e0b;"></i> Músicas Pedidas <span class="aovivo-count" id="aoVivoSongsCountTab">0</span>
+              </button>
+              <button type="button" role="tab" aria-selected="false" class="av-right-tab" id="tabAoVivoRightNotices" onclick="switchAoVivoRightTab('notices')">
+                <i class="ri-megaphone-fill" style="color:#fbbf24;"></i> Avisos em Antena <span class="aovivo-count av-unread-pill" id="aoVivoNoticesUnreadBadge">0</span>
+              </button>
+            </div>
+
+            <div id="aoVivoSongsPanel" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
             <div class="musicas-header">
               <div class="musicas-title-simple">
                 <i class="ri-music-2-line" style="color: #f59e0b;"></i>
@@ -1515,6 +1562,36 @@
             <!-- LISTA DE MÚSICAS PEDIDAS -->
             <div class="musicas-queue-list" id="aoVivoSongsList">
               <div class="aovivo-empty"><i class="ri-music-2-line"></i> A carregar pedidos...</div>
+            </div>
+            </div>
+
+            <!-- PAINEL DE AVISOS EM ANTENA (AO VIVO) -->
+            <div id="aoVivoNoticesPanel" class="av-notices-panel" style="display: none;">
+              <div class="av-notices-head">
+                <div class="av-notices-actions">
+                  <button type="button" class="btn-submit-main btn-sm" id="btnAoVivoReadNext" onclick="openNextUnreadPrompter()" title="Abrir o próximo aviso por ler no teleprompter">
+                    <i class="ri-mic-fill"></i> Ler Próximo
+                  </button>
+                  <button type="button" class="btn-action btn-sm" onclick="openQuickNoticeModal()" title="Criar aviso rápido para antena">
+                    <i class="ri-add-line"></i> Novo Aviso
+                  </button>
+                </div>
+                <div class="av-notices-toolbar">
+                  <div class="musicas-filters" id="aoVivoNoticeFilters">
+                    <button type="button" class="musicas-filter-chip active" data-notice-filter="unread" onclick="setAoVivoNoticeFilter('unread')">Por ler</button>
+                    <button type="button" class="musicas-filter-chip" data-notice-filter="today" onclick="setAoVivoNoticeFilter('today')">Hoje</button>
+                    <button type="button" class="musicas-filter-chip" data-notice-filter="all" onclick="setAoVivoNoticeFilter('all')">Todos</button>
+                    <button type="button" class="musicas-filter-chip" data-notice-filter="read" onclick="setAoVivoNoticeFilter('read')">Lidos</button>
+                  </div>
+                  <div class="av-notices-search">
+                    <i class="ri-search-line"></i>
+                    <input type="search" id="aoVivoNoticesSearch" placeholder="Pesquisar avisos..." oninput="onAoVivoNoticesSearch(this.value)" autocomplete="off">
+                  </div>
+                </div>
+              </div>
+              <div class="av-notices-list" id="aoVivoNoticesList" aria-live="polite">
+                <div class="aovivo-empty"><i class="ri-megaphone-line"></i> A carregar avisos...</div>
+              </div>
             </div>
 
           </div>
@@ -1669,6 +1746,94 @@
   </div>
 
   <!-- MODAL: GESTÃO DE PODCAST / SPOTIFY -->
+  <!-- MODAL: CRIAR / EDITAR PODCAST (PROGRAMA) -->
+  <div class="modal-overlay" id="podcastShowModal">
+    <div class="modal-card modal-card-lg" style="max-width: 560px;">
+      <div class="modal-header-styled">
+        <div class="modal-header-left">
+          <div class="modal-header-icon"
+            style="background: rgba(29, 185, 84, 0.14); color: #1db954; border-color: rgba(29, 185, 84, 0.25);">
+            <i class="ri-mic-2-fill"></i>
+          </div>
+          <div class="modal-header-text">
+            <h3 id="podcastShowModalTitle">Criar Novo Podcast</h3>
+            <p>Cria um programa/playlist próprio onde podes publicar episódios do Spotify.</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-icon-btn" onclick="closeModal('podcastShowModal')" title="Fechar"><i
+            class="ri-close-line"></i></button>
+      </div>
+
+      <form id="podcastShowForm" onsubmit="savePodcastShowForm(event)">
+        <input type="hidden" id="showIdInput">
+        <input type="hidden" id="showBuiltInKeyInput">
+        <input type="hidden" id="showIconInput" value="ri-mic-2-fill">
+
+        <div class="form-field">
+          <label><i class="ri-spotify-fill" style="color:#1db954;"></i> Link do Spotify (opcional — preenche nome e capa sozinho)</label>
+          <input type="text" id="showSpotifyUrlInput" class="form-input-lg"
+            placeholder="Cola o link do programa ou episódio no Spotify..." oninput="autoFillPodcastShowFromSpotify(this.value)">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 180px; gap: 0.75rem;">
+          <div class="form-field">
+            <label>Nome do Podcast <span style="color: #ef4444;">*</span></label>
+            <input type="text" id="showTitleInput" class="form-input-lg"
+              placeholder="Ex: Conversas de Recreio, Desporto Wave..." required maxlength="90"
+              oninput="recommendPodcastShowStyle(this.value)">
+          </div>
+          <div class="form-field">
+            <label>Portal</label>
+            <select id="showPortalInput" class="form-input-lg">
+              <option value="main">Site Principal</option>
+              <option value="economia">Economia</option>
+              <option value="both">Ambos</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label>Descrição</label>
+          <textarea id="showDescInput" class="form-input-lg" rows="2"
+            placeholder="Sobre o que é este podcast?"></textarea>
+        </div>
+
+        <div class="form-field">
+          <label>Capa do Podcast (URL, Upload ou Spotify)</label>
+          <div style="display: flex; gap: 0.55rem; align-items: center;">
+            <img id="showCoverPreview" src="assets/logo-radio.jpg" alt="" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(255,255,255,0.15); flex-shrink: 0;">
+            <input type="text" id="showCoverInput" class="form-input-lg" placeholder="URL da imagem ou carrega foto ->"
+              oninput="updatePodcastShowCoverPreview(this.value)">
+            <label for="showCoverFileInput" class="btn-action" style="white-space: nowrap; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem;">
+              <i class="ri-upload-2-line"></i> Foto
+            </label>
+            <input type="file" id="showCoverFileInput" accept="image/*" style="display: none;" onchange="handlePodcastShowCoverUpload(this)">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.75rem; align-items: end;">
+          <div class="form-field" style="margin-bottom: 0;">
+            <label>Ícone do Programa</label>
+            <div id="showIconPicker" style="display: flex; gap: 0.35rem; flex-wrap: wrap;"></div>
+          </div>
+          <div class="form-field" style="margin-bottom: 0;">
+            <label>Cor</label>
+            <div style="display: flex; gap: 0.3rem; align-items: center;">
+              <input type="color" id="showColorInput" class="form-input-lg" value="#1db954" style="width: 52px; height: 38px; padding: 0.2rem; cursor: pointer;">
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer-actions" style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.25rem;">
+          <button type="button" id="showDeleteBtn" class="btn-action danger-action" style="display: none; margin-right: auto;"
+            onclick="deleteOpenPodcastShow()"><i class="ri-delete-bin-line"></i> Eliminar</button>
+          <button type="button" class="btn-action" onclick="closeModal('podcastShowModal')">Cancelar</button>
+          <button type="submit" class="btn-submit-main"><i class="ri-check-line"></i> Guardar Podcast</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="addPodcastModal">
     <div class="card-panel modal-window" style="max-width: 720px; max-height: 90vh; overflow-y: auto;">
       <div class="modal-header-bar">
@@ -1721,6 +1886,14 @@
           <div id="podPreviewFrameContainer"></div>
         </div>
 
+        <!-- RECOMENDAÇÕES INTELIGENTES (1 CLIQUE) -->
+        <div id="podSmartBar" style="display: none; margin-bottom: 1rem; padding: 0.7rem 0.9rem; border-radius: 10px; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.28); font-size: 0.8rem;">
+          <div style="display: flex; align-items: center; gap: 0.4rem; color: #c084fc; font-weight: 700; margin-bottom: 0.45rem;">
+            <i class="ri-sparkling-2-fill"></i> Recomendações automáticas (clica para aplicar ou altera à vontade)
+          </div>
+          <div id="podSmartChips" style="display: flex; flex-wrap: wrap; gap: 0.4rem;"></div>
+        </div>
+
         <!-- TÍTULO & SUBTÍTULO -->
         <div class="form-field">
           <label>Título do Episódio <span style="color: #ef4444;">*</span></label>
@@ -1731,13 +1904,15 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
           <div class="form-field">
             <label>Categoria / Tema <span style="color: #ef4444;">*</span></label>
-            <select id="podCategoryInput" class="form-input-lg" required>
+            <select id="podCategoryInput" class="form-input-lg" required onchange="togglePodDisciplineField()">
               <option value="Entrevistas">Entrevistas</option>
               <option value="Debates">Debates &amp; Sociedade</option>
               <option value="Música">Música &amp; Cultura</option>
               <option value="Ciência &amp; Escola">Ciência &amp; Tecnologia</option>
               <option value="Emissão Especial">Emissão Especial</option>
+              <option value="Nerd Alert">Nerd Alert</option>
               <option value="Mito ou verdade">Mito ou verdade (Economia)</option>
+              <option value="Sabias que">Sabias que... (Economia)</option>
               <option value="Jovens e dinheiro">Jovens e dinheiro (Economia)</option>
               <option value="Economia e sustentabilidade">Economia e sustentabilidade (Economia)</option>
               <option value="Economia">Economia em Frequência</option>
@@ -1749,6 +1924,13 @@
             <label>Locutores / Participantes</label>
             <input type="text" id="podHostsInput" class="form-input-lg" placeholder="Ex: Matilde e Rodrigo (10.º A)">
           </div>
+        </div>
+
+        <div class="form-field" id="podDisciplineField" style="display: none;">
+          <label for="podDisciplineInput">Playlist / Disciplina <span style="color: #ef4444;">*</span></label>
+          <input type="text" id="podDisciplineInput" class="form-input-lg" list="podDisciplineList" placeholder="Ex: Economia, Matemática, História..." autocomplete="off">
+          <datalist id="podDisciplineList"></datalist>
+          <small style="color: var(--adm-text-muted);">Cada disciplina é uma playlist do podcast "Sabias que...". Escreve um nome novo para criar uma playlist nova.</small>
         </div>
 
         <div class="form-field">
@@ -2517,9 +2699,26 @@
           <h3 id="prompterTitle" class="prompter-title">Título do Aviso / Bloco</h3>
         </div>
 
-        <!-- Controls: Font size, speech timer, effects -->
+        <!-- Controls: Queue nav, Auto-scroll, Font size, speech timer -->
         <div class="prompter-controls">
-          <div class="prompter-font-controls" title="Ajustar tamanho da letra">
+          <div class="prompter-nav-group" title="Navegar entre avisos (← / →)">
+            <button type="button" class="prompter-ctrl-btn" id="prompterPrevBtn" onclick="navigatePrompterNotice(-1)" title="Aviso anterior (←)"><i class="ri-arrow-left-s-line"></i></button>
+            <span id="prompterQueuePos" class="prompter-queue-pos">1 / 1</span>
+            <button type="button" class="prompter-ctrl-btn" id="prompterNextBtn" onclick="navigatePrompterNotice(1)" title="Próximo aviso (→)"><i class="ri-arrow-right-s-line"></i></button>
+          </div>
+
+          <div class="prompter-scroll-group" title="Auto-scroll de teleprompter (Espaço)">
+            <button type="button" class="prompter-ctrl-btn" id="prompterAutoScrollBtn" onclick="togglePrompterAutoScroll()">
+              <i class="ri-play-circle-line" id="prompterAutoScrollIcon"></i> <span>Scroll</span>
+            </button>
+            <select id="prompterScrollSpeed" class="prompter-speed-select" aria-label="Velocidade do teleprompter" title="Velocidade de leitura">
+              <option value="22">Lento</option>
+              <option value="36" selected>Normal</option>
+              <option value="54">Rápido</option>
+            </select>
+          </div>
+
+          <div class="prompter-font-controls" title="Ajustar tamanho da letra (- / +)">
             <button type="button" class="prompter-ctrl-btn" onclick="adjustPrompterFontSize(-2)">A-</button>
             <button type="button" class="prompter-ctrl-btn" onclick="adjustPrompterFontSize(2)">A+</button>
           </div>
@@ -2564,13 +2763,13 @@
         <div class="prompter-status-info">
           <span id="prompterWordCount">0 palavras</span>
           <span style="color: #64748b;">•</span>
-          <span style="color: #94a3b8;">Ritmo ideal: 120-130 palavras/minuto</span>
+          <span style="color: #94a3b8;">Atalhos: <kbd>Espaço</kbd> Scroll/Timer · <kbd>←</kbd><kbd>→</kbd> Avisos · <kbd>L</kbd> Lido · <kbd>Esc</kbd> Fechar</span>
         </div>
         <div class="prompter-footer-actions">
           <button type="button" class="btn-action" onclick="closePrompterModal()">Fechar</button>
           <button type="button" class="btn-submit-main prompter-done-btn" id="prompterMarkReadBtn"
-            onclick="markCurrentPrompterAsRead()">
-            <i class="ri-checkbox-circle-fill"></i> Concluir Leitura &amp; Marcar como Lido
+            onclick="markCurrentPrompterAsRead(true)">
+            <i class="ri-checkbox-circle-fill"></i> Marcar Lido &amp; Próximo
           </button>
         </div>
       </div>
@@ -3082,6 +3281,14 @@
         </div>
 
         <div class="form-field">
+          <label>Onde aparece</label>
+          <select id="nerdChallengePortalInput" class="form-input-lg">
+            <option value="main">Site principal (página Alerta Nerd)</option>
+            <option value="economia">Economia em Frequência (aba lateral)</option>
+          </select>
+        </div>
+
+        <div class="form-field">
           <label>Pergunta / Enigma do Desafio <span style="color: #ef4444;">*</span></label>
           <textarea id="nerdChallengeQuestionInput" class="form-input-lg" rows="4"
             placeholder="Escreve aqui o desafio ou pergunta completa que os alunos vão ler na página Alerta Nerd..."
@@ -3376,7 +3583,7 @@
               (Beta)</span>
           </div>
           <div class="visibility-items-grid" id="visPagesGrid">
-            <!-- Gerado via js/admin.js -->
+            <!-- Gerado via js/admin.js?v=20261127l -->
           </div>
         </div>
 
@@ -3391,7 +3598,7 @@
               específicos</span>
           </div>
           <div class="visibility-items-grid" id="visSectionsGrid">
-            <!-- Gerado via js/admin.js -->
+            <!-- Gerado via js/admin.js?v=20261127l -->
           </div>
         </div>
       </div>
@@ -3583,14 +3790,14 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="js/preview-player.js?v=20261119n"></script>
-  <script src="js/firebase-config.js?v=20261119n"></script>
+  <script src="js/firebase-config.js?v=20261127b"></script>
   <script src="js/version-history.js?v=20261119n"></script>
   <script src="js/explicit-engine.js?v=20261119n"></script>
   <script src="js/calendar.js"></script>
-  <script src="js/admin.js?v=20261119n"></script>
-  <script src="js/songs-hub.js?v=20261119n"></script>
-  <script src="js/rundown-studio.js?v=20261119n"></script>
-  <script src="js/admin-ui-enhancements.js?v=20261117"></script>
+  <script src="js/admin.js?v=20261127l"></script>
+  <script src="js/songs-hub.js?v=20261127"></script>
+  <script src="js/rundown-studio.js?v=20261127"></script>
+  <script src="js/admin-ui-enhancements.js?v=20261127"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const shell = document.getElementById('adminShell');

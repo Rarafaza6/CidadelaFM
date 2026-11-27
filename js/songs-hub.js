@@ -187,9 +187,48 @@
       if (q && !`${g.songTitle} ${g.artist} ${(g.dtClasses || []).join(' ')} ${(g.studentIdentities || []).join(' ')} ${(g.requests || []).map(r => `${r.who} ${r.when}`).join(' ')}`.toLowerCase().includes(q)) return false;
       return true;
     });
-    if (state.sort === 'recent') visible.sort((a, b) => b.latestTimestamp - a.latestTimestamp || b.count - a.count);
-    else if (state.sort === 'az') visible.sort((a, b) => a.songTitle.localeCompare(b.songTitle, 'pt'));
-    else visible.sort((a, b) => b.count - a.count || b.latestTimestamp - a.latestTimestamp);
+    const tsOf = (g) => Number(g.latestTimestamp) || Number(g.firstTimestamp) || 0;
+    const cntOf = (g) => Number(g.count) || 0;
+    const strCmp = (a, b) => String(a || '').localeCompare(String(b || ''), 'pt', { sensitivity: 'base' });
+    switch (state.sort) {
+      case 'votes_asc':
+        visible.sort((a, b) => cntOf(a) - cntOf(b) || tsOf(b) - tsOf(a));
+        break;
+      case 'recent':
+        visible.sort((a, b) => tsOf(b) - tsOf(a) || cntOf(b) - cntOf(a));
+        break;
+      case 'oldest':
+        visible.sort((a, b) => (tsOf(a) || Number.MAX_SAFE_INTEGER) - (tsOf(b) || Number.MAX_SAFE_INTEGER) || cntOf(b) - cntOf(a));
+        break;
+      case 'az':
+        visible.sort((a, b) => strCmp(a.songTitle, b.songTitle) || strCmp(a.artist, b.artist));
+        break;
+      case 'za':
+        visible.sort((a, b) => strCmp(b.songTitle, a.songTitle) || strCmp(b.artist, a.artist));
+        break;
+      case 'artist_az':
+        visible.sort((a, b) => strCmp(a.artist, b.artist) || strCmp(a.songTitle, b.songTitle));
+        break;
+      default:
+        visible.sort((a, b) => cntOf(b) - cntOf(a) || tsOf(b) - tsOf(a));
+        break;
+    }
+    const sortSel = $('shSort');
+    if (sortSel && sortSel.value !== state.sort) sortSel.value = state.sort;
+    document.querySelectorAll('.sh-grid-header [data-sh-sort]').forEach(el => {
+      const col = el.dataset.shSort;
+      const base = el.dataset.baseLabel || el.textContent.replace(/ [↑↓]$/, '');
+      el.dataset.baseLabel = base;
+      let arrow = '';
+      if (col === 'votes' && state.sort === 'votes') arrow = ' ↓';
+      else if (col === 'votes' && state.sort === 'votes_asc') arrow = ' ↑';
+      else if (col === 'recent' && state.sort === 'recent') arrow = ' ↓';
+      else if (col === 'recent' && state.sort === 'oldest') arrow = ' ↑';
+      else if (col === 'az' && state.sort === 'az') arrow = ' ↑';
+      else if (col === 'az' && state.sort === 'za') arrow = ' ↓';
+      el.textContent = base + arrow;
+      el.style.color = arrow ? '#fff' : '';
+    });
 
     // Limpa seleção de músicas que já não existem na vista
     const visKeys = new Set(visible.map(g => g.key));
@@ -222,7 +261,7 @@
 
     // Lista (só toca no DOM se algo mudou → sem piscar)
     const html = visible.length ? visible.map(rowHtml).join('') : emptyHtml();
-    const hash = `${state.tab}|${html.length}|${simpleHash(html)}`;
+    const hash = `${state.tab}|${state.sort}|${html.length}|${simpleHash(html)}`;
     if (hash !== lastHash) {
       lastHash = hash;
       list.innerHTML = html;
@@ -370,6 +409,16 @@
       lastHash = ''; schedule();
     }));
     $('shSort').addEventListener('change', (e) => { state.sort = e.target.value; lastHash = ''; schedule(); });
+    document.querySelectorAll('.sh-grid-header [data-sh-sort]').forEach(el => {
+      el.addEventListener('click', () => {
+        const col = el.dataset.shSort;
+        if (col === 'votes') state.sort = state.sort === 'votes' ? 'votes_asc' : 'votes';
+        else if (col === 'recent') state.sort = state.sort === 'recent' ? 'oldest' : 'recent';
+        else if (col === 'az') state.sort = state.sort === 'az' ? 'za' : 'az';
+        lastHash = '';
+        schedule();
+      });
+    });
     let st;
     $('shSearch').addEventListener('input', (e) => {
       clearTimeout(st);

@@ -43,6 +43,8 @@ document.addEventListener('radio-db-updated', (e) => {
     renderFullPodcasts();
     syncInitialPodcastSelection();
     renderEconomiaPage();
+    renderHomeSabesQue();
+    renderFullSabesQuePage();
   }
   if (!col || col === 'announcements') {
     renderHomeNews();
@@ -757,22 +759,67 @@ function initPodcastPlayer() {
       if (!currentAudio.duration) return;
       if (e.key === 'ArrowRight') {
         e.preventDefault();
-        window.skipPodcastSeconds(15);
+        window.skipAudio(15);
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
-        window.skipPodcastSeconds(-15);
+        window.skipAudio(-15);
       }
     });
   }
 
+  // Guardar progresso de reprodução automaticamente para retomar onde parou
+  let _lastSavedSec = -1;
+  currentAudio.addEventListener('timeupdate', () => {
+    if (!currentActivePodcastObj || !currentActivePodcastObj.id || !currentAudio.duration) return;
+    const sec = Math.floor(currentAudio.currentTime);
+    if (Math.abs(sec - _lastSavedSec) >= 3) {
+      _lastSavedSec = sec;
+      try { localStorage.setItem('wave_pod_pos_' + currentActivePodcastObj.id, String(sec)); } catch (_) {}
+    }
+  });
+
   currentAudio.addEventListener('ended', () => {
+    if (currentActivePodcastObj && currentActivePodcastObj.id) {
+      try { localStorage.removeItem('wave_pod_pos_' + currentActivePodcastObj.id); } catch (_) {}
+    }
     updatePlayButtonState(false);
     if (seekFill) seekFill.style.width = '0%';
     const seekThumb = document.getElementById('podSeekThumb');
     if (seekThumb) seekThumb.style.left = '0%';
     if (timeCur) timeCur.innerText = '0:00';
     isPlaying = false;
+    // Auto-avançar para o episódio seguinte quando está numa playlist ou programa aberto
+    document.dispatchEvent(new CustomEvent('wave-podcast-ended', { detail: { id: currentActivePodcastObj && currentActivePodcastObj.id } }));
+    const activeLi = document.querySelector('.pod-ep.active, .pl-episode.active');
+    const nextBtn = activeLi && activeLi.nextElementSibling && activeLi.nextElementSibling.querySelector('button');
+    if (nextBtn) setTimeout(() => nextBtn.click(), 600);
   });
+
+  // Atalhos de teclado inteligentes no leitor (Espaço = play/pausa, ←/→ = ±15s, M = mute)
+  if (!window.__wavePlayerKeysBound) {
+    window.__wavePlayerKeysBound = true;
+    document.addEventListener('keydown', (e) => {
+      if (!document.getElementById('podcastMainPlayerSection')) return;
+      const tag = (e.target && e.target.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target?.isContentEditable) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (!currentAudio || !currentAudio.src) return;
+      if (e.code === 'Space') {
+        e.preventDefault();
+        const btn = document.getElementById('btnPodPlay');
+        if (btn) btn.click();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        window.skipAudio(15);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        window.skipAudio(-15);
+      } else if (e.key.toLowerCase() === 'm') {
+        e.preventDefault();
+        if (typeof window.toggleMute === 'function') window.toggleMute();
+      }
+    });
+  }
 }
 
 let activePodcastCategory = 'all';
@@ -797,6 +844,7 @@ function updatePlayButtonState(playing) {
   }
 }
 
+window.skipPodcastSeconds = function (seconds) { return window.skipAudio(seconds); };
 window.skipAudio = function (seconds) {
   if (!currentAudio.src || isNaN(currentAudio.duration)) return;
   currentAudio.currentTime = Math.max(0, Math.min(currentAudio.duration, currentAudio.currentTime + seconds));
@@ -871,6 +919,16 @@ window.filterPodcasts = function (category) {
 window.handlePodcastSearch = function (query) {
   activePodcastSearchQuery = (query || '').toLowerCase().trim();
   renderFullPodcasts();
+  const inp = document.getElementById('podcastSearchInput');
+  if (inp && !inp.dataset.enterBound) {
+    inp.dataset.enterBound = '1';
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const first = document.querySelector('#fullPodcastsGrid .pod-row');
+        if (first) { e.preventDefault(); first.click(); }
+      }
+    });
+  }
 };
 
 function getSpotifyEmbedUrl(url) {
@@ -899,6 +957,9 @@ window.loadAndPlayPodcast = function (audioOrSpotifyUrl, title, subtitle, podObj
   }
 
   currentActivePodcastObj = podObj || { title, subtitle, audioUrl: audioOrSpotifyUrl };
+  if (currentActivePodcastObj.id) {
+    try { localStorage.setItem('wave_last_podcast_id', String(currentActivePodcastObj.id)); } catch (_) {}
+  }
 
   const spotifyExtLink = document.getElementById('podSpotifyExternalLink');
   const titleEl   = document.getElementById('podPlayerTitle');
@@ -992,6 +1053,16 @@ window.loadAndPlayPodcast = function (audioOrSpotifyUrl, title, subtitle, podObj
     isSpotifyMode = false;
     currentAudio.pause();
     currentAudio.src = audioOrSpotifyUrl;
+    if (currentActivePodcastObj && currentActivePodcastObj.id) {
+      const savedSec = Number(localStorage.getItem('wave_pod_pos_' + currentActivePodcastObj.id) || 0);
+      if (savedSec > 5) {
+        currentAudio.addEventListener('loadedmetadata', () => {
+          if (currentAudio.duration && savedSec < currentAudio.duration - 10) {
+            currentAudio.currentTime = savedSec;
+          }
+        }, { once: true });
+      }
+    }
     if (options.autoplay !== false) {
       currentAudio.play().then(() => {
         isPlaying = true;
@@ -1014,6 +1085,7 @@ window.loadAndPlayPodcast = function (audioOrSpotifyUrl, title, subtitle, podObj
 function syncInitialPodcastSelection() {
   const playerSec = document.getElementById('podcastMainPlayerSection');
   if (!playerSec || currentActivePodcastObj) return;
+  if (document.getElementById('playlistEpisodeList')) return; // a página de playlist escolhe o seu próprio episódio
 
   const isEconomiaPage = Boolean(document.getElementById('economiaPodcastsContainer'));
   const allPods = isEconomiaPage
@@ -1080,54 +1152,321 @@ function renderHomePodcasts() {
   });
 }
 
-function renderFullPodcasts() {
-  const container = document.getElementById('fullPodcastsGrid');
-  if (!container) return;
+/* ── Podcasts organizados por programa ─────────────────────────────────── */
+const POD_PROGRAMS = [
+  { key: 'nerd', title: 'Nerd Alert', icon: 'ri-flashlight-fill', desc: 'Desafios, enigmas e curiosidades para os mais curiosos da escola.', link: null },
+  { key: 'sabias', title: 'Sabias que...', icon: 'ri-lightbulb-flash-line', desc: 'Curiosidades rápidas por disciplina, em formato de podcast.', link: 'sabes-que.html' },
+  { key: 'economia', title: 'Economia em Frequência', icon: 'ri-line-chart-line', desc: 'O projeto temático de economia da Rádio Wave: mitos, verdades e literacia financeira.', link: 'economia.html' }
+];
+const ECON_PROGRAM_CATEGORIES = ['economia', 'economia em frequência', 'mito ou verdade', 'jovens e dinheiro', 'economia e sustentabilidade'];
+let podRecentExpanded = false;
+const podProgramExpanded = new Set();
 
-  const allPods = window.db.getMainPodcasts ? window.db.getMainPodcasts() : (window.db.getPodcasts ? window.db.getPodcasts() : []);
+function getPodcastProgramKey(p) {
+  const cat = String(p.category || '').trim().toLowerCase();
+  if (cat === 'nerd alert') return 'nerd';
+  if (cat === 'sabias que') return 'sabias';
+  if (ECON_PROGRAM_CATEGORIES.includes(cat) || p.portal === 'economia' || p.portal === 'both') return 'economia';
+  return 'cat:' + (p.category || 'Geral');
+}
 
-  let filtered = allPods;
-  if (activePodcastCategory !== 'all') {
-    filtered = filtered.filter(p => (p.category || 'Geral').toLowerCase() === activePodcastCategory.toLowerCase());
-  }
-  if (activePodcastSearchQuery) {
-    filtered = filtered.filter(p => {
-      const t = (p.title       || '').toLowerCase();
-      const d = (p.description || '').toLowerCase();
-      const h = (p.hosts       || '').toLowerCase();
-      const c = (p.category    || '').toLowerCase();
-      return t.includes(activePodcastSearchQuery) ||
-             d.includes(activePodcastSearchQuery) ||
-             h.includes(activePodcastSearchQuery) ||
-             c.includes(activePodcastSearchQuery);
+function podSortByDate(list) {
+  return [...list].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+}
+
+function getCustomPodcastShows() {
+  return window.db && typeof window.db.getPodcastShows === 'function' ? window.db.getPodcastShows() : [];
+}
+
+function findCustomShowForEpisode(ep) {
+  const shows = getCustomPodcastShows();
+  return shows.find(sh =>
+    (ep.showId && String(ep.showId) === String(sh.id)) ||
+    String(ep.category || '').trim().toLowerCase() === String(sh.title || '').trim().toLowerCase()
+  ) || null;
+}
+
+function podProgramTitleOf(ep) {
+  const custom = findCustomShowForEpisode(ep);
+  if (custom) return custom.title;
+  const key = getPodcastProgramKey(ep);
+  const def = POD_PROGRAMS.find(p => p.key === key);
+  if (def) return def.title;
+  return key.startsWith('cat:') ? key.slice(4) : key;
+}
+
+function podRowHTML(ep, opts = {}) {
+  const thumb = ep.thumbnail || 'assets/logo-radio.jpg';
+  const id = escapeJs(ep.id || '');
+  const prog = opts.hideProgram ? '' : `<span class="pod-row-prog">${escapeHtml(podProgramTitleOf(ep))}${ep.discipline && getPodcastProgramKey(ep) === 'sabias' ? ' · ' + escapeHtml(ep.discipline) : ''}</span>`;
+  return `
+    <button type="button" class="pod-row" onclick="playPodcastById('${id}')" aria-label="Ouvir ${escapeHtml(ep.title)}">
+      <img class="pod-row-thumb" src="${escapeHtml(thumb)}" alt="" loading="lazy" onerror="this.onerror=null;this.src='assets/logo-radio.jpg';">
+      <span class="pod-row-info">
+        ${prog}
+        <strong class="pod-row-title">${escapeHtml(ep.title)}</strong>
+        <small class="pod-row-meta"><i class="ri-calendar-line"></i> ${escapeHtml(ep.date || 'Recente')} <i class="ri-time-line"></i> ${escapeHtml(ep.duration || '—')}</small>
+      </span>
+      <span class="pod-row-play" aria-hidden="true"><i class="ri-play-fill"></i></span>
+    </button>`;
+}
+
+window.toggleRecentPodcasts = function () { podRecentExpanded = !podRecentExpanded; renderFullPodcasts(); };
+
+let podOpenProgram = null;
+let podSabiasDisc = 'all';
+let podActiveEpId = null;
+
+const POD_PROGRAM_COLORS = { nerd: '#d97706', sabias: '#7c3aed', economia: '#15803d' };
+
+function podMovePlayer(toSlotId) {
+  const player = document.getElementById('podcastMainPlayerSection');
+  const slot = document.getElementById(toSlotId);
+  if (player && slot && player.parentNode !== slot) slot.appendChild(player);
+}
+
+function podGroups(all) {
+  const groups = new Map();
+  const savedShows = getCustomPodcastShows();
+  const hiddenBuiltIns = new Set(savedShows.filter(sh => sh.builtInKey && sh.hidden).map(sh => sh.builtInKey));
+  const customOnly = savedShows.filter(sh => !sh.builtInKey && !sh.hidden);
+  customOnly.forEach(sh => {
+    groups.set('show:' + sh.id, {
+      key: 'show:' + sh.id,
+      title: sh.title,
+      icon: sh.icon || 'ri-mic-2-fill',
+      desc: sh.description || '',
+      cover: sh.cover || '',
+      color: sh.color || '#1db954',
+      link: null,
+      episodes: []
     });
+  });
+  const visibleBuiltIns = POD_PROGRAMS.filter(p => !hiddenBuiltIns.has(p.key));
+  visibleBuiltIns.forEach(p => {
+    const ov = savedShows.find(sh => sh.builtInKey === p.key && !sh.hidden);
+    groups.set(p.key, {
+      ...p,
+      title: (ov && ov.title) || p.title,
+      desc: (ov && ov.description) || p.desc,
+      icon: (ov && ov.icon) || p.icon,
+      cover: (ov && ov.cover) || '',
+      color: (ov && ov.color) || POD_PROGRAM_COLORS[p.key] || '#282425',
+      episodes: []
+    });
+  });
+  all.forEach(ep => {
+    const custom = customOnly.find(sh =>
+      (ep.showId && String(ep.showId) === String(sh.id)) ||
+      String(ep.category || '').trim().toLowerCase() === String(sh.title || '').trim().toLowerCase()
+    );
+    const key = custom ? ('show:' + custom.id) : getPodcastProgramKey(ep);
+    if (hiddenBuiltIns.has(key)) return;
+    if (!groups.has(key)) {
+      groups.set(key, { key, title: key.startsWith('cat:') ? key.slice(4) : key, icon: 'ri-mic-line', desc: '', link: null, episodes: [] });
+    }
+    groups.get(key).episodes.push(ep);
+  });
+  const fixedKeys = new Set([...customOnly.map(s => 'show:' + s.id), ...visibleBuiltIns.map(p => p.key)]);
+  return [
+    ...customOnly.map(s => groups.get('show:' + s.id)),
+    ...visibleBuiltIns.map(p => groups.get(p.key)),
+    ...Array.from(groups.values()).filter(g => !fixedKeys.has(g.key)).sort((a, b) => a.title.localeCompare(b.title, 'pt'))
+  ];
+}
+
+window.openPodProgram = function (key) {
+  podOpenProgram = key;
+  podActiveEpId = null;
+  podSabiasDisc = 'all';
+  try { history.replaceState(null, '', '#programa-' + encodeURIComponent(key)); } catch (_) {}
+  renderFullPodcasts();
+  const sec = document.getElementById('podProgramsSection');
+  if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+window.closePodProgram = function () {
+  podOpenProgram = null;
+  try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch (_) {}
+  renderFullPodcasts();
+  const sec = document.getElementById('podProgramsSection');
+  if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+window.selectPodSabiasDisc = function (name) {
+  podSabiasDisc = name || 'all';
+  renderFullPodcasts();
+};
+
+window.playPodProgramEpisode = function (id) {
+  const ep = (window.db.getPodcasts ? window.db.getPodcasts() : []).find(p => String(p.id) === String(id));
+  if (!ep) return;
+  podActiveEpId = ep.id;
+  const url = ep.audioUrl || ep.spotifyUrl || ep.originalUrl || '';
+  window.loadAndPlayPodcast(url, ep.title, ep.date || '', ep, { autoplay: true, scroll: false });
+  document.querySelectorAll('.pod-ep').forEach(li => {
+    li.classList.toggle('active', String(li.dataset.id) === String(ep.id));
+  });
+  const player = document.getElementById('podcastMainPlayerSection');
+  if (player && window.matchMedia('(max-width: 900px)').matches) player.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+function podTileHTML(g) {
+  const n = g.episodes.length;
+  const latest = g.episodes[0];
+  const cover = g.cover || (latest ? (latest.thumbnail || 'assets/logo-radio.jpg') : '');
+  const color = g.color || POD_PROGRAM_COLORS[g.key] || '#282425';
+  const safe = escapeJs(g.key);
+  const clickable = n > 0;
+  return `
+    <button type="button" class="pod-tile${clickable ? '' : ' is-soon'}" style="--tile: ${color};" ${clickable ? `onclick="openPodProgram('${safe}')"` : 'disabled aria-disabled="true"'} aria-label="${escapeHtml(g.title)} — ${n} episódios">
+      <span class="pod-tile-art">
+        ${cover ? `<img src="${escapeHtml(cover)}" alt="" loading="lazy" onerror="this.onerror=null;this.src='assets/logo-radio.jpg';">` : `<i class="${escapeHtml(g.icon)} pod-tile-bigicon" aria-hidden="true"></i>`}
+        <span class="pod-tile-badge">${clickable ? `${n} ${n === 1 ? 'episódio' : 'episódios'}` : 'Em breve'}</span>
+        ${clickable ? '<span class="pod-tile-play"><i class="ri-play-fill" aria-hidden="true"></i></span>' : ''}
+      </span>
+      <span class="pod-tile-body">
+        <strong class="pod-tile-title"><i class="${escapeHtml(g.icon)}" aria-hidden="true"></i> ${escapeHtml(g.title)}</strong>
+        <span class="pod-tile-desc">${escapeHtml(g.desc || (latest ? 'Último: ' + latest.title : ''))}</span>
+      </span>
+    </button>`;
+}
+
+function podEpisodeItemHTML(ep, number) {
+  return `
+    <li class="pod-ep" data-id="${escapeHtml(ep.id)}">
+      <button type="button" class="pod-ep-btn" onclick="playPodProgramEpisode('${escapeJs(ep.id || '')}')" aria-label="Ouvir ${escapeHtml(ep.title)}">
+        <span class="pod-ep-num">${number}</span>
+        <img class="pod-ep-thumb" src="${escapeHtml(ep.thumbnail || 'assets/logo-radio.jpg')}" alt="" loading="lazy" onerror="this.onerror=null;this.src='assets/logo-radio.jpg';">
+        <span class="pod-ep-info">
+          <strong>${escapeHtml(ep.title)}</strong>
+          <small>${escapeHtml(ep.date || 'Recente')} · ${escapeHtml(ep.duration || '—')}</small>
+        </span>
+        <span class="pod-ep-icon" aria-hidden="true"><i class="ri-play-fill"></i></span>
+      </button>
+    </li>`;
+}
+
+function renderFullPodcasts() {
+  const recentGrid = document.getElementById('recentPodcastsGrid');
+  const progWrap = document.getElementById('podcastProgramsContainer');
+  const resultsGrid = document.getElementById('fullPodcastsGrid');
+  if (!recentGrid && !progWrap && !resultsGrid) return;
+
+  const all = podSortByDate(window.db.getPodcasts ? window.db.getPodcasts() : []);
+  const searchSec = document.getElementById('podSearchResults');
+  const recentSec = document.getElementById('podRecentSection');
+  const progSec = document.getElementById('podProgramsSection');
+
+  // ── Pesquisa ────────────────────────────────────────────────────────────
+  if (activePodcastSearchQuery && searchSec) {
+    podMovePlayer('podPlayerTop');
+    const q = activePodcastSearchQuery;
+    const found = all.filter(p => `${p.title || ''} ${p.description || ''} ${p.hosts || ''} ${p.category || ''} ${p.discipline || ''}`.toLowerCase().includes(q));
+    searchSec.style.display = '';
+    if (recentSec) recentSec.style.display = 'none';
+    if (progSec) progSec.style.display = 'none';
+    const title = searchSec.querySelector('.w-sec-title');
+    if (title) title.innerHTML = `<span class="n"></span>${found.length} resultado${found.length === 1 ? '' : 's'}`;
+    resultsGrid.innerHTML = found.length
+      ? found.map(ep => podRowHTML(ep)).join('')
+      : `<div class="pod-empty-box"><i class="ri-search-line"></i><span>Nenhum episódio encontrado. Tenta um termo diferente.</span></div>`;
+    return;
+  }
+  if (searchSec) searchSec.style.display = 'none';
+  if (recentSec) recentSec.style.display = '';
+  if (progSec) progSec.style.display = '';
+
+  // ── Recentes ────────────────────────────────────────────────────────────
+  if (recentGrid) {
+    const LIMIT = 6;
+    if (all.length === 0) {
+      recentGrid.innerHTML = `<div class="pod-empty-box"><i class="ri-headphones-line"></i><span>Ainda não foram adicionados podcasts. Fica atento às próximas emissões!</span></div>`;
+    } else {
+      recentGrid.innerHTML = (podRecentExpanded ? all : all.slice(0, LIMIT)).map((ep, i) => {
+        const isNew = i === 0 ? '<span class="pod-row-new">Novo</span>' : '';
+        return podRowHTML(ep).replace('<span class="pod-row-info">', `<span class="pod-row-info">${isNew}`);
+      }).join('');
+    }
+    const moreBtn = document.getElementById('podRecentMoreBtn');
+    if (moreBtn) {
+      moreBtn.style.display = all.length > LIMIT ? '' : 'none';
+      moreBtn.innerHTML = podRecentExpanded
+        ? '<i class="ri-arrow-up-s-line"></i> Mostrar menos'
+        : `<i class="ri-arrow-down-s-line"></i> Ver todos os ${all.length} episódios`;
+    }
   }
 
-  if (filtered.length === 0) {
-    container.innerHTML = allPods.length === 0 ? `
-      <div class="hv2-empty-state" style="grid-column: 1 / -1;">
-        <div class="hv2-empty-icon"><i class="ri-headphones-line"></i></div>
-        <h3>Ainda não foram adicionados podcasts</h3>
-        <p>A equipa da Rádio Wave está a preparar novos episódios. Fica atento às próximas emissões!</p>
-      </div>
-    ` : `
-      <div class="hv2-empty-state" style="grid-column: 1 / -1;">
-        <div class="hv2-empty-icon"><i class="ri-search-line"></i></div>
-        <h3>Nenhum episódio encontrado</h3>
-        <p>Tenta um termo diferente ou seleciona outra categoria.</p>
-      </div>
-    `;
+  // ── Programas ───────────────────────────────────────────────────────────
+  if (!progWrap) return;
+  const groups = podGroups(all);
+
+  if (!podOpenProgram && window.location.hash.startsWith('#programa-') && !window.__podHashHandled) {
+    const k = decodeURIComponent(window.location.hash.replace('#programa-', ''));
+    if (groups.some(g => g.key === k && g.episodes.length)) podOpenProgram = k;
+  }
+  window.__podHashHandled = true;
+  const g = podOpenProgram ? groups.find(x => x.key === podOpenProgram) : null;
+  const note = document.getElementById('podProgramsNote');
+
+  // Vista geral: grelha de capas dos programas (o player volta ao topo)
+  if (!g || g.episodes.length === 0) {
+    podOpenProgram = null;
+    podMovePlayer('podPlayerTop');
+    if (note) note.textContent = 'Escolhe um programa para ouvir os episódios';
+    progWrap.innerHTML = `<div class="pod-tiles">${groups.map(podTileHTML).join('')}</div>`;
     return;
   }
 
-  container.innerHTML = '';
-  filtered.forEach(pod => {
-    const playUrl = pod.audioUrl || pod.spotifyUrl || pod.originalUrl || '';
-    const card = document.createElement('div');
-    card.className = 'card-box podcast-card-pro';
-    card.innerHTML = buildPodcastCardHTML(pod, playUrl, 'Reproduzir', 'ri-play-fill');
-    container.appendChild(card);
-  });
+  // Vista do programa: player de um lado, episódios do outro
+  podMovePlayer('podPlayerTop'); // protege o player antes de reescrever o contentor
+  if (note) note.textContent = '';
+  let eps = g.episodes;
+  let subFilter = '';
+  let playlistLink = '';
+  if (g.key === 'sabias') {
+    const pls = getSabesQuePlaylists();
+    if (podSabiasDisc !== 'all' && !pls.some(p => p.name.toLowerCase() === podSabiasDisc.toLowerCase())) podSabiasDisc = 'all';
+    subFilter = `<div class="pod-subfilter" role="group" aria-label="Disciplina">
+      <button type="button" class="pod-chip${podSabiasDisc === 'all' ? ' active' : ''}" onclick="selectPodSabiasDisc('all')">Todas <b>${eps.length}</b></button>
+      ${pls.map(pl => `<button type="button" class="pod-chip${pl.name.toLowerCase() === podSabiasDisc.toLowerCase() ? ' active' : ''}" onclick="selectPodSabiasDisc('${escapeJs(pl.name)}')">${escapeHtml(pl.name)} <b>${pl.episodes.length}</b></button>`).join('')}
+    </div>`;
+    if (podSabiasDisc !== 'all') {
+      eps = eps.filter(e => String(e.discipline || 'Economia').trim().toLowerCase() === podSabiasDisc.toLowerCase());
+      playlistLink = `<a class="pod-view-link" href="playlist.html?disciplina=${encodeURIComponent(podSabiasDisc)}"><i class="ri-external-link-line"></i> Página da playlist</a>`;
+    }
+  }
+  const color = g.color || POD_PROGRAM_COLORS[g.key] || '#282425';
+
+  progWrap.innerHTML = `
+    <div class="pod-view" style="--tile: ${color};">
+      <header class="pod-view-head">
+        <button type="button" class="pod-back" onclick="closePodProgram()"><i class="ri-arrow-left-line"></i> Todos os programas</button>
+        <div class="pod-view-title">
+          <span class="pod-prog-icon"><i class="${escapeHtml(g.icon)}" aria-hidden="true"></i></span>
+          <div><h3>${escapeHtml(g.title)}</h3>${g.desc ? `<p>${escapeHtml(g.desc)}</p>` : ''}</div>
+        </div>
+        ${g.link ? `<a class="pod-view-link" href="${g.link}"><i class="ri-external-link-line"></i> Página do programa</a>` : ''}
+        ${playlistLink}
+      </header>
+      ${subFilter}
+      <div class="pl-layout">
+        <div class="pl-player-col" id="podProgPlayerSlot"></div>
+        <aside class="pl-list-col" aria-label="Episódios de ${escapeHtml(g.title)}">
+          <div class="pl-list-head"><h2>Episódios</h2><span class="pl-list-count">${eps.length} ${eps.length === 1 ? 'ep.' : 'eps.'}</span></div>
+          <ol class="pl-episode-list">${eps.map((ep, i) => podEpisodeItemHTML(ep, eps.length - i)).join('')}</ol>
+        </aside>
+      </div>
+    </div>`;
+  podMovePlayer('podProgPlayerSlot');
+
+  const current = eps.find(e => String(e.id) === String(podActiveEpId)) || eps[0];
+  if (current && String(current.id) !== String(podActiveEpId)) {
+    podActiveEpId = current.id;
+    const url = current.audioUrl || current.spotifyUrl || current.originalUrl || '';
+    window.loadAndPlayPodcast(url, current.title, current.date || '', current, { autoplay: false, scroll: false });
+  }
+  document.querySelectorAll('.pod-ep').forEach(li => li.classList.toggle('active', String(li.dataset.id) === String(podActiveEpId)));
 }
 
 window.playPodcastById = function (id) {
@@ -1188,6 +1527,9 @@ function getCategoryColor(cat) {
     'Música':            '#a78bfa',
     'Ciência & Escola':  '#34d399',
     'Emissão Especial':  '#fb923c',
+    'Nerd Alert':        '#facc15',
+    'Sabias que':        '#fbbf24',
+    'Mito ou verdade':   '#34d399',
   };
   return map[cat] || '#c084fc';
 }
@@ -1328,7 +1670,7 @@ function buildSabesQueCardHTML(item, options = {}) {
   return `
     <article class="sq-card">
       <div class="sq-card-top">
-        <span class="sq-discipline-pill"><i class="ri-lightbulb-flash-line" aria-hidden="true"></i> Sabias que... ${escapeHtml(discipline)}</span>
+        <span class="sq-discipline-pill"><i class="ri-mic-line" aria-hidden="true"></i> Podcast Sabias que · ${escapeHtml(discipline)}</span>
         <span class="sq-badge">
           ${showLatestBadge ? '<i class="ri-sparkling-line" aria-hidden="true"></i> Mais recente' : `<i class="ri-calendar-line" aria-hidden="true"></i> ${escapeHtml(dateLabel)}`}
         </span>
@@ -1339,7 +1681,7 @@ function buildSabesQueCardHTML(item, options = {}) {
       <div class="sq-footer">
         <span><i class="ri-user-3-line" aria-hidden="true"></i> ${escapeHtml(item.author || 'Rádio Wave')}</span>
         <button type="button" class="sq-read-btn" onclick="openSabesQueModal('${safeId}')">
-          Ler tudo <i class="ri-arrow-right-up-line" aria-hidden="true"></i>
+          Ver episódio <i class="ri-arrow-right-up-line" aria-hidden="true"></i>
         </button>
       </div>
     </article>
@@ -1420,28 +1762,69 @@ window.closeSabesQueModal = function () {
   document.body.style.overflow = '';
 };
 
+/* ── "Sabias que..." = podcast organizado em playlists por disciplina ───── */
+function getSabesQueEpisodes() {
+  const pods = window.db && window.db.getPodcasts ? window.db.getPodcasts() : [];
+  return pods.filter(p => String(p.category || '').trim().toLowerCase() === 'sabias que');
+}
+
+function getSabesQuePlaylists() {
+  const map = new Map();
+  getSabesQueEpisodes().forEach(ep => {
+    const disc = String(ep.discipline || 'Economia').trim() || 'Economia';
+    const key = disc.toLowerCase();
+    if (!map.has(key)) map.set(key, { name: disc, episodes: [] });
+    map.get(key).episodes.push(ep);
+  });
+  return Array.from(map.values()).sort((a, b) => {
+    if (a.name.toLowerCase() === 'economia') return -1;
+    if (b.name.toLowerCase() === 'economia') return 1;
+    return a.name.localeCompare(b.name, 'pt');
+  });
+}
+
+function buildSabesQuePlaylistCard(pl) {
+  const latest = pl.episodes[0];
+  const cover = (latest && (latest.thumbnail || latest.image)) || 'assets/logo-radio.jpg';
+  const n = pl.episodes.length;
+  const safe = escapeJs(pl.name);
+  return `
+    <article class="sq-pl-card" tabindex="0" role="button" onclick="openSabesQuePlaylist('${safe}')"
+      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openSabesQuePlaylist('${safe}');}"
+      aria-label="Abrir playlist ${escapeHtml(pl.name)}">
+      <div class="sq-pl-cover">
+        <img src="${escapeHtml(cover)}" alt="" loading="lazy" onerror="this.onerror=null;this.src='assets/logo-radio.jpg';">
+        <span class="sq-pl-count"><i class="ri-play-list-2-fill" aria-hidden="true"></i> ${n} ${n === 1 ? 'episódio' : 'episódios'}</span>
+        <span class="sq-pl-play"><i class="ri-play-fill" aria-hidden="true"></i></span>
+      </div>
+      <div class="sq-pl-body">
+        <span class="sq-pl-kicker">Playlist · Sabias que...</span>
+        <h3 class="sq-pl-title">${escapeHtml(pl.name)}</h3>
+        <p class="sq-pl-latest"><i class="ri-mic-line" aria-hidden="true"></i> Mais recente: ${escapeHtml(latest ? latest.title : '—')}</p>
+        <span class="sq-pl-cta">Ver todos os episódios <i class="ri-arrow-right-line" aria-hidden="true"></i></span>
+      </div>
+    </article>`;
+}
+
+window.openSabesQuePlaylist = function (discipline) {
+  window.location.href = `playlist.html?disciplina=${encodeURIComponent(discipline || 'Economia')}`;
+};
+
 function renderHomeSabesQue() {
   const container = document.getElementById('homeSabesQueContainer');
   if (!container) return;
+  const playlists = getSabesQuePlaylists();
 
-  const latestByDiscipline = window.db && window.db.getLatestSabesQueByDiscipline
-    ? window.db.getLatestSabesQueByDiscipline()
-    : [];
-
-  if (latestByDiscipline.length === 0) {
+  if (playlists.length === 0) {
     container.innerHTML = `
       <div class="hv2-empty-state" style="grid-column: 1 / -1;">
         <div class="hv2-empty-icon"><i class="ri-lightbulb-flash-line"></i></div>
-        <h3>Ainda não foram adicionadas curiosidades "Sabias que..."</h3>
-        <p>Em breve vais encontrar aqui o "Sabias que..." mais recente de Economia e de outras disciplinas.</p>
-      </div>
-    `;
+        <h3>Ainda não há episódios de "Sabias que..."</h3>
+        <p>Em breve vais encontrar aqui as playlists do podcast, organizadas por disciplina.</p>
+      </div>`;
     return;
   }
-
-  container.innerHTML = latestByDiscipline
-    .map(item => buildSabesQueCardHTML(item, { showLatestBadge: true }))
-    .join('');
+  container.innerHTML = playlists.map(buildSabesQuePlaylistCard).join('');
 }
 
 const ECONOMY_PODCAST_SHOWS = [
@@ -1449,27 +1832,20 @@ const ECONOMY_PODCAST_SHOWS = [
     id: 'eco-show-mito-ou-verdade',
     title: 'Mito ou verdade',
     category: 'Mito ou verdade',
+    icon: 'ri-scales-3-line',
     hosts: 'Economia em Frequência',
     duration: 'Série Oficial',
     description: 'Desmontamos mitos financeiros e verdades sobre dinheiro, consumo e mercados no dia a dia.',
     thumbnail: 'assets/logo-radio.jpg'
   },
   {
-    id: 'eco-show-jovens-e-dinheiro',
-    title: 'Jovens e dinheiro',
-    category: 'Jovens e dinheiro',
+    id: 'eco-show-sabias-que',
+    title: 'Sabias que...',
+    category: 'Sabias que',
+    icon: 'ri-lightbulb-flash-line',
     hosts: 'Economia em Frequência',
     duration: 'Série Oficial',
-    description: 'Poupança, consumo consciente, gestão de orçamento e os primeiros passos na literacia financeira.',
-    thumbnail: 'assets/logo-radio.jpg'
-  },
-  {
-    id: 'eco-show-economia-sustentabilidade',
-    title: 'Economia e sustentabilidade',
-    category: 'Economia e sustentabilidade',
-    hosts: 'Economia em Frequência',
-    duration: 'Série Oficial',
-    description: 'Como equilibrar crescimento económico, inovação verde e escolhas responsáveis para o futuro.',
+    description: 'Curiosidades rápidas e factos surpreendentes sobre economia, em formato de podcast.',
     thumbnail: 'assets/logo-radio.jpg'
   }
 ];
@@ -1478,10 +1854,12 @@ function initEconomiaFilters() {}
 
 function getEpisodesForEconomyShow(econPods, showCategory) {
   const catNorm = String(showCategory || '').trim().toLowerCase();
-  return (econPods || []).filter(p =>
+  const episodes = (econPods || []).filter(p =>
     String(p.category || '').trim().toLowerCase() === catNorm ||
     String(p.title || '').toLowerCase().includes(catNorm)
   );
+
+  return episodes;
 }
 
 function buildEconomyPodcastColumn(show, episodes) {
@@ -1523,9 +1901,10 @@ function buildEconomyPodcastColumn(show, episodes) {
   } else {
     bodyHtml = `
       <div class="econ-pod-col-body econ-pod-col-empty">
-        <div class="econ-pod-empty-icon"><i class="ri-mic-off-line"></i></div>
+        <div class="econ-pod-empty-icon"><i class="${escapeHtml(show.icon || 'ri-mic-line')}"></i></div>
+        <span class="econ-pod-soon">Em breve</span>
         <p class="econ-pod-ep-desc">${escapeHtml(show.description)}</p>
-        <p class="econ-pod-empty-note">Ainda não existe nenhum episódio publicado para este podcast.</p>
+        <p class="econ-pod-empty-note">O primeiro episódio ainda está a ser preparado pela equipa.</p>
         <div class="econ-pod-actions">
           <button type="button" class="btn-econ-history" onclick="openEconomyPodcastHistory('${safeCat}')">
             <i class="ri-history-line"></i> Ver episódios anteriores
@@ -1699,39 +2078,39 @@ function renderFullSabesQuePage() {
   const pillsWrap = document.getElementById('sabesQueDisciplinePills');
   if (!grid) return;
 
-  const disciplines = window.db.getSabesQueDisciplines ? window.db.getSabesQueDisciplines() : ['Economia'];
+  const playlists = getSabesQuePlaylists();
   if (pillsWrap) {
     const isAll = activeSabesQueDiscipline === 'all';
-    const buttons = [
+    pillsWrap.innerHTML = [
       `<button type="button" class="pod-filter-btn ${isAll ? 'active' : ''}" data-discipline="all" onclick="filterSabesQueByDiscipline('all')">Todas</button>`,
-      ...disciplines.map(d => {
-        const active = d.toLowerCase() === String(activeSabesQueDiscipline || '').toLowerCase();
-        return `<button type="button" class="pod-filter-btn ${active ? 'active' : ''}" data-discipline="${escapeHtml(d)}" onclick="filterSabesQueByDiscipline('${escapeJs(d)}')">${escapeHtml(d)}</button>`;
+      ...playlists.map(pl => {
+        const active = pl.name.toLowerCase() === String(activeSabesQueDiscipline || '').toLowerCase();
+        return `<button type="button" class="pod-filter-btn ${active ? 'active' : ''}" data-discipline="${escapeHtml(pl.name)}" onclick="filterSabesQueByDiscipline('${escapeJs(pl.name)}')">${escapeHtml(pl.name)} (${pl.episodes.length})</button>`;
       })
-    ];
-    pillsWrap.innerHTML = buttons.join('');
+    ].join('');
   }
 
-  let list = window.db.getSabesQue
-    ? window.db.getSabesQue(activeSabesQueDiscipline === 'all' ? null : activeSabesQueDiscipline)
-    : [];
-
+  let list = getSabesQueEpisodes().map(ep => ({ ...ep, _disc: String(ep.discipline || 'Economia').trim() || 'Economia' }));
+  if (activeSabesQueDiscipline !== 'all') {
+    list = list.filter(ep => ep._disc.toLowerCase() === String(activeSabesQueDiscipline).toLowerCase());
+  }
   if (activeSabesQueQuery) {
-    list = list.filter(item =>
-      `${item.title} ${item.content} ${item.discipline} ${item.author}`.toLowerCase().includes(activeSabesQueQuery)
-    );
+    list = list.filter(ep => `${ep.title} ${ep.description || ''} ${ep._disc} ${ep.hosts || ''}`.toLowerCase().includes(activeSabesQueQuery));
   }
 
   if (list.length === 0) {
     grid.innerHTML = `
       <div class="hv2-empty-state" style="grid-column: 1 / -1;">
         <div class="hv2-empty-icon"><i class="ri-lightbulb-flash-line"></i></div>
-        <h3>Nenhuma curiosidade encontrada</h3>
-        <p>${activeSabesQueDiscipline === 'all' ? 'Ainda não foram adicionados "Sabias que..." de nenhuma disciplina.' : `Ainda não existem "Sabias que..." para a disciplina ${escapeHtml(activeSabesQueDiscipline)}.`}</p>
-      </div>
-    `;
+        <h3>Nenhum episódio encontrado</h3>
+        <p>${activeSabesQueDiscipline === 'all' ? 'Ainda não foram publicados episódios de "Sabias que...".' : `Ainda não existem episódios na playlist ${escapeHtml(activeSabesQueDiscipline)}.`}</p>
+      </div>`;
     return;
   }
 
-  grid.innerHTML = list.map(item => buildSabesQueCardHTML(item)).join('');
+  grid.innerHTML = list.map(ep => {
+    const playUrl = ep.audioUrl || ep.spotifyUrl || ep.originalUrl || '';
+    const card = buildPodcastCardHTML({ ...ep, category: `Sabias que · ${ep._disc}` }, playUrl, 'Ouvir episódio', 'ri-play-fill');
+    return `<div class="card-box podcast-card-pro">${card}</div>`;
+  }).join('');
 }

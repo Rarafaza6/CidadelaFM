@@ -608,11 +608,53 @@ class RadioDatabase {
     document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'messages' } }));
   }
 
-  // PODCASTS
+  // PODCASTS (episódios) & PROGRAMAS (shows criados no Admin)
   getPodcasts() {
     return [...this.cache.podcasts]
+      .filter(p => p && p.recordType !== 'podcast_show')
       .map(p => ({ ...p, portal: p.portal || 'main' }))
       .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  }
+
+  getPodcastShows() {
+    return [...this.cache.podcasts]
+      .filter(p => p && p.recordType === 'podcast_show')
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  }
+
+  getPodcastShow(id) {
+    return this.getPodcastShows().find(s => String(s.id) === String(id)) || null;
+  }
+
+  savePodcastShow(show) {
+    const id = show.id || ('show-' + Date.now());
+    const idx = this.cache.podcasts.findIndex(p => p && p.id === id);
+    const existing = idx !== -1 ? this.cache.podcasts[idx] : {};
+    const entry = {
+      ...existing,
+      ...show,
+      id,
+      recordType: 'podcast_show',
+      title: String(show.title || '').trim(),
+      description: String(show.description || '').trim(),
+      cover: String(show.cover || '').trim(),
+      color: String(show.color || '#e4232a').trim(),
+      icon: String(show.icon || 'ri-mic-fill').trim(),
+      createdAt: existing.createdAt || show.createdAt || Date.now(),
+      updatedAt: Date.now()
+    };
+    if (idx === -1) this.cache.podcasts.unshift(entry);
+    else this.cache.podcasts[idx] = entry;
+    const writePromise = this.write('podcasts', id, entry);
+    writePromise.catch(console.error);
+    document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'podcasts' } }));
+    return this._attachWritePromise(entry, writePromise);
+  }
+
+  deletePodcastShow(id) {
+    this.cache.podcasts = this.cache.podcasts.filter(p => !p || p.id !== id);
+    document.dispatchEvent(new CustomEvent('radio-db-updated', { detail: { collection: 'podcasts' } }));
+    return this.remove('podcasts', id).catch(console.error);
   }
 
   getMainPodcasts() {
@@ -624,6 +666,7 @@ class RadioDatabase {
       'economia',
       'economia em frequência',
       'mito ou verdade',
+      'sabias que',
       'jovens e dinheiro',
       'economia e sustentabilidade'
     ]);
@@ -635,7 +678,7 @@ class RadioDatabase {
   }
 
   getPodcast(id) {
-    return this.cache.podcasts.find(p => p.id === id) || null;
+    return this.cache.podcasts.find(p => p && p.id === id && p.recordType !== 'podcast_show') || null;
   }
 
   addPodcast(podcast) {
@@ -1611,8 +1654,8 @@ class RadioDatabase {
     return [...(this.cache.nerdChallenges || [])].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   }
 
-  getActiveNerdChallenge() {
-    const activeList = this.getNerdChallenges().filter(c => c.active === true);
+  getActiveNerdChallenge(portal = 'main') {
+    const activeList = this.getNerdChallenges().filter(c => c.active === true && (c.portal || 'main') === portal);
     return activeList.length > 0 ? activeList[0] : null;
   }
 
@@ -1636,7 +1679,7 @@ class RadioDatabase {
     const otherPromises = [];
     if (isActive) {
       this.cache.nerdChallenges.forEach((item, idx) => {
-        if (item.id !== id && item.active) {
+        if (item.id !== id && item.active && (item.portal || 'main') === (entry.portal || 'main')) {
           this.cache.nerdChallenges[idx] = { ...item, active: false, updatedAt: Date.now() };
           otherPromises.push(this.write('nerdChallenges', item.id, { active: false, updatedAt: Date.now() }).catch(console.error));
         }

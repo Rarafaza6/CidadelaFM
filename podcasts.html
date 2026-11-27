@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css">
-  <link rel="stylesheet" href="css/wave.css?v=20261119q">
+  <link rel="stylesheet" href="css/wave.css?v=20261127c">
   <link rel="stylesheet" href="css/privacy-manager.css?v=20261102">
   <script>document.documentElement.classList.add('js');try{var t=localStorage.getItem('wave_theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
   <!-- Google Consent Mode v2 & Google tag (gtag.js) -->
@@ -80,6 +80,7 @@
 
 <main class="w-main" id="main">
 
+  <div id="podPlayerTop">
   <section class="podcast-studio-player" id="podcastMainPlayerSection" aria-label="Leitor de podcasts">
     <div class="studio-player-topbar">
       <div class="studio-status-tags"></div>
@@ -134,17 +135,10 @@
       </div>
     </div>
   </section>
+  </div>
 
-  <section class="podcast-filters-bar" aria-label="Filtros e pesquisa de podcasts">
+  <section class="podcast-filters-bar" aria-label="Pesquisa e programas">
     <div class="podcast-toolbar-inner">
-      <div class="podcast-category-pills" id="podcastCategoryPills" role="tablist" aria-label="Categorias de podcasts">
-        <button type="button" class="pod-filter-btn active" data-category="all" onclick="filterPodcasts('all')">Todos</button>
-        <button type="button" class="pod-filter-btn" data-category="Entrevistas" onclick="filterPodcasts('Entrevistas')">Entrevistas</button>
-        <button type="button" class="pod-filter-btn" data-category="Debates" onclick="filterPodcasts('Debates')">Debates</button>
-        <button type="button" class="pod-filter-btn" data-category="Música" onclick="filterPodcasts('Música')">Música</button>
-        <button type="button" class="pod-filter-btn" data-category="Ciência &amp; Escola" onclick="filterPodcasts('Ciência &amp; Escola')">Ciência &amp; Escola</button>
-        <button type="button" class="pod-filter-btn" data-category="Emissão Especial" onclick="filterPodcasts('Emissão Especial')">Especiais</button>
-      </div>
       <div class="podcast-search-box">
         <i class="ri-search-line" aria-hidden="true"></i>
         <input type="text" id="podcastSearchInput" placeholder="Pesquisar episódios, temas ou alunos..." aria-label="Pesquisar episódios de podcasts" oninput="handlePodcastSearch(this.value)">
@@ -152,13 +146,32 @@
     </div>
   </section>
 
-  <section aria-labelledby="allPodcastsHeading">
-    <h2 id="allPodcastsHeading" class="visually-hidden">Todos os podcasts</h2>
-    <div class="w-grid-3" id="fullPodcastsGrid" aria-live="polite">
-        <div class="w-skel-card" aria-hidden="true"><div class="w-skel-img"></div><div class="w-skel-body"><div class="w-skel-line sm"></div><div class="w-skel-line lg"></div><div class="w-skel-line md"></div></div></div>
-        <div class="w-skel-card" aria-hidden="true"><div class="w-skel-img"></div><div class="w-skel-body"><div class="w-skel-line sm"></div><div class="w-skel-line lg"></div><div class="w-skel-line md"></div></div></div>
-        <div class="w-skel-card" aria-hidden="true"><div class="w-skel-img"></div><div class="w-skel-body"><div class="w-skel-line sm"></div><div class="w-skel-line lg"></div><div class="w-skel-line md"></div></div></div>
-</div>
+  <section class="w-sec pod-sec" id="podSearchResults" aria-label="Resultados da pesquisa" style="display: none;">
+    <div class="w-wrap">
+      <header class="w-sec-head"><h2 class="w-sec-title"><span class="n"></span>Resultados</h2></header>
+      <div class="pod-rows" id="fullPodcastsGrid" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="w-sec pod-sec" id="podRecentSection" aria-labelledby="podRecentHeading">
+    <div class="w-wrap">
+      <header class="w-sec-head">
+        <h2 class="w-sec-title" id="podRecentHeading"><span class="n"></span>Recentes</h2>
+        <span class="pod-sec-note">Todos os programas, do mais recente para o mais antigo</span>
+      </header>
+      <div class="pod-rows" id="recentPodcastsGrid" aria-live="polite"></div>
+      <div class="pod-more-wrap"><button type="button" class="w-btn w-btn-ghost" id="podRecentMoreBtn" onclick="toggleRecentPodcasts()" style="display: none;"></button></div>
+    </div>
+  </section>
+
+  <section class="w-sec alt pod-sec" id="podProgramsSection" aria-labelledby="podProgramsHeading">
+    <div class="w-wrap">
+      <header class="w-sec-head">
+        <h2 class="w-sec-title" id="podProgramsHeading"><span class="n"></span>Programas</h2>
+        <span class="pod-sec-note" id="podProgramsNote">Escolhe um programa para ouvir os episódios</span>
+      </header>
+      <div id="podcastProgramsContainer" class="pod-programs"></div>
+    </div>
   </section>
 </main>
 <footer class="w-foot" role="contentinfo">
@@ -198,8 +211,9 @@
 </footer>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=20261117"></script>
-<script src="js/app.js?v=20261117k"></script>
-<script src="js/site-ui.js?v=20261117m"></script>
+<script src="js/firebase-config.js?v=20261127b"></script>
+<script src="js/app.js?v=20261127m"></script>
+<script src="js/site-ui.js?v=20261127"></script>
+<script src="js/economia-nerd.js?v=20261127b"></script>
 </body>
 </html>
